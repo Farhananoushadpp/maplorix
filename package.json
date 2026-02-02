@@ -1,0 +1,56 @@
+{
+  "name": "maplorix-job-consultancy",
+  "version": "1.0.0",
+  "description": "Professional Job Consultancy Website for Maplorix",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "job-consultancy",
+    "recruitment",
+    "website",
+    "maplorix",
+    "react",
+    "vite",
+    "tailwindcss"
+  ],
+  "author": "Maplorix",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "framer-motion": "^12.4.10",
+    "prop-types": "^15.8.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@vitejs/plugin-react-swc": "^3.8.0",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "postcss-custom-properties": "^14.0.4",
+    "postcss-import": "^16.1.0",
+    "postcss-nesting": "^13.0.1",
+    "postcss-preset-env": "^10.1.5",
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maplorix/job-consultancy-website.git"
+  },
+  "homepage": "https://maplorix.com"
+}
