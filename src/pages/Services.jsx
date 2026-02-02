@@ -5,21 +5,25 @@ const Services = () => {
   const candidateServices = [
     {
       icon: 'fa-search',
+      image: '/jobsearch.jpg',
       title: 'Job Search Assistance',
       description: 'Personalized job matching based on your skills, experience, and career goals. We connect you with opportunities that align with your aspirations.'
     },
     {
       icon: 'fa-file-alt',
+      image: '/resumebuilder.jpg',
       title: 'Resume Building',
       description: 'Professional resume optimization to highlight your strengths and stand out to employers. Our experts help you create compelling resumes.'
     },
     {
       icon: 'fa-user-tie',
+      image: '/interviewpreparation.jpg',
       title: 'Interview Preparation',
       description: 'Comprehensive interview coaching including mock interviews, feedback sessions, and confidence-building techniques to ace your interviews.'
     },
     {
       icon: 'fa-chart-line',
+      image: '/careercunseling.jpg',
       title: 'Career Counseling',
       description: 'Expert guidance on career path planning, skill development, and professional growth strategies to advance your career effectively.'
     }
@@ -65,14 +69,34 @@ const Services = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="space-y-8">
             {candidateServices.map((service, index) => (
-              <div key={index} className="card p-6 sm:p-8 text-center hover:shadow-xl transition-shadow duration-300">
-                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i className={`fas ${service.icon} text-secondary text-2xl`}></i>
+              <div key={index} className="card p-6 sm:p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  {/* Service Image */}
+                  <div className="w-full md:w-1/3 overflow-hidden rounded-lg">
+                    <img 
+                      src={service.image} 
+                      alt={service.title}
+                      className="w-full h-48 md:h-40 object-cover transition-transform duration-300 hover:scale-110"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-service.jpg'; // Fallback image
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Service Content */}
+                  <div className="w-full md:w-2/3 text-center md:text-left">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mr-4">
+                        <i className={`fas ${service.icon} text-secondary text-xl`}></i>
+                      </div>
+                      <h4 className="text-xl sm:text-2xl font-bold text-primary">{service.title}</h4>
+                    </div>
+                    <p className="text-text-light text-base sm:text-lg leading-relaxed">{service.description}</p>
+                  </div>
                 </div>
-                <h4 className="text-lg sm:text-xl font-bold text-primary mb-4">{service.title}</h4>
-                <p className="text-text-light text-sm sm:text-base leading-relaxed">{service.description}</p>
               </div>
             ))}
           </div>

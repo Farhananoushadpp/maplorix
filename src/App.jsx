@@ -12,6 +12,9 @@ import {
 } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Context
+import { AuthProvider } from './context/AuthContext';
+
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -21,8 +24,13 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import AboutPage from './pages/About';
 import ServicesPage from './pages/Services';
+import JobPostPage from './pages/JobPost';
 import ResumeUploadPage from './pages/ResumeUpload';
+import ApplicationsPage from './pages/Applications';
 import ContactPage from './pages/Contact';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import PostJob from './pages/PostJob';
 
 // Constants
 import { ANIMATION_VARIANTS, ROUTES } from './constants';
@@ -77,6 +85,19 @@ const AnimatedRoutes = () => {
           }
         />
         <Route
+          path={ROUTES.POST_JOB}
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <JobPostPage />
+            </motion.div>
+          }
+        />
+        <Route
           path={ROUTES.RESUME_UPLOAD}
           element={
             <motion.div
@@ -102,6 +123,10 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/post-job" element={<PostJob />} />
+        <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </AnimatePresence>
@@ -114,12 +139,14 @@ const AnimatedRoutes = () => {
  */
 const App = () => {
   return (
-    <Router>
-      <Header />
-      <AnimatedRoutes />
-      <Footer />
-      <ScrollToTop />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Header />
+        <AnimatedRoutes />
+        <Footer />
+        <ScrollToTop />
+      </Router>
+    </AuthProvider>
   );
 };
 
