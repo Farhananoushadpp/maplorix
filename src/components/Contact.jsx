@@ -14,19 +14,27 @@ const Contact = () => {
   const contactInfo = [
     {
       icon: 'fa-phone',
-      text: '+1 (555) 123-4567'
+      title: 'Call Us',
+      text: '+1 (555) 123-4567',
+      description: 'Mon-Fri: 9AM-6PM EST'
     },
     {
       icon: 'fa-envelope',
-      text: 'info@maplorix.com'
+      title: 'Email Us',
+      text: 'info@maplorix.com',
+      description: 'We respond within 24 hours'
     },
     {
       icon: 'fa-map-marker-alt',
-      text: '123 Business Ave, Suite 100\nNew York, NY 10001'
+      title: 'Visit Us',
+      text: '123 Business Ave, Suite 100',
+      description: 'New York, NY 10001'
     },
     {
       icon: 'fa-clock',
-      text: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 2:00 PM'
+      title: 'Business Hours',
+      text: 'Mon-Fri: 9:00 AM - 6:00 PM',
+      description: 'Saturday: 10:00 AM - 2:00 PM'
     }
   ];
 
@@ -60,7 +68,6 @@ const Contact = () => {
       [name]: value
     }));
     
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -81,7 +88,6 @@ const Contact = () => {
     setIsSubmitting(true);
     setSubmitMessage('');
     
-    // Simulate form submission
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
@@ -94,7 +100,6 @@ const Contact = () => {
       });
       setErrors({});
       
-      // Clear success message after 5 seconds
       setTimeout(() => {
         setSubmitMessage('');
       }, 5000);
@@ -107,128 +112,151 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="py-16 sm:py-20 bg-gray-50">
-      <div className="container px-4">
-        <div className="section-header">
-          <h2 className="section-title">Contact Us</h2>
-          <div className="divider"></div>
+    <section id="contact" className="py-12 sm:py-16 md:py-20 bg-gray-50">
+      <div className="container px-4 sm:px-6">
+        {/* Section Header */}
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">Contact Us</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg px-2">
+            Have questions? Ready to get started? We're here to help you succeed.
+          </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           {/* Contact Information */}
-          <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-primary mb-6 sm:mb-8">Get in Touch</h3>
-            <div className="space-y-4 sm:space-y-6">
+          <div className="order-2 lg:order-1">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary mb-4 sm:mb-6 lg:mb-8">Get in Touch</h3>
+            
+            <div className="space-y-3 sm:space-y-4 lg:space-y-6">
               {contactInfo.map((info, index) => (
-                <div key={index} className="flex items-start">
-                  <i className={`fas ${info.icon} text-accent mr-4 mt-1 text-lg w-5`}></i>
-                  <span className="text-text-light whitespace-pre-line text-sm sm:text-base">
-                    {info.text}
-                  </span>
+                <div key={index} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-secondary/20 to-accent/20 rounded-full flex items-center justify-center">
+                    <i className={`fas ${info.icon} text-secondary text-sm sm:text-base`}></i>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-primary mb-1">{info.title}</h4>
+                    <p className="text-xs sm:text-sm lg:text-base text-gray-600 font-medium break-words">{info.text}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">{info.description}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Contact Form */}
-          <div className="card p-6 sm:p-8">
+          <div className="order-1 lg:order-2">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary mb-4 sm:mb-6 lg:mb-8">Send Us a Message</h3>
+            
             {submitMessage && (
-              <div className={`mb-6 p-4 rounded-lg text-center ${
+              <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl ${
                 submitMessage.includes('Thank you') 
-                  ? 'bg-secondary/10 text-secondary' 
-                  : 'bg-red-50 text-red-600'
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-red-50 border border-red-200'
               }`}>
-                {submitMessage}
+                <p className={`text-xs sm:text-sm ${
+                  submitMessage.includes('Thank you') ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {submitMessage}
+                </p>
               </div>
             )}
-            
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
               <div>
+                <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Your Name *
+                </label>
                 <input
                   type="text"
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Your Name"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                    errors.name ? 'border-red-500' : 'border-border-color'
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent text-sm sm:text-base ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={isSubmitting}
+                  placeholder="John Doe"
                 />
                 {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  <p className="mt-1 text-xs text-red-600">{errors.name}</p>
                 )}
               </div>
 
               <div>
+                <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Email Address *
+                </label>
                 <input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="Your Email"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                    errors.email ? 'border-red-500' : 'border-border-color'
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent text-sm sm:text-base ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={isSubmitting}
+                  placeholder="john@example.com"
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  <p className="mt-1 text-xs text-red-600">{errors.email}</p>
                 )}
               </div>
 
               <div>
+                <label htmlFor="subject" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Subject *
+                </label>
                 <input
                   type="text"
                   id="subject"
                   name="subject"
                   value={formData.subject}
                   onChange={handleInputChange}
-                  placeholder="Subject"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                    errors.subject ? 'border-red-500' : 'border-border-color'
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent text-sm sm:text-base ${
+                    errors.subject ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={isSubmitting}
+                  placeholder="How can we help?"
                 />
                 {errors.subject && (
-                  <p className="text-red-500 text-sm mt-1">{errors.subject}</p>
+                  <p className="mt-1 text-xs text-red-600">{errors.subject}</p>
                 )}
               </div>
 
               <div>
+                <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Message *
+                </label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  placeholder="Your Message"
-                  rows={5}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-vertical text-base ${
-                    errors.message ? 'border-red-500' : 'border-border-color'
+                  rows={4}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent text-sm sm:text-base resize-none ${
+                    errors.message ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={isSubmitting}
-                />
+                  placeholder="Tell us more about your needs..."
+                ></textarea>
                 {errors.message && (
-                  <p className="text-red-500 text-sm mt-1">{errors.message}</p>
+                  <p className="mt-1 text-xs text-red-600">{errors.message}</p>
                 )}
               </div>
 
               <button
                 type="submit"
-                className="btn btn-primary w-full text-base sm:text-lg py-3 sm:py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
+                className="w-full px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-secondary to-accent text-primary font-bold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
                     Sending...
                   </span>
                 ) : (
-                  'Send Message'
+                  <span className="flex items-center justify-center">
+                    <i className="fas fa-paper-plane mr-2"></i>
+                    Send Message
+                  </span>
                 )}
               </button>
             </form>

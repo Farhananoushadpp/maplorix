@@ -23,14 +23,11 @@ import ScrollToTop from './components/ScrollToTop';
 // Pages
 import Home from './pages/Home';
 import AboutPage from './pages/About';
-import ServicesPage from './pages/Services';
 import JobPostPage from './pages/JobPost';
-import ResumeUploadPage from './pages/ResumeUpload';
 import ApplicationsPage from './pages/Applications';
-import ContactPage from './pages/Contact';
+import ContactPage from './pages/ContactPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import PostJob from './pages/PostJob';
 
 // Constants
 import { ANIMATION_VARIANTS, ROUTES } from './constants';
@@ -72,19 +69,6 @@ const AnimatedRoutes = () => {
           }
         />
         <Route
-          path={ROUTES.SERVICES}
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <ServicesPage />
-            </motion.div>
-          }
-        />
-        <Route
           path={ROUTES.POST_JOB}
           element={
             <motion.div
@@ -94,19 +78,6 @@ const AnimatedRoutes = () => {
               exit="exit"
             >
               <JobPostPage />
-            </motion.div>
-          }
-        />
-        <Route
-          path={ROUTES.RESUME_UPLOAD}
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <ResumeUploadPage />
             </motion.div>
           }
         />
@@ -125,7 +96,6 @@ const AnimatedRoutes = () => {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/post-job" element={<PostJob />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>

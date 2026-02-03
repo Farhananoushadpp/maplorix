@@ -36,18 +36,13 @@ const Header = () => {
             <div className="nav-brand">
               <Link 
                 to="/" 
-                className="flex items-center space-x-1 sm:space-x-2 no-underline"
+                className="flex items-center no-underline"
                 onClick={handleNavClick}
               >
                 <img 
-                  src="/maplorixlogo.svg" 
-                  alt="Maplorix Logo" 
-                  className="h-6 sm:h-7 md:h-8 w-auto"
-                />
-                <img 
-                  src="/logo.svg" 
+                  src="/maplorix.svg" 
                   alt="Maplorix" 
-                  className="h-6 sm:h-7 md:h-8 w-auto"
+                  className="h-8 sm:h-9 md:h-10 w-auto"
                 />
               </Link>
             </div>

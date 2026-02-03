@@ -7,9 +7,6 @@
 export const ROUTES = {
   HOME: '/',
   ABOUT: '/about',
-  SERVICES: '/services',
-  POST_JOB: '/post-job',
-  RESUME_UPLOAD: '/upload-resume',
   CONTACT: '/contact',
 }
 
@@ -17,9 +14,7 @@ export const ROUTES = {
 export const NAVIGATION_ITEMS = [
   { id: 'home', label: 'Home', path: ROUTES.HOME },
   { id: 'about', label: 'About Us', path: ROUTES.ABOUT },
-  { id: 'services', label: 'Services', path: ROUTES.SERVICES },
-  { id: 'postJob', label: 'Post Job', path: ROUTES.POST_JOB },
-  { id: 'uploadResume', label: 'Upload Resume', path: ROUTES.RESUME_UPLOAD },
+  { id: 'contact', label: 'Contact Us', path: ROUTES.CONTACT },
 ]
 
 // Contact Information
