@@ -8,6 +8,8 @@ export const ROUTES = {
   HOME: '/',
   ABOUT: '/about',
   CONTACT: '/contact',
+  FIND_JOB: '/find-job',
+  POST_JOB: '/post-job',
 }
 
 // Navigation Items Configuration
@@ -28,9 +30,9 @@ export const CONTACT_INFO = {
 // Footer Links Configuration
 export const FOOTER_LINKS = {
   quick: [
-    { label: 'About Us', href: ROUTES.ABOUT },
-    { label: 'Services', href: ROUTES.SERVICES },
+    { label: 'Find Job', href: ROUTES.FIND_JOB },
     { label: 'Post Job', href: ROUTES.POST_JOB },
+    { label: 'About Us', href: ROUTES.ABOUT },
   ],
   employers: [
     { label: 'Post Job', href: ROUTES.POST_JOB },
@@ -161,7 +163,7 @@ export const CANDIDATE_STEPS = [
     id: 3,
     title: 'Apply & Connect',
     description:
-      'Submit your application and connect with our career consultants for personalized guidance.',
+      'Submit your application and connect with our career advisors for personalized guidance.',
   },
   {
     id: 4,

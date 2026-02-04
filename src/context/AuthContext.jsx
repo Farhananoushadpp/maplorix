@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
           const response = await authAPI.getProfile();
           dispatch({
             type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-            payload: response.data.user,
+            payload: response.data.data.user,
           });
         } catch (error) {
           localStorage.removeItem('authToken');
@@ -122,15 +122,15 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(email, password);
       
       // Store token and user in localStorage
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('authToken', response.data.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.data.user));
       
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
-        payload: response.data,
+        payload: response.data.data,
       });
       
-      return response.data;
+      return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed';
       dispatch({
@@ -148,15 +148,15 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData);
       
       // Store token and user in localStorage
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('authToken', response.data.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.data.user));
       
       dispatch({
         type: AUTH_ACTIONS.REGISTER_SUCCESS,
-        payload: response.data,
+        payload: response.data.data,
       });
       
-      return response.data;
+      return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Registration failed';
       dispatch({

@@ -17,7 +17,7 @@ const About = () => {
     {
       icon: 'fa-users',
       title: 'Expert Team',
-      description: 'Professional consultants with 10+ years industry experience',
+      description: 'Professional advisors with 10+ years industry experience',
       color: 'text-accent'
     },
     {
@@ -73,12 +73,12 @@ const About = () => {
                   Our Mission
                 </h3>
                 <p className="text-gray-700 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
-                  Maplorix is a premier job consultancy firm dedicated to creating meaningful connections 
+                  Maplorix is a premier recruitment agency dedicated to creating meaningful connections 
                   between talented professionals and forward-thinking organizations. We don't just fill positions; 
                   we build careers and transform businesses.
                 </p>
                 <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-                  Our team of expert consultants works tirelessly to understand your unique needs, ensuring 
+                  Our team of expert advisors works tirelessly to understand your unique needs, ensuring 
                   personalized service that delivers exceptional results. Whether you're seeking your next 
                   career opportunity or looking to build your dream team, Maplorix is here to guide you 
                   every step of the way.

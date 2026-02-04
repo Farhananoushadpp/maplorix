@@ -79,7 +79,7 @@ const Login = () => {
             Sign in to Maplorix
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Access your job consultancy dashboard
+            Access your job recruitment dashboard
           </p>
         </div>
         

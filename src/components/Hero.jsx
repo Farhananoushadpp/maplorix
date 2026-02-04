@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jobsAPI } from '../services/api';
 
 const Hero = ({ onUploadResume, onPostJob }) => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [featuredJobs, setFeaturedJobs] = useState([]);
+  const [jobStats, setJobStats] = useState({ total: 0, featured: 0 });
+  const [loading, setLoading] = useState(true);
   const videoRef = useRef(null);
   
   const videos = [
@@ -37,6 +41,38 @@ const Hero = ({ onUploadResume, onPostJob }) => {
   };
 
   useEffect(() => {
+    // Fetch job data from backend
+    const fetchJobData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch featured jobs
+        const featuredResponse = await jobsAPI.getFeaturedJobs({ limit: 3 });
+        const jobs = featuredResponse.data?.jobs || [];
+        setFeaturedJobs(jobs);
+        
+        // Fetch job statistics
+        const allJobsResponse = await jobsAPI.getAllJobs();
+        const totalJobs = allJobsResponse.data?.pagination?.total || 0;
+        
+        setJobStats({
+          total: totalJobs,
+          featured: jobs.length
+        });
+        
+      } catch (error) {
+        console.error('Error fetching job data:', error);
+        // Set default values if backend is not available
+        setJobStats({ total: 0, featured: 0 });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobData();
+  }, []);
+
+  useEffect(() => {
     const videoElement = videoRef.current;
     
     const handleVideoEnd = () => {
@@ -64,10 +100,6 @@ const Hero = ({ onUploadResume, onPostJob }) => {
       videoElement.playsInline = true;
       videoElement.muted = true;
       videoElement.preload = 'auto';
-      
-      videoElement.play().catch(error => {
-        console.log('Auto-play was prevented:', error);
-      });
     }
 
     return () => {
@@ -77,7 +109,7 @@ const Hero = ({ onUploadResume, onPostJob }) => {
         videoElement.removeEventListener('error', handleVideoError);
       }
     };
-  }, [currentVideoIndex, videos.length]);
+  }, [currentVideoIndex]);
 
   useEffect(() => {
     if (videoRef.current) {

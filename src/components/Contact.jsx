@@ -15,20 +15,20 @@ const Contact = () => {
     {
       icon: 'fa-phone',
       title: 'Call Us',
-      text: '+1 (555) 123-4567',
-      description: 'Mon-Fri: 9AM-6PM EST'
+      text: '044538999, 0581929900',
+      description: 'Mon-Fri: 9AM-6PM GST'
     },
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'info@maplorix.com',
+      text: 'hr@maplorix.ae',
       description: 'We respond within 24 hours'
     },
     {
       icon: 'fa-map-marker-alt',
       title: 'Visit Us',
-      text: '123 Business Ave, Suite 100',
-      description: 'New York, NY 10001'
+      text: 'A5 Block, Office No:45, Xavier Business Center',
+      description: 'Burj Nahar Mall, Al Muteena, Dubai'
     },
     {
       icon: 'fa-clock',

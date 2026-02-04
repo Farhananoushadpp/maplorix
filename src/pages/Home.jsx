@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Hero from '../components/Hero';
 import About from '../components/About';
 import Contact from '../components/Contact';
 import { useAuth } from '../context/AuthContext';
-import { jobsAPI } from '../services/api';
+import { applicationsAPI, jobsAPI } from '../services/api';
 
 const Home = () => {
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState([]);
   const { user, isAuthenticated } = useAuth();
   
   // Post Job Form State
@@ -194,6 +195,7 @@ const Home = () => {
     phone: '',
     location: '',
     jobTitle: '',
+    job: '', // Add job field for application
     company: '',
     jobType: 'Full-time',
     experience: 'Mid Level',
@@ -210,6 +212,19 @@ const Home = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Fetch available jobs for the application form
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await jobsAPI.getAllJobs({ limit: 20 });
+        setAvailableJobs(response.data.jobs || []);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -260,6 +275,10 @@ const Home = () => {
       newErrors.jobTitle = 'Job title is required';
     }
     
+    if (!formData.job) {
+      newErrors.job = 'Please select a job to apply for';
+    }
+    
     if (!formData.skills.trim()) {
       newErrors.skills = 'Skills are required';
     }
@@ -287,6 +306,31 @@ const Home = () => {
     setUploadProgress(0);
     
     try {
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all form fields with correct field names for backend
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('jobRole', formData.jobTitle);
+      formDataToSend.append('jobId', formData.job); // Changed to jobId
+      formDataToSend.append('experience', formData.experience);
+      formDataToSend.append('skills', formData.skills);
+      formDataToSend.append('coverLetter', `Applying for ${formData.jobTitle} position via resume upload form`);
+      
+      // Add resume file
+      if (formData.resume) {
+        formDataToSend.append('resume', formData.resume);
+      }
+      
+      // Debug: Log FormData contents
+      console.log('Submitting application with data:');
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(`${key}:`, value instanceof File ? `File: ${value.name}` : value);
+      }
+      
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -298,13 +342,13 @@ const Home = () => {
         });
       }, 200);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Make real API call
+      const response = await applicationsAPI.createApplication(formDataToSend);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      setSuccessMessage('Your resume has been successfully uploaded! We will contact you soon.');
+      setSuccessMessage('Your application has been successfully submitted! We will contact you soon.');
       
       // Reset form
       setFormData({
@@ -313,6 +357,7 @@ const Home = () => {
         phone: '',
         location: '',
         jobTitle: '',
+        job: '',
         company: '',
         jobType: 'Full-time',
         experience: 'Mid Level',
@@ -338,8 +383,23 @@ const Home = () => {
       }, 3000);
       
     } catch (error) {
-      console.error('Upload error:', error);
-      setErrors({ submit: 'Failed to upload resume. Please try again.' });
+      console.error('Application submission error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      let errorMessage = 'Failed to submit application. Please try again.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setErrors({ submit: errorMessage });
+      setUploadProgress(0);
     } finally {
       setIsSubmitting(false);
     }
@@ -417,9 +477,12 @@ const Home = () => {
             {/* Section Header */}
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary">
-                Services for Candidates
+                Ready to Transform Your Career?
               </h2>
-              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-4"></div>
+              <p className="text-lg sm:text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
+                Discover personalized solutions designed to accelerate your professional growth and land your dream job
+              </p>
+              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-6"></div>
             </div>
             
             {/* Services Grid */}
@@ -457,12 +520,7 @@ const Home = () => {
                           <div>
                             <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">{service.title}</h3>
                             <div className="flex items-center mt-1">
-                              <div className="flex text-yellow-400">
-                                {[...Array(5)].map((_, i) => (
-                                  <i key={i} className="fas fa-star text-xs"></i>
-                                ))}
-                              </div>
-                              <span className="text-gray-500 text-sm ml-2">(4.9)</span>
+                              <span className="text-secondary text-xs sm:text-sm font-medium">Personalized Career Support</span>
                             </div>
                           </div>
                         </div>
@@ -525,9 +583,12 @@ const Home = () => {
             {/* Section Header */}
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary">
-                Services for Employers
+                Looking for Top Talent?
               </h2>
-              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-4"></div>
+              <p className="text-lg sm:text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
+                Find exceptional candidates who will drive your business forward with our expert recruitment solutions
+              </p>
+              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-6"></div>
             </div>
             
             {/* Services Grid */}
@@ -565,12 +626,7 @@ const Home = () => {
                           <div>
                             <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">{service.title}</h3>
                             <div className="flex items-center mt-1">
-                              <div className="flex text-yellow-400">
-                                {[...Array(5)].map((_, i) => (
-                                  <i key={i} className="fas fa-star text-xs"></i>
-                                ))}
-                              </div>
-                              <span className="text-gray-500 text-sm ml-2">(4.8)</span>
+                              <span className="text-accent text-xs sm:text-sm font-medium">Expert Hiring Solutions</span>
                             </div>
                           </div>
                         </div>
@@ -1149,6 +1205,29 @@ const Home = () => {
                           <option value="Director">Director</option>
                           <option value="Executive">Executive</option>
                         </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Apply for Position *</label>
+                        <select
+                          name="job"
+                          value={formData.job}
+                          onChange={handleChange}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
+                            errors.job ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          disabled={isSubmitting}
+                        >
+                          <option value="">Select a job position</option>
+                          {availableJobs.map(job => (
+                            <option key={job._id} value={job._id}>
+                              {job.title} at {job.company} - {job.location}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.job && (
+                          <p className="mt-1 text-sm text-red-600">{errors.job}</p>
+                        )}
                       </div>
                     </div>
 

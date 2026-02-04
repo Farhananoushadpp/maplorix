@@ -32,19 +32,24 @@ const Header = () => {
       <nav className="py-3 sm:py-4">
         <div className="container px-4">
           <div className="flex justify-between items-center">
-            {/* Logo */}
-            <div className="nav-brand">
+            {/* Logos - Left Side */}
+            <div className="flex items-center space-x-1">
               <Link 
                 to="/" 
                 className="flex items-center no-underline"
                 onClick={handleNavClick}
               >
                 <img 
-                  src="/maplorix.svg" 
+                  src="/maplorixlogo.svg" 
                   alt="Maplorix" 
                   className="h-8 sm:h-9 md:h-10 w-auto"
                 />
               </Link>
+              <img 
+                src="/logo.svg" 
+                alt="Maplorix" 
+                className="h-8 sm:h-9 md:h-10 w-auto"
+              />
             </div>
 
             {/* Desktop Navigation */}
