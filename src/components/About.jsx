@@ -73,7 +73,7 @@ const About = () => {
                   Our Mission
                 </h3>
                 <p className="text-gray-700 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
-                  Maplorix is a premier recruitment agency dedicated to creating meaningful connections 
+                  Maplorix is a premier recruitment company dedicated to creating meaningful connections 
                   between talented professionals and forward-thinking organizations. We don't just fill positions; 
                   we build careers and transform businesses.
                 </p>

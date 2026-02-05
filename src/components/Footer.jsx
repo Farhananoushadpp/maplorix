@@ -159,7 +159,7 @@ const Footer = () => {
             <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-phone text-secondary mr-2 sm:mr-3 w-4"></i>
-                <span class="break-all">044538999, 0581929900</span>
+                <span class="break-all">044538999, +971581929900</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-envelope text-accent mr-2 sm:mr-3 w-4"></i>
