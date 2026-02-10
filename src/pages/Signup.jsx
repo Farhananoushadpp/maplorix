@@ -90,8 +90,10 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log('Signup form submitted with:', formData)
 
     if (!validateForm()) {
+      console.log('Form validation failed')
       return
     }
 
@@ -106,9 +108,14 @@ const Signup = () => {
         ...(formData.userType === 'employer' && { company: formData.company }),
       }
 
+      console.log('Submitting registration to backend:', userData)
+
       await register(userData)
+      console.log('Registration successful, navigating to dashboard')
+
       navigate('/dashboard')
     } catch (error) {
+      console.error('Registration error:', error)
       // Error is handled by the auth context
     }
   }

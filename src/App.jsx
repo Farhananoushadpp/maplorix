@@ -1,6 +1,9 @@
 /**
+
  * Main App Component
+
  * Root component with routing and animations
+
  */
 
 import {
@@ -10,17 +13,25 @@ import {
   useLocation,
   Navigate,
 } from 'react-router-dom'
+
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Context
+
 import { AuthProvider } from './context/AuthContext'
 
 // Components
+
 import Header from './components/Header'
+
 import Footer from './components/Footer'
+
 import ScrollToTop from './components/ScrollToTop'
 
+import AuthDebug from './components/AuthDebug'
+
 // Pages
+
 import Home from './pages/Home'
 import AboutPage from './pages/About'
 import JobPostPage from './pages/JobPost'
@@ -31,12 +42,17 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 
 // Constants
+
 import { ANIMATION_VARIANTS, ROUTES } from './constants'
 
 /**
+
  * AnimatedRoutes component for page transitions
+
  * @returns {JSX.Element} Animated routes
+
  */
+
 const AnimatedRoutes = () => {
   const location = useLocation()
 
@@ -56,6 +72,7 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
+
         <Route
           path={ROUTES.ABOUT}
           element={
@@ -69,6 +86,7 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
+
         <Route
           path={ROUTES.POST_JOB}
           element={
@@ -82,6 +100,7 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
+
         <Route
           path={ROUTES.CONTACT}
           element={
@@ -95,10 +114,15 @@ const AnimatedRoutes = () => {
             </motion.div>
           }
         />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Signup />} />
+
         <Route path="/dashboard" element={<Dashboard />} />
+
         <Route path="/applications" element={<ApplicationsPage />} />
+
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </AnimatePresence>
@@ -106,16 +130,25 @@ const AnimatedRoutes = () => {
 }
 
 /**
+
  * Main App component
+
  * @returns {JSX.Element} App component
+
  */
+
 const App = () => {
   return (
     <AuthProvider>
       <Router>
         <Header />
+
+        <AuthDebug />
+
         <AnimatedRoutes />
+
         <Footer />
+
         <ScrollToTop />
       </Router>
     </AuthProvider>

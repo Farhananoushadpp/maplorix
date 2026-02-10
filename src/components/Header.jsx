@@ -1,19 +1,30 @@
 /**
+
  * Header Component
+
  * Main navigation header with mobile menu support
+
  */
 
 import React, { useState } from 'react'
+
 import { Link, useLocation } from 'react-router-dom'
+
 import { NAVIGATION_ITEMS, ROUTES } from '../constants'
+
 import { useAuth } from '../context/AuthContext'
 
 /**
+
  * Header component with navigation and mobile menu
+
  * @returns {JSX.Element} Header component
+
  */
+
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   const location = useLocation()
   const { user, isAuthenticated, logout } = useAuth()
 
@@ -35,6 +46,7 @@ const Header = () => {
         <div className="container px-4">
           <div className="flex justify-between items-center">
             {/* Logos - Left Side */}
+
             <div className="flex items-center space-x-1">
               <Link
                 to="/"
@@ -47,6 +59,7 @@ const Header = () => {
                   className="h-8 sm:h-9 md:h-10 w-auto"
                 />
               </Link>
+
               <img
                 src="/logo.svg"
                 alt="Maplorix"
@@ -55,6 +68,7 @@ const Header = () => {
             </div>
 
             {/* Desktop Navigation */}
+
             <div className="hidden md:flex items-center space-x-8">
               <ul className="flex space-x-8">
                 {NAVIGATION_ITEMS.map((item) => (
@@ -71,34 +85,34 @@ const Header = () => {
               </ul>
 
               {/* Auth Buttons */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 {isAuthenticated ? (
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <span className="text-white text-sm font-body">
                       Welcome, {user?.firstName || 'User'}
                     </span>
                     <button
                       onClick={logout}
-                      className="btn btn-outline text-sm py-2 px-4"
+                      className="header-auth-btn header-auth-btn-outline"
                     >
-                      <i className="fas fa-sign-out-alt mr-2"></i>
+                      <i className="fas fa-sign-out-alt mr-1"></i>
                       Logout
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <Link
                       to={ROUTES.LOGIN}
-                      className="btn btn-outline text-sm py-2 px-4"
+                      className="header-auth-btn header-auth-btn-outline"
                     >
-                      <i className="fas fa-sign-in-alt mr-2"></i>
+                      <i className="fas fa-sign-in-alt mr-1"></i>
                       Login
                     </Link>
                     <Link
                       to={ROUTES.REGISTER}
-                      className="btn btn-primary text-sm py-2 px-4"
+                      className="header-auth-btn header-auth-btn-primary"
                     >
-                      <i className="fas fa-user-plus mr-2"></i>
+                      <i className="fas fa-user-plus mr-1"></i>
                       Sign Up
                     </Link>
                   </div>
@@ -107,6 +121,7 @@ const Header = () => {
             </div>
 
             {/* Mobile Menu Button */}
+
             <button
               onClick={toggleMobileMenu}
               className="md:hidden flex flex-col justify-center items-center w-8 h-8 space-y-1"
@@ -117,11 +132,13 @@ const Header = () => {
                   isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''
                 }`}
               />
+
               <span
                 className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
                   isMobileMenuOpen ? 'opacity-0' : ''
                 }`}
               />
+
               <span
                 className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
                   isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
@@ -131,6 +148,7 @@ const Header = () => {
           </div>
 
           {/* Mobile Navigation */}
+
           <div
             className={`md:hidden transition-all duration-300 ${
               isMobileMenuOpen
@@ -165,9 +183,9 @@ const Header = () => {
                         logout()
                         handleNavClick()
                       }}
-                      className="btn btn-outline w-full text-sm py-2"
+                      className="header-auth-btn header-auth-btn-outline w-full"
                     >
-                      <i className="fas fa-sign-out-alt mr-2"></i>
+                      <i className="fas fa-sign-out-alt mr-1"></i>
                       Logout
                     </button>
                   </div>
@@ -176,17 +194,17 @@ const Header = () => {
                     <Link
                       to={ROUTES.LOGIN}
                       onClick={handleNavClick}
-                      className="btn btn-outline w-full text-sm py-2 block"
+                      className="header-auth-btn header-auth-btn-outline w-full block text-center"
                     >
-                      <i className="fas fa-sign-in-alt mr-2"></i>
+                      <i className="fas fa-sign-in-alt mr-1"></i>
                       Login
                     </Link>
                     <Link
                       to={ROUTES.REGISTER}
                       onClick={handleNavClick}
-                      className="btn btn-primary w-full text-sm py-2 block"
+                      className="header-auth-btn header-auth-btn-primary w-full block text-center"
                     >
-                      <i className="fas fa-user-plus mr-2"></i>
+                      <i className="fas fa-user-plus mr-1"></i>
                       Sign Up
                     </Link>
                   </div>

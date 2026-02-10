@@ -92,16 +92,25 @@ export const AuthProvider = ({ children }) => {
         try {
           dispatch({ type: AUTH_ACTIONS.LOAD_USER_START })
           const response = await authAPI.getProfile()
-          dispatch({
-            type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-            payload: response.data.user,
-          })
+          console.log('Profile response:', response)
+
+          if (response.success && response.data) {
+            dispatch({
+              type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+              payload: response.data.user,
+            })
+          } else {
+            throw new Error('Invalid profile response')
+          }
         } catch (error) {
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
           dispatch({
             type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-            payload: error.response?.data?.message || 'Failed to load user',
+            payload:
+              error.response?.data?.message ||
+              error.message ||
+              'Failed to load user',
           })
         }
       } else {
@@ -121,18 +130,25 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START })
       const response = await authAPI.login(email, password)
 
+      console.log('Login response:', response)
+
       // Store token and user in localStorage
-      localStorage.setItem('authToken', response.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.user))
+      if (response.success && response.data) {
+        localStorage.setItem('authToken', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
 
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_SUCCESS,
-        payload: response.data,
-      })
+        dispatch({
+          type: AUTH_ACTIONS.LOGIN_SUCCESS,
+          payload: response.data,
+        })
 
-      return response.data
+        return response.data
+      } else {
+        throw new Error('Invalid login response')
+      }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed'
+      const errorMessage =
+        error.response?.data?.message || error.message || 'Login failed'
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
@@ -147,19 +163,25 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START })
       const response = await authAPI.register(userData)
 
+      console.log('Register response:', response)
+
       // Store token and user in localStorage
-      localStorage.setItem('authToken', response.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.user))
+      if (response.success && response.data) {
+        localStorage.setItem('authToken', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
 
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_SUCCESS,
-        payload: response.data,
-      })
+        dispatch({
+          type: AUTH_ACTIONS.REGISTER_SUCCESS,
+          payload: response.data,
+        })
 
-      return response.data
+        return response.data
+      } else {
+        throw new Error('Invalid registration response')
+      }
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || 'Registration failed'
+        error.response?.data?.message || error.message || 'Registration failed'
       dispatch({
         type: AUTH_ACTIONS.REGISTER_FAILURE,
         payload: errorMessage,
