@@ -9,35 +9,36 @@ import {
   Routes,
   useLocation,
   Navigate,
-} from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+} from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Context
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext'
 
 // Components
-import Header from './components/Header';
-import Footer from './components/Footer';
-import ScrollToTop from './components/ScrollToTop';
+import Header from './components/Header'
+import Footer from './components/Footer'
+import ScrollToTop from './components/ScrollToTop'
 
 // Pages
-import Home from './pages/Home';
-import AboutPage from './pages/About';
-import JobPostPage from './pages/JobPost';
-import ApplicationsPage from './pages/Applications';
-import ContactPage from './pages/ContactPage';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import Home from './pages/Home'
+import AboutPage from './pages/About'
+import JobPostPage from './pages/JobPost'
+import ApplicationsPage from './pages/Applications'
+import ContactPage from './pages/ContactPage'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
 
 // Constants
-import { ANIMATION_VARIANTS, ROUTES } from './constants';
+import { ANIMATION_VARIANTS, ROUTES } from './constants'
 
 /**
  * AnimatedRoutes component for page transitions
  * @returns {JSX.Element} Animated routes
  */
 const AnimatedRoutes = () => {
-  const location = useLocation();
+  const location = useLocation()
 
   return (
     <AnimatePresence mode="wait">
@@ -95,13 +96,14 @@ const AnimatedRoutes = () => {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </AnimatePresence>
-  );
-};
+  )
+}
 
 /**
  * Main App component
@@ -117,7 +119,7 @@ const App = () => {
         <ScrollToTop />
       </Router>
     </AuthProvider>
-  );
-};
+  )
+}
 
-export default App;
+export default App

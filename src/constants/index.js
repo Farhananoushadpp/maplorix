@@ -10,6 +10,8 @@ export const ROUTES = {
   CONTACT: '/contact',
   FIND_JOB: '/find-job',
   POST_JOB: '/post-job',
+  LOGIN: '/login',
+  REGISTER: '/register',
 }
 
 // Navigation Items Configuration
