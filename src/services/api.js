@@ -113,6 +113,11 @@ export const applicationsAPI = {
     return response.data
   },
 
+  searchApplications: async (params = {}) => {
+    const response = await api.get('/applications/search', { params })
+    return response.data
+  },
+
   getApplicationById: async (id) => {
     const response = await api.get(`/applications/${id}`)
     return response.data
@@ -124,6 +129,21 @@ export const applicationsAPI = {
         'Content-Type': 'multipart/form-data',
       },
     })
+    return response.data
+  },
+
+  // Public application submission (no auth required)
+  submitPublicApplication: async (formData) => {
+    // Create a new axios instance without auth interceptor for public submissions
+    const publicApi = axios.create({
+      baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    const response = await publicApi.post('/applications/public', formData)
     return response.data
   },
 

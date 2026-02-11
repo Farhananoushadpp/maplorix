@@ -82,6 +82,15 @@ const Header = () => {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <Link
+                    to="/apply"
+                    onClick={handleNavClick}
+                    className={`nav-link ${isActiveRoute('/apply') ? 'active' : ''}`}
+                  >
+                    Apply
+                  </Link>
+                </li>
               </ul>
 
               {/* Auth Buttons */}

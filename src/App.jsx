@@ -23,27 +23,25 @@ import { AuthProvider } from './context/AuthContext'
 // Components
 
 import Header from './components/Header'
-
 import Footer from './components/Footer'
-
 import ScrollToTop from './components/ScrollToTop'
-
-import AuthDebug from './components/AuthDebug'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages
 
 import Home from './pages/Home'
 import AboutPage from './pages/About'
-import JobPostPage from './pages/JobPost'
-import ApplicationsPage from './pages/Applications'
 import ContactPage from './pages/ContactPage'
 import Login from './pages/Login'
-import Signup from './pages/Signup'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import PostJob from './pages/PostJob'
+import ApplyJob from './pages/ApplyJob'
+import CandidateSearch from './pages/CandidateSearch'
 
 // Constants
 
-import { ANIMATION_VARIANTS, ROUTES } from './constants'
+import { ANIMATION_VARIANTS } from './constants'
 
 /**
 
@@ -59,8 +57,9 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
         <Route
-          path={ROUTES.HOME}
+          path="/"
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -74,7 +73,7 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path={ROUTES.ABOUT}
+          path="/about"
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -88,21 +87,7 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path={ROUTES.POST_JOB}
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <JobPostPage />
-            </motion.div>
-          }
-        />
-
-        <Route
-          path={ROUTES.CONTACT}
+          path="/contact"
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -116,14 +101,63 @@ const AnimatedRoutes = () => {
         />
 
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/apply" element={<ApplyJob />} />
 
-        <Route path="/register" element={<Signup />} />
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <Dashboard />
+              </motion.div>
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/post-job"
+          element={
+            <ProtectedRoute>
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <PostJob />
+              </motion.div>
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/applications" element={<ApplicationsPage />} />
+        <Route
+          path="/candidate-search"
+          element={
+            <ProtectedRoute>
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <CandidateSearch />
+              </motion.div>
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+        {/* Redirect old routes */}
+        <Route path="/signup" element={<Navigate to="/register" replace />} />
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
   )
@@ -142,13 +176,8 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Header />
-
-        <AuthDebug />
-
         <AnimatedRoutes />
-
         <Footer />
-
         <ScrollToTop />
       </Router>
     </AuthProvider>
