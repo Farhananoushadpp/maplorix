@@ -23,25 +23,30 @@ import { AuthProvider } from './context/AuthContext'
 // Components
 
 import Header from './components/Header'
+
 import Footer from './components/Footer'
+
 import ScrollToTop from './components/ScrollToTop'
-import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages
 
 import Home from './pages/Home'
+
 import AboutPage from './pages/About'
+
+import JobPostPage from './pages/JobPost'
+
+import ApplicationsPage from './pages/Applications'
+
 import ContactPage from './pages/ContactPage'
+
 import Login from './pages/Login'
-import Register from './pages/Register'
+
 import Dashboard from './pages/Dashboard'
-import PostJob from './pages/PostJob'
-import ApplyJob from './pages/ApplyJob'
-import CandidateSearch from './pages/CandidateSearch'
 
 // Constants
 
-import { ANIMATION_VARIANTS } from './constants'
+import { ANIMATION_VARIANTS, ROUTES } from './constants'
 
 /**
 
@@ -57,9 +62,8 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Public Routes */}
         <Route
-          path="/"
+          path={ROUTES.HOME}
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -73,7 +77,7 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path="/about"
+          path={ROUTES.ABOUT}
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -87,7 +91,21 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path="/contact"
+          path={ROUTES.POST_JOB}
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <JobPostPage />
+            </motion.div>
+          }
+        />
+
+        <Route
+          path={ROUTES.CONTACT}
           element={
             <motion.div
               variants={ANIMATION_VARIANTS.pageTransition}
@@ -101,63 +119,12 @@ const AnimatedRoutes = () => {
         />
 
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/apply" element={<ApplyJob />} />
 
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <motion.div
-                variants={ANIMATION_VARIANTS.pageTransition}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              >
-                <Dashboard />
-              </motion.div>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route
-          path="/post-job"
-          element={
-            <ProtectedRoute>
-              <motion.div
-                variants={ANIMATION_VARIANTS.pageTransition}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              >
-                <PostJob />
-              </motion.div>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/applications" element={<ApplicationsPage />} />
 
-        <Route
-          path="/candidate-search"
-          element={
-            <ProtectedRoute>
-              <motion.div
-                variants={ANIMATION_VARIANTS.pageTransition}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              >
-                <CandidateSearch />
-              </motion.div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Redirect old routes */}
-        <Route path="/signup" element={<Navigate to="/register" replace />} />
-
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </AnimatePresence>
   )
@@ -176,8 +143,11 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Header />
+
         <AnimatedRoutes />
+
         <Footer />
+
         <ScrollToTop />
       </Router>
     </AuthProvider>

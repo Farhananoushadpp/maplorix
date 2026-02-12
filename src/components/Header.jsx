@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext'
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
 
   const location = useLocation()
   const { user, isAuthenticated, logout } = useAuth()
@@ -32,8 +33,13 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+  }
+
   const handleNavClick = () => {
     setIsMobileMenuOpen(false)
+    setIsProfileDropdownOpen(false)
   }
 
   const isActiveRoute = (path) => {
@@ -68,9 +74,8 @@ const Header = () => {
             </div>
 
             {/* Desktop Navigation */}
-
             <div className="hidden md:flex items-center space-x-8">
-              <ul className="flex space-x-8">
+              <ul className="flex items-center space-x-8 list-none m-0 p-0">
                 {NAVIGATION_ITEMS.map((item) => (
                   <li key={item.id}>
                     <Link
@@ -82,48 +87,85 @@ const Header = () => {
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <Link
-                    to="/apply"
-                    onClick={handleNavClick}
-                    className={`nav-link ${isActiveRoute('/apply') ? 'active' : ''}`}
-                  >
-                    Apply
-                  </Link>
-                </li>
+                {isAuthenticated && (
+                  <li>
+                    <Link
+                      to="/dashboard"
+                      onClick={handleNavClick}
+                      className={`nav-link ${isActiveRoute('/dashboard') ? 'active' : ''}`}
+                    >
+                      Dashboard
+                    </Link>
+                  </li>
+                )}
               </ul>
-
-              {/* Auth Buttons */}
-              <div className="flex items-center space-x-3">
-                {isAuthenticated ? (
-                  <div className="flex items-center space-x-3">
-                    <span className="text-white text-sm font-body">
-                      Welcome, {user?.firstName || 'User'}
-                    </span>
-                    <button
-                      onClick={logout}
-                      className="header-auth-btn header-auth-btn-outline"
-                    >
-                      <i className="fas fa-sign-out-alt mr-1"></i>
-                      Logout
-                    </button>
+              {/* Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={toggleProfileDropdown}
+                  className="flex items-center space-x-2 text-white hover:text-white/80 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <i className="fas fa-user text-sm"></i>
                   </div>
-                ) : (
-                  <div className="flex items-center space-x-3">
-                    <Link
-                      to={ROUTES.LOGIN}
-                      className="header-auth-btn header-auth-btn-outline"
-                    >
-                      <i className="fas fa-sign-in-alt mr-1"></i>
-                      Login
-                    </Link>
-                    <Link
-                      to={ROUTES.REGISTER}
-                      className="header-auth-btn header-auth-btn-primary"
-                    >
-                      <i className="fas fa-user-plus mr-1"></i>
-                      Sign Up
-                    </Link>
+                  <span className="text-sm font-medium">
+                    {user?.firstName || 'User'}
+                  </span>
+                  <i className="fas fa-chevron-down text-xs"></i>
+                </button>
+
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                    {isAuthenticated ? (
+                      // Logged in user options
+                      <>
+                        <div className="px-4 py-2 border-b border-gray-200">
+                          <p className="text-sm font-medium text-gray-900">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">{user?.email}</p>
+                          {user?.role === 'admin' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 mt-1">
+                              Admin
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="border-t border-gray-200 my-1"></div>
+
+                        <button
+                          onClick={() => {
+                            logout()
+                            handleNavClick()
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <i className="fas fa-sign-out-alt mr-2"></i>
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      // Not logged in options
+                      <div className="py-1">
+                        <Link
+                          to="/login"
+                          onClick={handleNavClick}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <i className="fas fa-sign-in-alt mr-2"></i>
+                          Login
+                        </Link>
+
+                        <Link
+                          to="/register"
+                          onClick={handleNavClick}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <i className="fas fa-user-plus mr-2"></i>
+                          Sign Up
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -161,11 +203,11 @@ const Header = () => {
           <div
             className={`md:hidden transition-all duration-300 ${
               isMobileMenuOpen
-                ? 'max-h-96 opacity-100 mt-4'
+                ? 'max-h-screen opacity-100'
                 : 'max-h-0 opacity-0 overflow-hidden'
             }`}
           >
-            <ul className="space-y-4 py-4">
+            <ul className="space-y-4 py-4 list-none m-0 p-0">
               {NAVIGATION_ITEMS.map((item) => (
                 <li key={item.id}>
                   <Link
@@ -179,46 +221,19 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
-
-              {/* Mobile Auth Section */}
-              <li className="border-t border-white/20 pt-4 mt-4">
-                {isAuthenticated ? (
-                  <div className="space-y-3">
-                    <div className="text-white text-sm font-body py-2">
-                      Welcome, {user?.firstName || 'User'}
-                    </div>
-                    <button
-                      onClick={() => {
-                        logout()
-                        handleNavClick()
-                      }}
-                      className="header-auth-btn header-auth-btn-outline w-full"
-                    >
-                      <i className="fas fa-sign-out-alt mr-1"></i>
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <Link
-                      to={ROUTES.LOGIN}
-                      onClick={handleNavClick}
-                      className="header-auth-btn header-auth-btn-outline w-full block text-center"
-                    >
-                      <i className="fas fa-sign-in-alt mr-1"></i>
-                      Login
-                    </Link>
-                    <Link
-                      to={ROUTES.REGISTER}
-                      onClick={handleNavClick}
-                      className="header-auth-btn header-auth-btn-primary w-full block text-center"
-                    >
-                      <i className="fas fa-user-plus mr-1"></i>
-                      Sign Up
-                    </Link>
-                  </div>
-                )}
-              </li>
+              {isAuthenticated && (
+                <li>
+                  <Link
+                    to="/dashboard"
+                    onClick={handleNavClick}
+                    className={`nav-link block w-full text-left py-2 ${
+                      isActiveRoute('/dashboard') ? 'active' : ''
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
         </div>

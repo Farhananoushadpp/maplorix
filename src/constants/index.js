@@ -1,22 +1,23 @@
 /**
 
  * Application Constants
- *
+
  * Centralized configuration for better maintainability
+
  */
 
 // Navigation Routes
+
 export const ROUTES = {
   HOME: '/',
+
   ABOUT: '/about',
+
   CONTACT: '/contact',
+
   FIND_JOB: '/find-job',
+
   POST_JOB: '/post-job',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  DASHBOARD: '/dashboard',
-  APPLY: '/apply',
-  CANDIDATE_SEARCH: '/candidate-search',
 }
 
 // Navigation Items Configuration

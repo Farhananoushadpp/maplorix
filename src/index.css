@@ -1,8 +1,11 @@
 @tailwind base;
+
 @tailwind components;
+
 @tailwind utilities;
 
 /* Custom base styles */
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -19,13 +22,17 @@
   h5,
   h6 {
     font-family: 'Montserrat', sans-serif;
+
     font-weight: 700;
+
     text-transform: uppercase;
+
     letter-spacing: 0.5px;
   }
 }
 
 /* Custom component styles */
+
 @layer components {
   .btn {
     @apply px-8 py-3 rounded-full font-semibold text-base uppercase tracking-wide transition-all duration-300 inline-block cursor-pointer no-underline;
@@ -70,22 +77,10 @@
   .nav-link.active {
     @apply text-secondary;
   }
-
-  /* Header auth button fixes */
-  .header-auth-btn {
-    @apply px-4 py-2 rounded-full font-semibold text-xs uppercase tracking-wide transition-all duration-300 inline-block cursor-pointer no-underline transform hover:-translate-y-0.5;
-  }
-
-  .header-auth-btn-outline {
-    @apply bg-transparent text-white border border-white hover:bg-white hover:text-primary;
-  }
-
-  .header-auth-btn-primary {
-    @apply bg-secondary text-white hover:bg-teal-600;
-  }
 }
 
 /* Custom utilities */
+
 @layer utilities {
   .text-shadow {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
-import { useNavigate } from 'react-router-dom'
-
 import Hero from '../components/Hero'
 
 import About from '../components/About'
@@ -9,6 +7,8 @@ import About from '../components/About'
 import Contact from '../components/Contact'
 
 import { useAuth } from '../context/AuthContext'
+
+import { useNavigate } from 'react-router-dom'
 
 import { applicationsAPI, jobsAPI } from '../services/api'
 
@@ -206,107 +206,62 @@ const Home = () => {
   const handlePostJobSubmit = async (e) => {
     e.preventDefault()
 
-    console.log('=== JOB POSTING SUBMISSION START ===')
-    console.log('Is authenticated:', isAuthenticated)
-    console.log('User:', user)
-    console.log('User ID:', user?._id)
-    console.log('Auth token:', localStorage.getItem('authToken'))
-
-    // Check authentication
-    if (!isAuthenticated) {
-      console.log('ERROR: User not authenticated')
-      setPostJobErrors({
-        submit:
-          'Please login to post a job. Click the Login button in the header.',
-      })
-      return
-    }
-
-    if (!user || !user._id) {
-      console.log('ERROR: Invalid user session')
-      setPostJobErrors({ submit: 'User session invalid. Please login again.' })
-      return
-    }
-
     if (!validatePostJobForm()) {
-      console.log('ERROR: Form validation failed')
       return
     }
 
     setIsPostJobLoading(true)
 
     try {
-      // Prepare job data for backend - ensure proper format
-      const jobData = {
-        title: postJobData.title.trim(),
-        company: postJobData.company.trim(),
-        location: postJobData.location.trim(),
-        type: postJobData.type,
-        category: postJobData.category,
-        experience: postJobData.experience,
-        description: postJobData.description.trim(),
-        requirements: postJobData.requirements.trim(),
-        salary: {
-          min: postJobData.salary.min
-            ? Number(postJobData.salary.min)
-            : undefined,
-          max: postJobData.salary.max
-            ? Number(postJobData.salary.max)
-            : undefined,
-          currency: postJobData.salary.currency,
-        },
-        applicationDeadline: postJobData.applicationDeadline || undefined,
-        featured: postJobData.featured,
-        active: postJobData.active !== false,
-        // Don't send postedBy - backend will set it from authenticated user
-      }
-
-      console.log('Submitting job data to database:', jobData)
-
-      const response = await jobsAPI.createJob(jobData)
-      console.log('Job creation response:', response)
+      const response = await jobsAPI.createJob(postJobData)
 
       setPostJobSuccess(true)
 
       // Reset form after successful submission
+
       setTimeout(() => {
         setPostJobData({
           title: '',
+
           company: '',
+
           location: '',
+
           type: 'Full-time',
+
           category: 'Technology',
+
           experience: 'Mid Level',
+
           description: '',
+
           requirements: '',
+
           salary: {
             min: '',
+
             max: '',
+
             currency: 'USD',
           },
+
           applicationDeadline: '',
+
           featured: false,
+
           active: true,
         })
+
         setPostJobErrors({})
+
         setPostJobSuccess(false)
+
         setShowPostJobModal(false)
       }, 3000)
     } catch (error) {
-      console.error('Job posting error:', error)
-      console.error('Error response:', error.response)
-
-      let errorMessage = 'Failed to post job. Please try again.'
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      setPostJobErrors({ submit: errorMessage })
+      setPostJobErrors({
+        submit: error.message || 'Failed to post job. Please try again.',
+      })
     } finally {
       setIsPostJobLoading(false)
     }
@@ -314,17 +269,13 @@ const Home = () => {
 
   const handlePostJobClick = () => {
     console.log('Post Job button clicked')
+
     console.log('Is authenticated:', isAuthenticated)
+
     console.log('User:', user)
 
-    if (!isAuthenticated) {
-      // Redirect to login instead of showing modal
-      console.log('User not authenticated, redirecting to login')
-      navigate('/login')
-      return
-    }
-
-    setShowPostJobModal(true)
+    // Navigate to the full JobPost page
+    navigate('/post-job')
   }
 
   const [formData, setFormData] = useState({
@@ -474,50 +425,70 @@ const Home = () => {
 
     try {
       // Create FormData for file upload
+
       const formDataToSend = new FormData()
 
       // Add all form fields with correct field names for backend
-      formDataToSend.append('fullName', formData.fullName.trim())
-      formDataToSend.append('email', formData.email.trim())
-      formDataToSend.append('phone', formData.phone.trim())
-      formDataToSend.append('location', formData.location.trim())
-      formDataToSend.append('jobRole', formData.jobTitle.trim())
-      formDataToSend.append('job', formData.job) // Backend expects 'job' field
+
+      formDataToSend.append('fullName', formData.fullName)
+
+      formDataToSend.append('email', formData.email)
+
+      formDataToSend.append('phone', formData.phone)
+
+      formDataToSend.append('location', formData.location)
+
+      formDataToSend.append('jobRole', formData.jobTitle)
+
+      formDataToSend.append('jobId', formData.job) // Changed to jobId
+
       formDataToSend.append('experience', formData.experience)
-      formDataToSend.append('skills', formData.skills.trim())
+
+      formDataToSend.append('skills', formData.skills)
+
       formDataToSend.append(
         'coverLetter',
-        `Applying for ${formData.jobTitle} position`
+        `Applying for ${formData.jobTitle} position via resume upload form`
       )
 
       // Add resume file
+
       if (formData.resume) {
         formDataToSend.append('resume', formData.resume)
       }
 
-      console.log('Submitting application to database:')
-      console.log('Job ID:', formData.job)
-      console.log('Job Role:', formData.jobTitle)
-      console.log('Full Name:', formData.fullName)
+      // Debug: Log FormData contents
+
+      console.log('Submitting application with data:')
+
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(
+          `${key}:`,
+          value instanceof File ? `File: ${value.name}` : value
+        )
+      }
 
       // Simulate upload progress
+
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval)
+
             return 90
           }
+
           return prev + 10
         })
       }, 200)
 
       // Make real API call
+
       const response = await applicationsAPI.createApplication(formDataToSend)
 
       clearInterval(progressInterval)
-      setUploadProgress(100)
 
-      console.log('Application submission response:', response)
+      setUploadProgress(100)
 
       setSuccessMessage(
         'Your application has been successfully submitted! We will contact you soon.'
@@ -973,13 +944,22 @@ const Home = () => {
                   hiring process with our proven recruitment strategies.
                 </p>
 
-                <button
-                  onClick={handlePostJobClick}
-                  className="px-8 py-3 bg-gradient-to-r from-accent to-secondary text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                >
-                  <i className="fas fa-briefcase mr-2"></i>
-                  Post a Job Now
-                </button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={handlePostJobClick}
+                    className="px-8 py-3 bg-gradient-to-r from-accent to-secondary text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    <i className="fas fa-briefcase mr-2"></i>
+                    Post a Job Now
+                  </button>
+                  <button
+                    onClick={() => (window.location.href = '/apply')}
+                    className="px-8 py-3 bg-white text-accent border-2 border-accent font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    <i className="fas fa-file-alt mr-2"></i>
+                    Apply for Jobs
+                  </button>
+                </div>
               </div>
             </div>
           </div>
