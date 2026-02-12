@@ -18,6 +18,10 @@ export const ROUTES = {
   FIND_JOB: '/find-job',
 
   POST_JOB: '/post-job',
+
+  ADMIN_POSTS: '/admin/posts',
+
+  POSTS_FEED: '/posts',
 }
 
 // Navigation Items Configuration
@@ -28,6 +32,8 @@ export const NAVIGATION_ITEMS = [
   { id: 'about', label: 'About Us', path: ROUTES.ABOUT },
 
   { id: 'contact', label: 'Contact Us', path: ROUTES.CONTACT },
+
+  { id: 'posts', label: 'Posts Feed', path: ROUTES.POSTS_FEED },
 ]
 
 // Contact Information

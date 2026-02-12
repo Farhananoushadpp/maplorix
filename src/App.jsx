@@ -44,6 +44,10 @@ import Login from './pages/Login'
 
 import Dashboard from './pages/Dashboard'
 
+import AdminPosts from './pages/AdminPosts'
+
+import PostsFeed from './pages/PostsFeed'
+
 // Constants
 
 import { ANIMATION_VARIANTS, ROUTES } from './constants'
@@ -123,6 +127,34 @@ const AnimatedRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />} />
 
         <Route path="/applications" element={<ApplicationsPage />} />
+
+        <Route
+          path={ROUTES.ADMIN_POSTS}
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <AdminPosts />
+            </motion.div>
+          }
+        />
+
+        <Route
+          path={ROUTES.POSTS_FEED}
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <PostsFeed />
+            </motion.div>
+          }
+        />
 
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>

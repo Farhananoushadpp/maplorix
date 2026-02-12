@@ -98,6 +98,17 @@ const Header = () => {
                     </Link>
                   </li>
                 )}
+                {isAuthenticated && user?.role === 'admin' && (
+                  <li>
+                    <Link
+                      to="/admin/posts"
+                      onClick={handleNavClick}
+                      className={`nav-link ${isActiveRoute('/admin/posts') ? 'active' : ''}`}
+                    >
+                      Admin Posts
+                    </Link>
+                  </li>
+                )}
               </ul>
               {/* Profile Dropdown */}
               <div className="relative">
@@ -231,6 +242,19 @@ const Header = () => {
                     }`}
                   >
                     Dashboard
+                  </Link>
+                </li>
+              )}
+              {isAuthenticated && user?.role === 'admin' && (
+                <li>
+                  <Link
+                    to="/admin/posts"
+                    onClick={handleNavClick}
+                    className={`nav-link block w-full text-left py-2 ${
+                      isActiveRoute('/admin/posts') ? 'active' : ''
+                    }`}
+                  >
+                    Admin Posts
                   </Link>
                 </li>
               )}
