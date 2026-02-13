@@ -45,6 +45,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 
 import AdminPosts from './pages/AdminPosts'
+import AdminDashboard from './pages/AdminDashboard'
 
 import PostsFeed from './pages/PostsFeed'
 
@@ -128,7 +129,7 @@ const AnimatedRoutes = () => {
 
         <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route path="/applications" element={<ApplicationsPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         <Route
           path={ROUTES.ADMIN_POSTS}
