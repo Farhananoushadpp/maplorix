@@ -435,7 +435,7 @@ const JobPost = () => {
   }
 
   return (
-    <section id="resume-upload" className="py-16 sm:py-20 bg-gray-50">
+    <section id="resume-upload" className="py-16 sm:py-20 bg-gray-50 pt-20">
       <div className="container px-4">
         <div className="section-header">
           <h2 className="section-title">Upload Your Resume</h2>

@@ -48,6 +48,8 @@ import AdminPosts from './pages/AdminPosts'
 
 import PostsFeed from './pages/PostsFeed'
 
+import PostJobForm from './pages/PostJobForm'
+
 // Constants
 
 import { ANIMATION_VARIANTS, ROUTES } from './constants'
@@ -152,6 +154,20 @@ const AnimatedRoutes = () => {
               exit="exit"
             >
               <PostsFeed />
+            </motion.div>
+          }
+        />
+
+        <Route
+          path={ROUTES.POST_JOB}
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <PostJobForm />
             </motion.div>
           }
         />

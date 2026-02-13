@@ -789,7 +789,7 @@ const ApplyJob = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-20 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Apply for a Job</h2>

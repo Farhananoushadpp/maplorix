@@ -91,6 +91,28 @@ const PostsFeed = () => {
     }
   }
 
+  const handleEdit = (post) => {
+    // Navigate to admin posts page with edit mode
+    const editUrl = `/admin/posts?edit=${post._id}`
+    window.location.href = editUrl
+  }
+
+  const handleDelete = async (postId) => {
+    if (
+      window.confirm(
+        'Are you sure you want to delete this post? This action cannot be undone.'
+      )
+    ) {
+      try {
+        await jobsAPI.deleteJob(postId)
+        fetchPosts() // Refresh posts list
+      } catch (error) {
+        console.error('Error deleting post:', error)
+        alert('Failed to delete post. Please try again.')
+      }
+    }
+  }
+
   const handleApply = (post) => {
     // Navigate to apply page with pre-filled job info
     const applyUrl = `/apply?jobId=${post._id}&jobTitle=${encodeURIComponent(post.title)}&company=${encodeURIComponent(post.company)}`
@@ -128,7 +150,7 @@ const PostsFeed = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-20">
       {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -365,6 +387,27 @@ const PostsFeed = () => {
                         <i className="far fa-share group-hover:fas transition-colors"></i>
                         <span className="text-sm font-medium">Share</span>
                       </button>
+
+                      {/* Admin Actions - Edit and Delete */}
+                      {user && user.role === 'admin' && (
+                        <>
+                          <div className="border-l border-gray-300 h-6 mx-2"></div>
+                          <button
+                            onClick={() => handleEdit(post)}
+                            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors group"
+                          >
+                            <i className="fas fa-edit group-hover:scale-110 transition-transform"></i>
+                            <span className="text-sm font-medium">Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post._id)}
+                            className="flex items-center space-x-2 text-red-600 hover:text-red-700 transition-colors group"
+                          >
+                            <i className="fas fa-trash group-hover:scale-110 transition-transform"></i>
+                            <span className="text-sm font-medium">Delete</span>
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Apply Button */}

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 const AdminPosts = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  
+
   // Check if user is admin
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -20,7 +20,7 @@ const AdminPosts = () => {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingPost, setEditingPost] = useState(null)
-  
+
   // Form state for creating/editing posts
   const [formData, setFormData] = useState({
     title: '',
@@ -29,7 +29,8 @@ const AdminPosts = () => {
     visibility: 'public', // public, private
     tags: [],
     featured: false,
-    attachments: []
+    attachments: [], // Changed from single file to array for multiple images
+    images: [], // Separate field for images
   })
 
   // Fetch existing posts
@@ -58,7 +59,8 @@ const AdminPosts = () => {
       visibility: 'public',
       tags: [],
       featured: false,
-      attachments: []
+      attachments: [],
+      images: [],
     })
     setShowCreateModal(true)
   }
@@ -70,11 +72,52 @@ const AdminPosts = () => {
       content: post.description || '',
       type: 'job',
       visibility: 'public',
-      tags: post.skills ? post.skills.split(',').map(s => s.trim()) : [],
+      tags: post.skills ? post.skills.split(',').map((s) => s.trim()) : [],
       featured: post.featured || false,
-      attachments: []
+      attachments: [],
+      images: post.images || [],
     })
     setShowCreateModal(true)
+  }
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    const newImages = []
+
+    files.forEach((file) => {
+      // Validate file type (images only)
+      if (file.type.startsWith('image/')) {
+        // Validate file size (5MB max)
+        if (file.size <= 5 * 1024 * 1024) {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            newImages.push({
+              file: file,
+              preview: event.target.result,
+              id: Date.now() + Math.random(),
+            })
+            if (newImages.length === files.length) {
+              setFormData((prev) => ({
+                ...prev,
+                images: [...prev.images, ...newImages],
+              }))
+            }
+          }
+          reader.readAsDataURL(file)
+        } else {
+          alert('Image size must be less than 5MB')
+        }
+      } else {
+        alert('Only image files are allowed (JPG, PNG, GIF, WebP)')
+      }
+    })
+  }
+
+  const removeImage = (imageId) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img.id !== imageId),
+    }))
   }
 
   const handleSubmitPost = async (e) => {
@@ -144,8 +187,12 @@ const AdminPosts = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <i className="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-600">
+            You don't have permission to access this page.
+          </p>
         </div>
       </div>
     )
@@ -163,14 +210,16 @@ const AdminPosts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-20">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Posts</h1>
-              <p className="text-gray-600 mt-1">Create and manage job posts like LinkedIn</p>
+              <p className="text-gray-600 mt-1">
+                Create and manage job posts like LinkedIn
+              </p>
             </div>
             <button
               onClick={handleCreatePost}
@@ -188,8 +237,12 @@ const AdminPosts = () => {
         {posts.length === 0 ? (
           <div className="text-center py-12">
             <i className="fas fa-briefcase text-6xl text-gray-300 mb-4"></i>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
-            <p className="text-gray-600 mb-6">Create your first job post to get started</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No posts yet
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Create your first job post to get started
+            </p>
             <button
               onClick={handleCreatePost}
               className="bg-accent text-white px-6 py-3 rounded-lg hover:bg-accent/90 transition-colors"
@@ -200,7 +253,10 @@ const AdminPosts = () => {
         ) : (
           <div className="space-y-6">
             {posts.map((post) => (
-              <div key={post._id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+              <div
+                key={post._id}
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              >
                 {/* Post Header */}
                 <div className="p-6 border-b">
                   <div className="flex items-start justify-between">
@@ -209,9 +265,12 @@ const AdminPosts = () => {
                         <i className="fas fa-briefcase text-white"></i>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{post.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {post.title}
+                        </h3>
                         <p className="text-sm text-gray-600">
-                          {post.company} • {new Date(post.createdAt).toLocaleDateString()}
+                          {post.company} •{' '}
+                          {new Date(post.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -233,8 +292,28 @@ const AdminPosts = () => {
 
                 {/* Post Content */}
                 <div className="p-6">
+                  {/* Images */}
+                  {post.images && post.images.length > 0 && (
+                    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {post.images.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={image.preview || image.url}
+                            alt={`Post image ${index + 1}`}
+                            className="w-full h-48 sm:h-56 object-cover rounded-lg border border-gray-200 group-hover:shadow-md transition-shadow"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg flex items-center justify-center">
+                            <i className="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">{post.description}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {post.description}
+                    </p>
                   </div>
 
                   {post.skills && (
@@ -323,7 +402,10 @@ const AdminPosts = () => {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setShowCreateModal(false)}></div>
+            <div
+              className="fixed inset-0 bg-black opacity-50"
+              onClick={() => setShowCreateModal(false)}
+            ></div>
             <div className="relative bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-lg">
                 <div className="flex justify-between items-center">
@@ -348,7 +430,9 @@ const AdminPosts = () => {
                     <input
                       type="text"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                       placeholder="e.g., Senior React Developer Needed"
                       required
@@ -361,7 +445,9 @@ const AdminPosts = () => {
                     </label>
                     <textarea
                       value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, content: e.target.value })
+                      }
                       rows={8}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent resize-vertical"
                       placeholder="Describe the job role, requirements, and what you're looking for..."
@@ -371,15 +457,70 @@ const AdminPosts = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Images
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className="cursor-pointer flex flex-col items-center justify-center w-full py-8 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <i className="fas fa-cloud-upload-alt text-3xl mb-2"></i>
+                        <span className="text-sm font-medium">
+                          Click to upload images
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1">
+                          JPG, PNG, GIF, WebP (Max 5MB each)
+                        </span>
+                      </label>
+
+                      {/* Image Previews */}
+                      {formData.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                          {formData.images.map((image) => (
+                            <div key={image.id} className="relative group">
+                              <img
+                                src={image.preview}
+                                alt="Preview"
+                                className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(image.id)}
+                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <i className="fas fa-times text-xs"></i>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Tags (comma separated)
                     </label>
                     <input
                       type="text"
                       value={formData.tags.join(', ')}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
-                      })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tags: e.target.value
+                            .split(',')
+                            .map((tag) => tag.trim())
+                            .filter((tag) => tag),
+                        })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                       placeholder="React, Node.js, MongoDB, JavaScript"
                     />
@@ -390,10 +531,15 @@ const AdminPosts = () => {
                       type="checkbox"
                       id="featured"
                       checked={formData.featured}
-                      onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, featured: e.target.checked })
+                      }
                       className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
                     />
-                    <label htmlFor="featured" className="ml-2 block text-sm text-gray-700">
+                    <label
+                      htmlFor="featured"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
                       Feature this post
                     </label>
                   </div>
