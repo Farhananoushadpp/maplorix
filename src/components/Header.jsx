@@ -99,26 +99,15 @@ const Header = () => {
                   </li>
                 )}
                 {isAuthenticated && user?.role === 'admin' && (
-                  <>
-                    <li>
-                      <Link
-                        to="/admin/posts"
-                        onClick={handleNavClick}
-                        className={`nav-link ${isActiveRoute('/admin/posts') ? 'active' : ''}`}
-                      >
-                        Admin Posts
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={handleNavClick}
-                        className={`nav-link ${isActiveRoute('/admin/dashboard') ? 'active' : ''}`}
-                      >
-                        Admin Dashboard
-                      </Link>
-                    </li>
-                  </>
+                  <li>
+                    <Link
+                      to="/admin/posts"
+                      onClick={handleNavClick}
+                      className={`nav-link ${isActiveRoute('/admin/posts') ? 'active' : ''}`}
+                    >
+                      Admin Posts
+                    </Link>
+                  </li>
                 )}
               </ul>
               {/* Profile Dropdown */}
@@ -257,30 +246,17 @@ const Header = () => {
                 </li>
               )}
               {isAuthenticated && user?.role === 'admin' && (
-                <>
-                  <li>
-                    <Link
-                      to="/admin/posts"
-                      onClick={handleNavClick}
-                      className={`nav-link block w-full text-left py-2 ${
-                        isActiveRoute('/admin/posts') ? 'active' : ''
-                      }`}
-                    >
-                      Admin Posts
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/dashboard"
-                      onClick={handleNavClick}
-                      className={`nav-link block w-full text-left py-2 ${
-                        isActiveRoute('/admin/dashboard') ? 'active' : ''
-                      }`}
-                    >
-                      Admin Dashboard
-                    </Link>
-                  </li>
-                </>
+                <li>
+                  <Link
+                    to="/admin/posts"
+                    onClick={handleNavClick}
+                    className={`nav-link block w-full text-left py-2 ${
+                      isActiveRoute('/admin/posts') ? 'active' : ''
+                    }`}
+                  >
+                    Admin Posts
+                  </Link>
+                </li>
               )}
             </ul>
           </div>
