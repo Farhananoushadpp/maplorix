@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jobsAPI } from '../services/api'
 
-const Hero = ({ onUploadResume, onPostJob }) => {
+const Hero = ({ onPostJob }) => {
   const navigate = useNavigate()
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [featuredJobs, setFeaturedJobs] = useState([])
@@ -28,12 +28,8 @@ const Hero = ({ onUploadResume, onPostJob }) => {
     }
   }
 
-  const handleUploadResumeClick = () => {
-    if (onUploadResume) {
-      onUploadResume()
-    } else {
-      navigate('/upload-resume')
-    }
+  const handleFindJobClick = () => {
+    navigate('/posts-feed')
   }
 
   useEffect(() => {
@@ -181,7 +177,7 @@ const Hero = ({ onUploadResume, onPostJob }) => {
             </button>
 
             <button
-              onClick={handleUploadResumeClick}
+              onClick={handleFindJobClick}
               className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-secondary to-accent hover:from-accent hover:to-secondary text-primary font-bold text-base sm:text-lg rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-accent/25 focus:outline-none focus:ring-4 focus:ring-accent/50"
             >
               <span className="relative z-10 flex items-center justify-center">

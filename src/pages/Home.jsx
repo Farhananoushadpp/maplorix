@@ -667,10 +667,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       <main>
-        <Hero
-          onUploadResume={() => setShowResumeModal(true)}
-          onPostJob={handlePostJobClick}
-        />
+        <Hero onPostJob={handlePostJobClick} />
 
         <About />
 
