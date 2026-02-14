@@ -32,7 +32,7 @@ const JobPost = () => {
     salaryMin: '',
     salaryMax: '',
     salaryType: 'Annual',
-    currency: 'USD',
+    currency: 'AED', // Default to AED as required
 
     // Job Content
     description: '',
@@ -51,6 +51,7 @@ const JobPost = () => {
     tags: '',
     featured: false,
     urgent: false,
+    status: 'active', // Active by default
   })
 
   const [errors, setErrors] = useState({})
@@ -344,7 +345,7 @@ const JobPost = () => {
         salaryMin: '',
         salaryMax: '',
         salaryType: 'Annual',
-        currency: 'USD',
+        currency: 'AED', // Reset to AED default
         description: '',
         requirements: '',
         responsibilities: '',

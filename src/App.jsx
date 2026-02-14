@@ -20,10 +20,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import { AuthProvider } from './context/AuthContext'
 
+import { ApplicationProvider } from './context/ApplicationContext'
+
 // Components
 
 import Header from './components/Header'
-
 import Footer from './components/Footer'
 
 import ScrollToTop from './components/ScrollToTop'
@@ -49,6 +50,12 @@ import AdminPosts from './pages/AdminPosts'
 import PostsFeed from './pages/PostsFeed'
 
 import ApplyJob from './pages/ApplyJob'
+
+import AllApplications from './pages/AllApplications'
+
+import AllApplicationsEnhanced from './pages/AllApplicationsEnhanced'
+
+import AllJobs from './pages/AllJobs'
 
 // Constants
 
@@ -126,23 +133,20 @@ const AnimatedRoutes = () => {
 
         <Route path="/login" element={<Login />} />
 
+        <Route path="/apply" element={<ApplyJob />} />
+
+        <Route path="/all-applications" element={<AllApplications />} />
+
+        <Route
+          path="/all-applications-enhanced"
+          element={<AllApplicationsEnhanced />}
+        />
+
+        <Route path="/all-jobs" element={<AllJobs />} />
+
         <Route path="/dashboard" element={<Dashboard />} />
 
         <Route path="/applications" element={<ApplicationsPage />} />
-
-        <Route
-          path="/apply"
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <ApplyJob />
-            </motion.div>
-          }
-        />
 
         <Route
           path={ROUTES.ADMIN_POSTS}
@@ -189,15 +193,17 @@ const AnimatedRoutes = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Header />
+      <ApplicationProvider>
+        <Router>
+          <Header />
 
-        <AnimatedRoutes />
+          <AnimatedRoutes />
 
-        <Footer />
+          <Footer />
 
-        <ScrollToTop />
-      </Router>
+          <ScrollToTop />
+        </Router>
+      </ApplicationProvider>
     </AuthProvider>
   )
 }

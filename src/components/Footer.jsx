@@ -129,25 +129,25 @@ const Footer = () => {
             <ul className="space-y-1.5 sm:space-y-2 sm:space-y-3">
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-check-circle text-secondary mr-2 mt-0.5 sm:mt-0 flex-shrink-0"></i>
-                <span class="text-center sm:text-left">
+                <span className="text-center sm:text-left">
                   Professional Career Guidance
                 </span>
               </li>
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-check-circle text-secondary mr-2 mt-0.5 sm:mt-0 flex-shrink-0"></i>
-                <span class="text-center sm:text-left">
+                <span className="text-center sm:text-left">
                   5000+ Successful Placements
                 </span>
               </li>
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-check-circle text-secondary mr-2 mt-0.5 sm:mt-0 flex-shrink-0"></i>
-                <span class="text-center sm:text-left">
+                <span className="text-center sm:text-left">
                   98% Client Satisfaction Rate
                 </span>
               </li>
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-check-circle text-secondary mr-2 mt-0.5 sm:mt-0 flex-shrink-0"></i>
-                <span class="text-center sm:text-left">
+                <span className="text-center sm:text-left">
                   24/7 Support Available
                 </span>
               </li>
@@ -198,11 +198,11 @@ const Footer = () => {
             <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-phone text-secondary mr-2 sm:mr-3 w-4"></i>
-                <span class="break-all">044538999, +971581929900</span>
+                <span className="break-all">044538999, +971581929900</span>
               </div>
               <div className="flex items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-envelope text-accent mr-2 sm:mr-3 w-4"></i>
-                <span class="break-all">info@maplorix.ae</span>
+                <span className="break-all">info@maplorix.ae</span>
               </div>
               <div className="flex items-start justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-map-marker-alt text-secondary mr-2 sm:mr-3 w-4 mt-0.5"></i>

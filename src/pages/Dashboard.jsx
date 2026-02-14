@@ -1,218 +1,179 @@
-// Dashboard Page Component
+// Dashboard Page Component - Production Version with Both Recent Applications and Recent Jobs
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { jobsAPI, applicationsAPI } from '../services/api'
 import { useNavigate } from 'react-router-dom'
+import { applicationsAPI } from '../services/api'
+import { jobsAPI } from '../services/api'
 
 const Dashboard = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
 
-  const [activeTab, setActiveTab] = useState('overview')
-  const [allJobs, setAllJobs] = useState([])
-  const [allApplications, setAllApplications] = useState([])
-
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalJobs: 0,
     activeJobs: 0,
     totalApplications: 0,
     recentApplications: 0,
+    recentJobs: 0,
   })
 
-  const [recentJobs, setRecentJobs] = useState([])
+  // Real recent applications data from API
   const [recentApplications, setRecentApplications] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [jobsSearchTerm, setJobsSearchTerm] = useState('')
-  const [applicationsSearchTerm, setApplicationsSearchTerm] = useState('')
-  const [selectedDepartment, setSelectedDepartment] = useState('all')
-  const [selectedJobRole, setSelectedJobRole] = useState('all')
-  const [newJobPostedMessage, setNewJobPostedMessage] = useState('')
 
+  // Real recent jobs data from API
+  const [recentJobs, setRecentJobs] = useState([])
+
+  // Fetch recent applications (latest 5)
+  const fetchRecentApplications = async () => {
+    try {
+      const response = await applicationsAPI.getAllApplications(
+        'page=1&limit=5&sortBy=createdAt&sortOrder=desc'
+      )
+      setRecentApplications(response.data.data.applications)
+      setStats((prev) => ({
+        ...prev,
+        totalApplications: response.data.data.pagination.total,
+        recentApplications: response.data.data.applications.length,
+      }))
+    } catch (error) {
+      console.error('Error fetching recent applications:', error)
+    }
+  }
+
+  // Fetch recent jobs (latest 5)
+  const fetchRecentJobs = async () => {
+    try {
+      const response = await jobsAPI.getAllJobs(
+        'page=1&limit=5&sortBy=createdAt&sortOrder=desc'
+      )
+      setRecentJobs(response.data.data.jobs)
+      setStats((prev) => ({
+        ...prev,
+        totalJobs: response.data.data.pagination.total,
+        activeJobs: response.data.data.jobs.filter((job) => job.isActive)
+          .length,
+        recentJobs: response.data.data.jobs.length,
+      }))
+    } catch (error) {
+      console.error('Error fetching recent jobs:', error)
+    }
+  }
+
+  // Listen for new applications
   useEffect(() => {
-    fetchDashboardData()
+    const handleApplicationSubmitted = (event) => {
+      const newApplication = event.detail.application
+      setRecentApplications((prev) => [newApplication, ...prev.slice(0, 4)]) // Keep only latest 5
+      setStats((prev) => ({
+        ...prev,
+        totalApplications: prev.totalApplications + 1,
+        recentApplications: prev.recentApplications + 1,
+      }))
+    }
 
-    // Listen for job posting events
+    window.addEventListener('applicationSubmitted', handleApplicationSubmitted)
+
+    return () => {
+      window.removeEventListener(
+        'applicationSubmitted',
+        handleApplicationSubmitted
+      )
+    }
+  }, [])
+
+  // Listen for new jobs
+  useEffect(() => {
     const handleJobPosted = (event) => {
-      console.log('Job posted event received:', event.detail)
-      if (event.detail?.success) {
-        // Show success message
-        setNewJobPostedMessage('✅ New job posted successfully!')
-
-        // Clear message after 5 seconds
-        setTimeout(() => {
-          setNewJobPostedMessage('')
-        }, 5000)
-
-        // Refresh dashboard data to show new job
-        fetchDashboardData()
-      }
+      const newJob = event.detail.job
+      setRecentJobs((prev) => [newJob, ...prev.slice(0, 4)]) // Keep only latest 5
+      setStats((prev) => ({
+        ...prev,
+        totalJobs: prev.totalJobs + 1,
+        activeJobs: newJob.isActive ? prev.activeJobs + 1 : prev.activeJobs,
+        recentJobs: prev.recentJobs + 1,
+      }))
     }
 
     window.addEventListener('jobPosted', handleJobPosted)
 
-    // Cleanup function
     return () => {
       window.removeEventListener('jobPosted', handleJobPosted)
     }
   }, [])
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-
-      // Fetch jobs and applications
-      const [jobsResponse, applicationsResponse] = await Promise.all([
-        jobsAPI.getAllJobs({ limit: isAdmin ? 100 : 5 }),
-        applicationsAPI.getAllApplications({ limit: isAdmin ? 100 : 5 }),
-      ])
-
-      console.log('Jobs response:', jobsResponse.data)
-      console.log('Applications response:', applicationsResponse.data)
-      console.log('Jobs array:', jobsResponse.data.jobs)
-      console.log('Number of jobs:', jobsResponse.data.jobs?.length || 0)
-
-      // Calculate stats
-      const totalJobs = jobsResponse.data.pagination?.total || 0
-      const activeJobs =
-        jobsResponse.data.jobs?.filter((job) => job.isActive).length || 0
-      const totalApplications = applicationsResponse.data.pagination?.total || 0
-      const recentApplications =
-        applicationsResponse.data.applications?.length || 0
-
-      setStats({
-        totalJobs,
-        activeJobs,
-        totalApplications,
-        recentApplications,
-      })
-
-      setRecentJobs(jobsResponse.data.jobs?.slice(0, 5) || [])
-
-      // For admin, store all jobs and applications
-      if (isAdmin) {
-        setAllJobs(jobsResponse.data.jobs || [])
-        setAllApplications(applicationsResponse.data.applications || [])
-      }
-
-      // Use real applications if available
-      const realApplications =
-        applicationsResponse.data.applications?.slice(0, 5) || []
-      if (realApplications.length > 0) {
-        setRecentApplications(realApplications)
-      } else {
-        // Mock data for demonstration
-        const mockApplications = [
-          {
-            _id: 'mock1',
-            fullName: 'John Doe',
-            email: 'john.doe@example.com',
-            jobRole: 'Software Developer',
-            status: 'submitted',
-            createdAt: new Date().toISOString(),
-          },
-        ]
-        setRecentApplications(mockApplications)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-      setRecentJobs([])
-      setRecentApplications([])
-      setAllJobs([])
-      setAllApplications([])
-      setStats({
-        totalJobs: 0,
-        activeJobs: 0,
-        totalApplications: 0,
-        recentApplications: 0,
-      })
-    } finally {
+  // Initial load - fetch both datasets
+  useEffect(() => {
+    const timer = setTimeout(() => {
       setLoading(false)
-    }
-  }
+    }, 1000)
+
+    // Fetch both recent applications and recent jobs
+    Promise.all([fetchRecentApplications(), fetchRecentJobs()])
+      .then(() => {
+        console.log('Both datasets loaded successfully')
+      })
+      .catch((error) => {
+        console.error('Error loading dashboard data:', error)
+      })
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleLogout = () => {
     logout()
-    navigate('/')
+    navigate('/login')
   }
 
-  // Filter functions
-  const filteredJobs = recentJobs.filter((job) => {
-    console.log('Filtering job:', job)
-    const matchesSearch =
-      job.title?.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
-      job.company?.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
-      job.location?.toLowerCase().includes(jobsSearchTerm.toLowerCase())
-    const matchesDepartment =
-      selectedDepartment === 'all' ||
-      (job.department && job.department === selectedDepartment) ||
-      (!job.department && selectedDepartment === 'all') // Handle missing department
-    console.log('Job filter results:', { matchesSearch, matchesDepartment })
-    return matchesSearch && matchesDepartment
-  })
+  const handleNavigateToAllJobs = () => {
+    navigate('/all-jobs')
+  }
 
-  const filteredApplications = recentApplications.filter((application) => {
-    const matchesSearch =
-      application.fullName
-        .toLowerCase()
-        .includes(applicationsSearchTerm.toLowerCase()) ||
-      application.email
-        .toLowerCase()
-        .includes(applicationsSearchTerm.toLowerCase()) ||
-      application.jobRole
-        .toLowerCase()
-        .includes(applicationsSearchTerm.toLowerCase())
-    const matchesJobRole =
-      selectedJobRole === 'all' || application.jobRole === selectedJobRole
-    return matchesSearch && matchesJobRole
-  })
-
-  // Get unique departments and job roles for filter options
-  const departments = [
-    ...new Set(recentJobs.map((job) => job.department).filter(Boolean)),
-  ]
-  const jobRoles = [
-    ...new Set(recentApplications.map((app) => app.jobRole).filter(Boolean)),
-  ]
+  const handleNavigateToAllApplications = () => {
+    navigate('/all-applications')
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-accent mb-4"></i>
-          <p className="text-text-light">Loading dashboard...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-custom">
+      <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-primary font-heading">
-                Dashboard
-              </h1>
-              <p className="text-text-light">
-                Welcome back, {user?.firstName}!
-              </p>
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <span className="ml-4 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
+                {isAdmin ? 'Admin' : 'User'}
+              </span>
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/post-job')}
-                className="bg-accent text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors"
+                onClick={handleNavigateToAllJobs}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
-                <i className="fas fa-plus mr-2"></i>
-                Post Job
+                All Jobs
+              </button>
+              <button
+                onClick={handleNavigateToAllApplications}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                All Applications
               </button>
               <button
                 onClick={handleLogout}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <i className="fas fa-sign-out-alt mr-2"></i>
                 Logout
               </button>
             </div>
@@ -220,404 +181,264 @@ const Dashboard = () => {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-custom hover:shadow-custom-hover transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <i className="fas fa-briefcase text-2xl text-accent"></i>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-text-light">
-                  Total Jobs
-                </p>
-                <p className="text-2xl font-bold text-primary">
-                  {stats.totalJobs}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-custom hover:shadow-custom-hover transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <i className="fas fa-check-circle text-2xl text-secondary"></i>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-text-light">
-                  Active Jobs
-                </p>
-                <p className="text-2xl font-bold text-primary">
-                  {stats.activeJobs}
-                </p>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                    <i className="fas fa-briefcase text-white text-sm"></i>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Jobs
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats.totalJobs}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
 
-          <div
-            className="bg-white p-6 rounded-lg shadow-custom cursor-pointer hover:shadow-custom-hover transition-shadow"
-            onClick={() => navigate('/applications')}
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <i className="fas fa-file-alt text-2xl text-accent"></i>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-text-light">
-                  Total Applications
-                </p>
-                <p className="text-2xl font-bold text-primary">
-                  {stats.totalApplications}
-                </p>
-                <p className="text-xs text-accent mt-1">Click to view</p>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                    <i className="fas fa-check-circle text-white text-sm"></i>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Active Jobs
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats.activeJobs}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-custom hover:shadow-custom-hover transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <i className="fas fa-clock text-2xl text-secondary"></i>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                    <i className="fas fa-file-alt text-white text-sm"></i>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Applications
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats.totalApplications}
+                    </dd>
+                  </dl>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-text-light">
-                  Recent Applications
-                </p>
-                <p className="text-2xl font-bold text-primary">
-                  {stats.recentApplications}
-                </p>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+                    <i className="fas fa-clock text-white text-sm"></i>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Recent Items
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats.recentApplications + stats.recentJobs}
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Admin Tabs - Only visible to admin users */}
-        {isAdmin && (
-          <div className="flex gap-2 mb-6 border-b border-border-color pb-2">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-t-lg font-medium transition-colors ${
-                activeTab === 'overview'
-                  ? 'bg-accent text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('jobs')}
-              className={`px-4 py-2 rounded-t-lg font-medium transition-colors ${
-                activeTab === 'jobs'
-                  ? 'bg-accent text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              All Jobs ({allJobs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('applications')}
-              className={`px-4 py-2 rounded-t-lg font-medium transition-colors ${
-                activeTab === 'applications'
-                  ? 'bg-accent text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              All Applications ({allApplications.length})
-            </button>
-          </div>
-        )}
-
-        {/* Content based on active tab */}
-        {(!isAdmin || activeTab === 'overview') && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Jobs */}
-            <div className="bg-white rounded-lg shadow-custom">
-              <div className="px-6 py-4 border-b border-border-color">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-medium text-primary font-heading">
-                    Recent Jobs
-                  </h2>
-                </div>
-
-                {/* Success message for new job posting */}
-                {newJobPostedMessage && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-green-800 text-sm font-medium">
-                      {newJobPostedMessage}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <i className="fas fa-search text-text-light text-sm"></i>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search jobs..."
-                      value={jobsSearchTerm}
-                      onChange={(e) => setJobsSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border-color rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
-                    />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <i className="fas fa-filter text-text-light text-sm"></i>
-                    </div>
-                    <select
-                      value={selectedDepartment}
-                      onChange={(e) => setSelectedDepartment(e.target.value)}
-                      className="pl-10 pr-8 py-2 border border-border-color rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors appearance-none bg-white"
-                    >
-                      <option value="all">All Departments</option>
-                      {departments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <i className="fas fa-chevron-down text-text-light text-xs"></i>
-                    </div>
-                  </div>
-                </div>
+        {/* Two Column Layout for Recent Applications and Recent Jobs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Applications Section */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Recent Applications ({recentApplications.length})
+                </h3>
+                <button
+                  onClick={handleNavigateToAllApplications}
+                  className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  View All →
+                </button>
               </div>
-              <div className="p-6">
-                {console.log('Recent Jobs display - recentJobs:', recentJobs)}
-                {console.log(
-                  'Recent Jobs display - filteredJobs:',
-                  filteredJobs
-                )}
-                {console.log(
-                  'Recent Jobs display - filteredJobs.length:',
-                  filteredJobs.length
-                )}
-                {filteredJobs.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredJobs.map((job) => (
-                      <div
-                        key={job._id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div>
-                          <h3 className="text-sm font-medium text-primary">
-                            {job.title}
-                          </h3>
-                          <p className="text-sm text-text-light">
-                            {job.company} • {job.location}
-                          </p>
-                          <div className="flex items-center mt-1 space-x-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent bg-opacity-20 text-accent">
-                              {job.type}
-                            </span>
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                job.isActive
-                                  ? 'bg-secondary bg-opacity-20 text-secondary'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {job.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-text-light">
-                            {new Date(job.createdAt).toLocaleDateString()}
-                          </p>
-                          <p className="text-sm font-medium text-accent">
-                            {job.applicationCount} applications
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-text-light text-center py-8">
-                    {jobsSearchTerm
-                      ? 'No jobs found matching your search'
-                      : 'No jobs posted yet'}
+
+              {recentApplications.length === 0 ? (
+                <div className="text-center py-8">
+                  <i className="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+                  <p className="text-gray-500">No applications received yet.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Applications will appear here when candidates submit them.
                   </p>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Applications */}
-            <div className="bg-white rounded-lg shadow-custom">
-              <div className="px-6 py-4 border-b border-border-color">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-medium text-primary font-heading">
-                    Recent Applications
-                  </h2>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <i className="fas fa-search text-text-light text-sm"></i>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search applications..."
-                      value={applicationsSearchTerm}
-                      onChange={(e) =>
-                        setApplicationsSearchTerm(e.target.value)
-                      }
-                      className="w-full pl-10 pr-4 py-2 border border-border-color rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
-                    />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <i className="fas fa-filter text-text-light text-sm"></i>
-                    </div>
-                    <select
-                      value={selectedJobRole}
-                      onChange={(e) => setSelectedJobRole(e.target.value)}
-                      className="pl-10 pr-8 py-2 border border-border-color rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors appearance-none bg-white"
-                    >
-                      <option value="all">All Job Roles</option>
-                      {jobRoles.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <i className="fas fa-chevron-down text-text-light text-xs"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6">
-                {filteredApplications.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredApplications.map((application) => (
-                      <div
-                        key={application._id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div>
-                          <h3 className="text-sm font-medium text-primary">
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Job Role
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Experience
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Expected Salary
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date Applied
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {recentApplications.map((application) => (
+                        <tr key={application._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {application.fullName}
-                          </h3>
-                          <p className="text-sm text-text-light">
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {application.email}
-                          </p>
-                          <p className="text-sm text-text-light">
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {application.jobRole}
-                          </p>
-                          <div className="flex items-center mt-1">
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {application.experience}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {application.expectedSalary || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(
+                              application.createdAt
+                            ).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 application.status === 'submitted'
-                                  ? 'bg-accent bg-opacity-20 text-accent'
-                                  : application.status === 'under-review'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : application.status === 'shortlisted'
-                                      ? 'bg-secondary bg-opacity-20 text-secondary'
-                                      : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
                               }`}
                             >
                               {application.status}
                             </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-text-light">
-                            {new Date(
-                              application.createdAt
-                            ).toLocaleDateString()}
-                          </p>
-                          <button className="text-sm text-accent hover:text-accent hover:opacity-80 transition-colors">
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-text-light text-center py-8">
-                    {applicationsSearchTerm
-                      ? 'No applications found matching your search'
-                      : 'No applications received yet'}
-                  </p>
-                )}
-              </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
-        )}
 
-        {/* All Jobs Tab - Admin Only */}
-        {isAdmin && activeTab === 'jobs' && (
-          <div className="bg-white rounded-lg shadow-custom">
-            <div className="px-6 py-4 border-b border-border-color">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium text-primary font-heading">
-                  All Posted Jobs
-                </h2>
+          {/* Recent Jobs Section */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Recent Jobs ({recentJobs.length})
+                </h3>
                 <button
-                  onClick={() => navigate('/post-job')}
-                  className="bg-accent text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors text-sm"
+                  onClick={handleNavigateToAllJobs}
+                  className="text-sm text-green-600 hover:text-green-500 font-medium"
                 >
-                  <i className="fas fa-plus mr-2"></i>
-                  Create New Job
+                  View All →
                 </button>
               </div>
-            </div>
-            <div className="p-6">
-              {allJobs.length > 0 ? (
+
+              {recentJobs.length === 0 ? (
+                <div className="text-center py-8">
+                  <i className="fas fa-briefcase text-gray-400 text-4xl mb-4"></i>
+                  <p className="text-gray-500">No jobs posted yet.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Jobs will appear here when you post them.
+                  </p>
+                </div>
+              ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Job Title
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Company
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Location
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Type
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Experience
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Salary
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date Posted
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Applications
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {allJobs.map((job) => (
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {recentJobs.map((job) => (
                         <tr key={job._id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-primary">
-                              {job.title}
-                            </div>
-                            {job.featured && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
-                                ⭐ Featured
-                              </span>
-                            )}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {job.title}
                           </td>
-                          <td className="px-4 py-3 text-gray-600">
-                            {job.company}
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {job.location}
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent bg-opacity-20 text-accent">
-                              {job.type}
-                            </span>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {job.experience}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {job.salary}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 job.isActive
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-gray-100 text-gray-800'
@@ -626,108 +447,15 @@ const Dashboard = () => {
                               {job.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-medium text-accent">
-                            {job.applicationCount || 0}
-                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <p className="text-text-light text-center py-8">
-                  No jobs posted yet. Click "Create New Job" to get started.
-                </p>
               )}
             </div>
           </div>
-        )}
-
-        {/* All Applications Tab - Admin Only */}
-        {isAdmin && activeTab === 'applications' && (
-          <div className="bg-white rounded-lg shadow-custom">
-            <div className="px-6 py-4 border-b border-border-color">
-              <h2 className="text-lg font-medium text-primary font-heading">
-                All Submitted Applications
-              </h2>
-              <p className="text-sm text-text-light mt-1">
-                Total: {allApplications.length} applications received
-              </p>
-            </div>
-            <div className="p-6">
-              {allApplications.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Applicant
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Email
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Job Applied
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">
-                          Applied Date
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {allApplications.map((application) => (
-                        <tr key={application._id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium text-primary">
-                            {application.fullName}
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">
-                            {application.email}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-gray-800">
-                              {application.job?.title}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {application.job?.company}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                application.status === 'submitted'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : application.status === 'under-review'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : application.status === 'shortlisted'
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {application.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">
-                            {new Date(
-                              application.createdAt
-                            ).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-text-light text-center py-8">
-                  No applications submitted yet. They will appear here when
-                  candidates apply.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
       </main>
     </div>
   )

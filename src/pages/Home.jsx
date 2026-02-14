@@ -8,8 +8,6 @@ import Contact from '../components/Contact'
 
 import { useAuth } from '../context/AuthContext'
 
-import { useNavigate } from 'react-router-dom'
-
 import { applicationsAPI, jobsAPI } from '../services/api'
 
 const Home = () => {
@@ -20,8 +18,6 @@ const Home = () => {
   const [availableJobs, setAvailableJobs] = useState([])
 
   const { user, isAuthenticated } = useAuth()
-
-  const navigate = useNavigate()
 
   // Post Job Form State
 
@@ -274,8 +270,17 @@ const Home = () => {
 
     console.log('User:', user)
 
-    // Navigate to the full JobPost page
-    navigate('/post-job')
+    if (!isAuthenticated) {
+      // For testing, let's show the modal even without authentication
+
+      console.log('User not authenticated, showing modal anyway for testing')
+
+      setShowPostJobModal(true)
+
+      return
+    }
+
+    setShowPostJobModal(true)
   }
 
   const [formData, setFormData] = useState({
@@ -440,7 +445,7 @@ const Home = () => {
 
       formDataToSend.append('jobRole', formData.jobTitle)
 
-      formDataToSend.append('job', formData.job) // Backend expects 'job' field for MongoDB ObjectId
+      formDataToSend.append('jobId', formData.job) // Changed to jobId
 
       formDataToSend.append('experience', formData.experience)
 
@@ -667,7 +672,10 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       <main>
-        <Hero onPostJob={handlePostJobClick} />
+        <Hero
+          onUploadResume={() => setShowResumeModal(true)}
+          onPostJob={handlePostJobClick}
+        />
 
         <About />
 
@@ -941,22 +949,13 @@ const Home = () => {
                   hiring process with our proven recruitment strategies.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={handlePostJobClick}
-                    className="px-8 py-3 bg-gradient-to-r from-accent to-secondary text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    <i className="fas fa-briefcase mr-2"></i>
-                    Post a Job Now
-                  </button>
-                  <button
-                    onClick={() => (window.location.href = '/apply')}
-                    className="px-8 py-3 bg-white text-accent border-2 border-accent font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    <i className="fas fa-file-alt mr-2"></i>
-                    Apply for Jobs
-                  </button>
-                </div>
+                <button
+                  onClick={handlePostJobClick}
+                  className="px-8 py-3 bg-gradient-to-r from-accent to-secondary text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  <i className="fas fa-briefcase mr-2"></i>
+                  Post a Job Now
+                </button>
               </div>
             </div>
           </div>

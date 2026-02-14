@@ -60,7 +60,7 @@ export const authAPI = {
   login: async (email, password) => {
     const response = await api.post('/auth/login', { email, password })
 
-    return response.data
+    return response // Return full response, not response.data
   },
 
   register: async (userData) => {
@@ -151,16 +151,6 @@ export const applicationsAPI = {
 
   createApplication: async (formData) => {
     const response = await api.post('/applications', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    return response.data
-  },
-
-  submitPublicApplication: async (formData) => {
-    const response = await api.post('/applications/public', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
