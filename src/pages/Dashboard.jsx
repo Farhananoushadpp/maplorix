@@ -28,14 +28,17 @@ const Dashboard = () => {
   // Fetch recent applications (latest 5)
   const fetchRecentApplications = async () => {
     try {
-      const response = await applicationsAPI.getAllApplications(
-        'page=1&limit=5&sortBy=createdAt&sortOrder=desc'
-      )
-      setRecentApplications(response.data.data.applications)
+      const response = await applicationsAPI.getAllApplications({
+        page: 1,
+        limit: 5,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      })
+      setRecentApplications(response.data?.data?.applications || [])
       setStats((prev) => ({
         ...prev,
-        totalApplications: response.data.data.pagination.total,
-        recentApplications: response.data.data.applications.length,
+        totalApplications: response.data?.data?.pagination?.total || 0,
+        recentApplications: response.data?.data?.applications?.length || 0,
       }))
     } catch (error) {
       console.error('Error fetching recent applications:', error)
@@ -45,16 +48,20 @@ const Dashboard = () => {
   // Fetch recent jobs (latest 5)
   const fetchRecentJobs = async () => {
     try {
-      const response = await jobsAPI.getAllJobs(
-        'page=1&limit=5&sortBy=createdAt&sortOrder=desc'
-      )
-      setRecentJobs(response.data.data.jobs)
+      const response = await jobsAPI.getAllJobs({
+        page: 1,
+        limit: 5,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      })
+      setRecentJobs(response.data?.data?.jobs || [])
       setStats((prev) => ({
         ...prev,
-        totalJobs: response.data.data.pagination.total,
-        activeJobs: response.data.data.jobs.filter((job) => job.isActive)
-          .length,
-        recentJobs: response.data.data.jobs.length,
+        totalJobs: response.data?.data?.pagination?.total || 0,
+        activeJobs: (response.data?.data?.jobs || []).filter(
+          (job) => job.isActive
+        ).length,
+        recentJobs: response.data?.data?.jobs?.length || 0,
       }))
     } catch (error) {
       console.error('Error fetching recent jobs:', error)

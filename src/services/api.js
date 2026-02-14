@@ -32,7 +32,7 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle common errors
+// Response interceptor to handle errors
 
 api.interceptors.response.use(
   (response) => {
@@ -41,14 +41,13 @@ api.interceptors.response.use(
 
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-
       localStorage.removeItem('authToken')
-
       localStorage.removeItem('user')
-
       window.location.href = '/login'
     }
+
+    console.error('API Error:', error)
+    console.error('Response:', error.response)
 
     return Promise.reject(error)
   }
