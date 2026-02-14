@@ -1,4 +1,4 @@
-// Posts Feed Page - LinkedIn-style feed showing Maplorix admin posts
+// feed Page - LinkedIn-style feed showing Maplorix admin posts
 import React, { useState, useEffect } from 'react'
 import { jobsAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -210,7 +210,7 @@ const PostsFeed = () => {
         </div>
       </div>
 
-      {/* Posts Feed */}
+      {/* feed */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {filteredAndSortedPosts.length === 0 ? (
           <div className="text-center py-12">

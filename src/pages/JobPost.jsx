@@ -136,22 +136,14 @@ const JobPost = () => {
   const validateForm = () => {
     const newErrors = {}
 
-    // Company Information Validation
-    if (!formData.company.trim()) {
+    // Required fields that actually exist in the form
+    if (!formData.company?.trim()) {
       newErrors.company = 'Company name is required'
-    }
-
-    if (formData.companyWebsite && !isValidUrl(formData.companyWebsite)) {
-      newErrors.companyWebsite = 'Please enter a valid website URL'
-    }
-
-    if (!formData.companySize) {
-      newErrors.companySize = 'Please select company size'
     }
 
     // Contact Information Validation
     if (
-      !formData.contactName.trim() ||
+      !formData.contactName?.trim() ||
       formData.contactName.trim().length < 2
     ) {
       newErrors.contactName = 'Contact name is required (at least 2 characters)'
@@ -159,7 +151,7 @@ const JobPost = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (
-      !formData.contactEmail.trim() ||
+      !formData.contactEmail?.trim() ||
       !emailRegex.test(formData.contactEmail)
     ) {
       newErrors.contactEmail = 'Please enter a valid email address'
@@ -167,7 +159,7 @@ const JobPost = () => {
 
     const phoneRegex = /^[\d\s\-\+\(\)]+$/
     if (
-      !formData.contactPhone.trim() ||
+      !formData.contactPhone?.trim() ||
       !phoneRegex.test(formData.contactPhone) ||
       formData.contactPhone.replace(/\D/g, '').length < 10
     ) {
@@ -175,39 +167,23 @@ const JobPost = () => {
         'Please enter a valid phone number (at least 10 digits)'
     }
 
-    if (!formData.contactTitle.trim()) {
-      newErrors.contactTitle = 'Contact title is required'
-    }
-
-    if (!formData.location.trim()) {
+    if (!formData.location?.trim()) {
       newErrors.location = 'Job location is required'
     }
 
-    if (!formData.title.trim()) {
+    if (!formData.title?.trim()) {
       newErrors.title = 'Job title is required'
     }
 
     // Custom Category Validation
-    if (formData.category === 'Other' && !formData.customCategory.trim()) {
+    if (formData.category === 'Other' && !formData.customCategory?.trim()) {
       newErrors.customCategory =
-        'Please specify the category when Other is selected'
-    }
-
-    if (!formData.workLocationType) {
-      newErrors.workLocationType = 'Please select work location type'
-    }
-
-    if (
-      formData.salaryMin &&
-      formData.salaryMax &&
-      parseFloat(formData.salaryMin) > parseFloat(formData.salaryMax)
-    ) {
-      newErrors.salaryMax = 'Maximum salary must be greater than minimum salary'
+        'Please specify category when Other is selected'
     }
 
     // Job Content Validation
     if (
-      !formData.description.trim() ||
+      !formData.description?.trim() ||
       formData.description.trim().length < 50
     ) {
       newErrors.description =
@@ -215,40 +191,25 @@ const JobPost = () => {
     }
 
     if (
-      !formData.requirements.trim() ||
+      !formData.requirements?.trim() ||
       formData.requirements.trim().length < 20
     ) {
       newErrors.requirements =
         'Job requirements are required (at least 20 characters)'
     }
 
-    if (
-      !formData.responsibilities.trim() ||
-      formData.responsibilities.trim().length < 20
-    ) {
-      newErrors.responsibilities =
-        'Job responsibilities are required (at least 20 characters)'
+    // Optional website validation (only if provided)
+    if (formData.companyWebsite && !isValidUrl(formData.companyWebsite)) {
+      newErrors.companyWebsite = 'Please enter a valid website URL'
     }
 
-    // Application Details Validation
+    // Optional salary validation (only if both provided)
     if (
-      formData.applicationMethod === 'Email' &&
-      !formData.applicationEmail.trim()
+      formData.salaryMin &&
+      formData.salaryMax &&
+      parseFloat(formData.salaryMin) > parseFloat(formData.salaryMax)
     ) {
-      newErrors.applicationEmail =
-        'Application email is required when Email application is selected'
-    }
-
-    if (
-      formData.applicationMethod === 'Website' &&
-      !formData.applicationUrl.trim()
-    ) {
-      newErrors.applicationUrl =
-        'Application URL is required when Website application is selected'
-    }
-
-    if (formData.applicationUrl && !isValidUrl(formData.applicationUrl)) {
-      newErrors.applicationUrl = 'Please enter a valid application URL'
+      newErrors.salaryMax = 'Maximum salary must be greater than minimum salary'
     }
 
     return newErrors
@@ -281,9 +242,11 @@ const JobPost = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log('JobPost form submission started')
 
     const newErrors = validateForm()
     if (Object.keys(newErrors).length > 0) {
+      console.log('Validation errors:', newErrors)
       setErrors(newErrors)
       return
     }
@@ -308,18 +271,23 @@ const JobPost = () => {
         description: formData.description,
         requirements: formData.requirements,
 
-        // Optional fields
-        salary: {
-          min: formData.salaryMin ? parseFloat(formData.salaryMin) : undefined,
-          max: formData.salaryMax ? parseFloat(formData.salaryMax) : undefined,
-          currency: formData.currency,
-        },
+        // Optional fields - flatten salary object
+        salaryMin: formData.salaryMin
+          ? parseFloat(formData.salaryMin)
+          : undefined,
+        salaryMax: formData.salaryMax
+          ? parseFloat(formData.salaryMax)
+          : undefined,
+        currency: formData.currency,
         applicationDeadline: formData.applicationDeadline
           ? new Date(formData.applicationDeadline)
           : undefined,
         featured: formData.featured,
         active: true,
+        postedDate: new Date(),
       }
+
+      console.log('Submitting job data:', jobData)
 
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -333,13 +301,25 @@ const JobPost = () => {
       }, 100)
 
       // Call the API
+      console.log('Calling jobsAPI.createJob...')
       const response = await jobsAPI.createJob(jobData)
+      console.log('API response:', response)
 
       clearInterval(progressInterval)
       setUploadProgress(100)
 
       setSubmitMessage(
         '🎉 Thank you for posting your job! Your listing has been successfully submitted and will be reviewed shortly. Qualified candidates will be able to apply soon.'
+      )
+
+      // Emit custom event to refresh dashboard
+      window.dispatchEvent(
+        new CustomEvent('jobPosted', {
+          detail: {
+            success: true,
+            job: response.data?.job || jobData,
+          },
+        })
       )
 
       // Reset form
@@ -441,80 +421,84 @@ const JobPost = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label
-                      htmlFor="fullName"
+                      htmlFor="contactName"
                       className="block text-sm font-medium text-text-dark mb-2"
                     >
                       Your Name *
                     </label>
                     <input
                       type="text"
-                      id="fullName"
-                      name="fullName"
-                      value={formData.fullName}
+                      id="contactName"
+                      name="contactName"
+                      value={formData.contactName}
                       onChange={handleInputChange}
                       placeholder="Enter your full name"
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.fullName
+                        errors.contactName
                           ? 'border-red-500'
                           : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.fullName && (
+                    {errors.contactName && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.fullName}
+                        {errors.contactName}
                       </p>
                     )}
                   </div>
 
                   <div>
                     <label
-                      htmlFor="email"
+                      htmlFor="contactEmail"
                       className="block text-sm font-medium text-text-dark mb-2"
                     >
                       Email Address *
                     </label>
                     <input
                       type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
+                      id="contactEmail"
+                      name="contactEmail"
+                      value={formData.contactEmail}
                       onChange={handleInputChange}
                       placeholder="your.email@example.com"
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.email ? 'border-red-500' : 'border-border-color'
+                        errors.contactEmail
+                          ? 'border-red-500'
+                          : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.email && (
+                    {errors.contactEmail && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.email}
+                        {errors.contactEmail}
                       </p>
                     )}
                   </div>
 
                   <div>
                     <label
-                      htmlFor="phone"
+                      htmlFor="contactPhone"
                       className="block text-sm font-medium text-text-dark mb-2"
                     >
                       Phone Number *
                     </label>
                     <input
                       type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
+                      id="contactPhone"
+                      name="contactPhone"
+                      value={formData.contactPhone}
                       onChange={handleInputChange}
                       placeholder="+1 (555) 123-4567"
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.phone ? 'border-red-500' : 'border-border-color'
+                        errors.contactPhone
+                          ? 'border-red-500'
+                          : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.phone && (
+                    {errors.contactPhone && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.phone}
+                        {errors.contactPhone}
                       </p>
                     )}
                   </div>

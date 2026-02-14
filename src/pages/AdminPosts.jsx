@@ -232,7 +232,7 @@ const AdminPosts = () => {
         </div>
       </div>
 
-      {/* Posts Feed */}
+      {/* feed */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {posts.length === 0 ? (
           <div className="text-center py-12">

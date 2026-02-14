@@ -21,6 +21,7 @@ const PostJobForm = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -43,6 +44,7 @@ const PostJobForm = () => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
     // Basic validation
     if (!user) {
@@ -58,8 +60,57 @@ const PostJobForm = () => {
     }
 
     try {
-      await jobsAPI.createJob(formData)
-      navigate('/admin/posts')
+      // Prepare job data in the correct structure for API
+      const jobData = {
+        title: formData.title,
+        type: formData.type,
+        category: formData.category,
+        experienceLevel: formData.experience,
+        location: formData.location,
+        description: formData.description,
+        requirements: formData.requirements,
+        featured: formData.featured,
+        isActive: formData.active,
+        applicationDeadline: formData.applicationDeadline
+          ? new Date(formData.applicationDeadline)
+          : undefined,
+        postedDate: new Date(),
+        company: {
+          name: formData.company,
+        },
+        contactInfo: {
+          name: user?.name || 'Admin',
+          email: user?.email || '',
+        },
+      }
+
+      console.log('Submitting job data:', jobData)
+      const response = await jobsAPI.createJob(jobData)
+      console.log('Job posted successfully:', response)
+
+      // Show success message
+      setSuccess('Job posted successfully!')
+
+      // Reset form
+      setFormData({
+        title: '',
+        company: '',
+        location: '',
+        type: 'Full-time',
+        category: 'Technology',
+        experience: 'Entry Level',
+        jobRole: '',
+        description: '',
+        requirements: '',
+        featured: false,
+        active: true,
+        applicationDeadline: '',
+      })
+
+      // Navigate to admin posts after delay
+      setTimeout(() => {
+        navigate('/admin/posts')
+      }, 2000)
     } catch (err) {
       console.error('Error posting job:', err)
       setError(
@@ -76,6 +127,7 @@ const PostJobForm = () => {
     <div className="post-job-container">
       <h2>Post a New Job</h2>
       {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
       <form onSubmit={handleSubmit} className="post-job-form">
         <div className="form-group">
           <label htmlFor="title">Job Title *</label>

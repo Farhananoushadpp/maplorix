@@ -27,9 +27,34 @@ const Dashboard = () => {
   const [applicationsSearchTerm, setApplicationsSearchTerm] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [selectedJobRole, setSelectedJobRole] = useState('all')
+  const [newJobPostedMessage, setNewJobPostedMessage] = useState('')
 
   useEffect(() => {
     fetchDashboardData()
+
+    // Listen for job posting events
+    const handleJobPosted = (event) => {
+      console.log('Job posted event received:', event.detail)
+      if (event.detail?.success) {
+        // Show success message
+        setNewJobPostedMessage('✅ New job posted successfully!')
+
+        // Clear message after 5 seconds
+        setTimeout(() => {
+          setNewJobPostedMessage('')
+        }, 5000)
+
+        // Refresh dashboard data to show new job
+        fetchDashboardData()
+      }
+    }
+
+    window.addEventListener('jobPosted', handleJobPosted)
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('jobPosted', handleJobPosted)
+    }
   }, [])
 
   const fetchDashboardData = async () => {
@@ -44,6 +69,8 @@ const Dashboard = () => {
 
       console.log('Jobs response:', jobsResponse.data)
       console.log('Applications response:', applicationsResponse.data)
+      console.log('Jobs array:', jobsResponse.data.jobs)
+      console.log('Number of jobs:', jobsResponse.data.jobs?.length || 0)
 
       // Calculate stats
       const totalJobs = jobsResponse.data.pagination?.total || 0
@@ -111,12 +138,16 @@ const Dashboard = () => {
 
   // Filter functions
   const filteredJobs = recentJobs.filter((job) => {
+    console.log('Filtering job:', job)
     const matchesSearch =
-      job.title.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(jobsSearchTerm.toLowerCase())
+      job.title?.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
+      job.company?.toLowerCase().includes(jobsSearchTerm.toLowerCase()) ||
+      job.location?.toLowerCase().includes(jobsSearchTerm.toLowerCase())
     const matchesDepartment =
-      selectedDepartment === 'all' || job.department === selectedDepartment
+      selectedDepartment === 'all' ||
+      (job.department && job.department === selectedDepartment) ||
+      (!job.department && selectedDepartment === 'all') // Handle missing department
+    console.log('Job filter results:', { matchesSearch, matchesDepartment })
     return matchesSearch && matchesDepartment
   })
 
@@ -272,7 +303,7 @@ const Dashboard = () => {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              📊 Overview
+              Overview
             </button>
             <button
               onClick={() => setActiveTab('jobs')}
@@ -282,7 +313,7 @@ const Dashboard = () => {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              💼 All Jobs ({allJobs.length})
+              All Jobs ({allJobs.length})
             </button>
             <button
               onClick={() => setActiveTab('applications')}
@@ -292,7 +323,7 @@ const Dashboard = () => {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              📝 All Applications ({allApplications.length})
+              All Applications ({allApplications.length})
             </button>
           </div>
         )}
@@ -308,6 +339,16 @@ const Dashboard = () => {
                     Recent Jobs
                   </h2>
                 </div>
+
+                {/* Success message for new job posting */}
+                {newJobPostedMessage && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm font-medium">
+                      {newJobPostedMessage}
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -344,6 +385,15 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="p-6">
+                {console.log('Recent Jobs display - recentJobs:', recentJobs)}
+                {console.log(
+                  'Recent Jobs display - filteredJobs:',
+                  filteredJobs
+                )}
+                {console.log(
+                  'Recent Jobs display - filteredJobs.length:',
+                  filteredJobs.length
+                )}
                 {filteredJobs.length > 0 ? (
                   <div className="space-y-4">
                     {filteredJobs.map((job) => (
