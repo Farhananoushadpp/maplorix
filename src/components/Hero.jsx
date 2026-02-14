@@ -29,7 +29,7 @@ const Hero = ({ onPostJob }) => {
   }
 
   const handleFindJobClick = () => {
-    navigate('/posts-feed')
+    navigate('/apply')
   }
 
   useEffect(() => {

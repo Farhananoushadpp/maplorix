@@ -440,7 +440,7 @@ const Home = () => {
 
       formDataToSend.append('jobRole', formData.jobTitle)
 
-      formDataToSend.append('jobId', formData.job) // Changed to jobId
+      formDataToSend.append('job', formData.job) // Backend expects 'job' field for MongoDB ObjectId
 
       formDataToSend.append('experience', formData.experience)
 

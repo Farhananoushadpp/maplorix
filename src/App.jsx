@@ -48,7 +48,7 @@ import AdminPosts from './pages/AdminPosts'
 
 import PostsFeed from './pages/PostsFeed'
 
-import PostJobForm from './pages/PostJobForm'
+import ApplyJob from './pages/ApplyJob'
 
 // Constants
 
@@ -128,6 +128,22 @@ const AnimatedRoutes = () => {
 
         <Route path="/dashboard" element={<Dashboard />} />
 
+        <Route path="/applications" element={<ApplicationsPage />} />
+
+        <Route
+          path="/apply"
+          element={
+            <motion.div
+              variants={ANIMATION_VARIANTS.pageTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <ApplyJob />
+            </motion.div>
+          }
+        />
+
         <Route
           path={ROUTES.ADMIN_POSTS}
           element={
@@ -152,20 +168,6 @@ const AnimatedRoutes = () => {
               exit="exit"
             >
               <PostsFeed />
-            </motion.div>
-          }
-        />
-
-        <Route
-          path={ROUTES.POST_JOB}
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <PostJobForm />
             </motion.div>
           }
         />

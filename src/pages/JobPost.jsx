@@ -3,12 +3,15 @@ import { jobsAPI } from '../services/api'
 
 const JobPost = () => {
   const [formData, setFormData] = useState({
-    // Company Information
-    companyName: '',
-    companyWebsite: '',
-    companySize: '',
-    companyIndustry: '',
-    companyDescription: '',
+    // Job Details (matching backend API field names)
+    title: '',
+    company: '',
+    location: '',
+    type: 'Full-time',
+    category: 'Technology',
+    customCategory: '',
+    department: '',
+    experience: 'Mid Level',
 
     // Contact Information
     contactName: '',
@@ -16,19 +19,20 @@ const JobPost = () => {
     contactPhone: '',
     contactTitle: '',
 
-    // Job Details
-    jobTitle: '',
-    jobType: 'Full-time',
-    jobCategory: 'Technology',
-    customJobCategory: '',
-    department: '',
-    experienceLevel: 'Mid Level',
-    location: '',
+    // Company Information
+    companyWebsite: '',
+    companySize: '',
+    companyIndustry: '',
+    companyDescription: '',
+
+    // Work Location
     workLocationType: 'On-site',
+
+    // Salary Information
     salaryMin: '',
     salaryMax: '',
     salaryType: 'Annual',
-    currency: 'AED', // Changed default to AED
+    currency: 'USD',
 
     // Job Content
     description: '',
@@ -133,8 +137,8 @@ const JobPost = () => {
     const newErrors = {}
 
     // Company Information Validation
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required'
+    if (!formData.company.trim()) {
+      newErrors.company = 'Company name is required'
     }
 
     if (formData.companyWebsite && !isValidUrl(formData.companyWebsite)) {
@@ -179,16 +183,13 @@ const JobPost = () => {
       newErrors.location = 'Job location is required'
     }
 
-    if (!formData.jobTitle.trim()) {
-      newErrors.jobTitle = 'Job title is required'
+    if (!formData.title.trim()) {
+      newErrors.title = 'Job title is required'
     }
 
     // Custom Category Validation
-    if (
-      formData.jobCategory === 'Other' &&
-      !formData.customJobCategory.trim()
-    ) {
-      newErrors.customJobCategory =
+    if (formData.category === 'Other' && !formData.customCategory.trim()) {
+      newErrors.customCategory =
         'Please specify the category when Other is selected'
     }
 
@@ -292,71 +293,32 @@ const JobPost = () => {
     setUploadProgress(0)
 
     try {
-      // Prepare comprehensive job data for API
+      // Prepare job data matching backend API expectations
       const jobData = {
-        // Company Information
-        company: {
-          name: formData.companyName,
-          website: formData.companyWebsite,
-          size: formData.companySize,
-          industry: formData.companyIndustry,
-          description: formData.companyDescription,
-        },
-
-        // Contact Information
-        contactInfo: {
-          name: formData.contactName,
-          email: formData.contactEmail,
-          phone: formData.contactPhone,
-          title: formData.contactTitle,
-        },
-
-        // Job Details
-        title: formData.jobTitle,
-        type: formData.jobType,
-        category:
-          formData.jobCategory === 'Other'
-            ? formData.customJobCategory
-            : formData.jobCategory,
-        experienceLevel: formData.experienceLevel,
+        // Required fields
+        title: formData.title,
+        company: formData.company,
         location: formData.location,
-        workLocationType: formData.workLocationType,
+        type: formData.type,
+        category:
+          formData.category === 'Other'
+            ? formData.customCategory
+            : formData.category,
+        experience: formData.experience,
+        description: formData.description,
+        requirements: formData.requirements,
 
-        // Salary Information
+        // Optional fields
         salary: {
           min: formData.salaryMin ? parseFloat(formData.salaryMin) : undefined,
           max: formData.salaryMax ? parseFloat(formData.salaryMax) : undefined,
-          type: formData.salaryType,
           currency: formData.currency,
         },
-
-        // Job Content
-        description: formData.description,
-        requirements: formData.requirements,
-        responsibilities: formData.responsibilities,
-        benefits: formData.benefits,
-        skills: formData.skills
-          .split(',')
-          .map((skill) => skill.trim())
-          .filter((skill) => skill),
-
-        // Application Details
         applicationDeadline: formData.applicationDeadline
           ? new Date(formData.applicationDeadline)
           : undefined,
-        applicationMethod: formData.applicationMethod,
-        applicationEmail: formData.applicationEmail || formData.contactEmail,
-        applicationUrl: formData.applicationUrl,
-
-        // Additional Information
-        tags: formData.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter((tag) => tag),
         featured: formData.featured,
-        urgent: formData.urgent,
-        isActive: true,
-        postedDate: new Date(),
+        active: true,
       }
 
       // Simulate progress
@@ -382,26 +344,27 @@ const JobPost = () => {
 
       // Reset form
       setFormData({
-        companyName: '',
-        companyWebsite: '',
-        companySize: '',
-        companyIndustry: '',
-        companyDescription: '',
+        title: '',
+        company: '',
+        location: '',
+        type: 'Full-time',
+        category: 'Technology',
+        customCategory: '',
+        department: '',
+        experience: 'Mid Level',
         contactName: '',
         contactEmail: '',
         contactPhone: '',
         contactTitle: '',
-        jobTitle: '',
-        jobType: 'Full-time',
-        jobCategory: 'Technology',
-        customJobCategory: '',
-        experienceLevel: 'Mid Level',
-        location: '',
+        companyWebsite: '',
+        companySize: '',
+        companyIndustry: '',
+        companyDescription: '',
         workLocationType: 'On-site',
         salaryMin: '',
         salaryMax: '',
         salaryType: 'Annual',
-        currency: 'AED', // Changed default to AED
+        currency: 'USD',
         description: '',
         requirements: '',
         responsibilities: '',
@@ -602,21 +565,19 @@ const JobPost = () => {
                     </label>
                     <input
                       type="text"
-                      id="jobTitle"
-                      name="jobTitle"
-                      value={formData.jobTitle}
+                      id="title"
+                      name="title"
+                      value={formData.title}
                       onChange={handleInputChange}
                       placeholder="e.g., Software Developer"
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.jobTitle
-                          ? 'border-red-500'
-                          : 'border-border-color'
+                        errors.title ? 'border-red-500' : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.jobTitle && (
+                    {errors.title && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.jobTitle}
+                        {errors.title}
                       </p>
                     )}
                   </div>
@@ -657,14 +618,12 @@ const JobPost = () => {
                       Job Type *
                     </label>
                     <select
-                      id="jobType"
-                      name="jobType"
-                      value={formData.jobType}
+                      id="type"
+                      name="type"
+                      value={formData.type}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.jobType
-                          ? 'border-red-500'
-                          : 'border-border-color'
+                        errors.type ? 'border-red-500' : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     >
@@ -674,10 +633,8 @@ const JobPost = () => {
                         </option>
                       ))}
                     </select>
-                    {errors.jobType && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.jobType}
-                      </p>
+                    {errors.type && (
+                      <p className="text-red-500 text-sm mt-1">{errors.type}</p>
                     )}
                   </div>
 
@@ -714,31 +671,31 @@ const JobPost = () => {
                   </div>
 
                   {/* Custom Category Field - Show when Other is selected */}
-                  {formData.jobCategory === 'Other' && (
+                  {formData.category === 'Other' && (
                     <div>
                       <label
-                        htmlFor="customJobCategory"
+                        htmlFor="customCategory"
                         className="block text-sm font-medium text-text-dark mb-2"
                       >
                         Specify Category *
                       </label>
                       <input
                         type="text"
-                        id="customJobCategory"
-                        name="customJobCategory"
-                        value={formData.customJobCategory}
+                        id="customCategory"
+                        name="customCategory"
+                        value={formData.customCategory}
                         onChange={handleInputChange}
                         placeholder="e.g., Hospitality, Retail, Construction"
                         className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.customJobCategory
+                          errors.customCategory
                             ? 'border-red-500'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
-                      {errors.customJobCategory && (
+                      {errors.customCategory && (
                         <p className="text-red-500 text-sm mt-1">
-                          {errors.customJobCategory}
+                          {errors.customCategory}
                         </p>
                       )}
                     </div>

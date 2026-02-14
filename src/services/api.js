@@ -159,6 +159,16 @@ export const applicationsAPI = {
     return response.data
   },
 
+  submitPublicApplication: async (formData) => {
+    const response = await api.post('/applications/public', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  },
+
   updateApplication: async (id, applicationData) => {
     const response = await api.put(`/applications/${id}`, applicationData)
 
