@@ -1,338 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react'
-
+// Home Page - Maplorix Recruitment Agency Landing Page
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Hero from '../components/Hero'
-
 import About from '../components/About'
-
 import Contact from '../components/Contact'
-
+import DashboardJobPostModal from '../components/DashboardJobPostModal'
+import DashboardJobApplyModal from '../components/DashboardJobApplyModal'
 import { useAuth } from '../context/AuthContext'
-
+import { useData } from '../context/DataContext'
 import { applicationsAPI, jobsAPI } from '../services/api'
 
 const Home = () => {
   const [showResumeModal, setShowResumeModal] = useState(false)
-
   const [showPostJobModal, setShowPostJobModal] = useState(false)
-
+  const [showApplyJobModal, setShowApplyJobModal] = useState(false)
   const [availableJobs, setAvailableJobs] = useState([])
 
   const { user, isAuthenticated } = useAuth()
+  const { fetchJobs, fetchApplications } = useData()
+  const navigate = useNavigate()
 
-  // Post Job Form State
-
-  const [postJobData, setPostJobData] = useState({
-    title: '',
-
-    company: '',
-
-    location: '',
-
-    type: 'Full-time',
-
-    category: 'Technology',
-
-    experience: 'Mid Level',
-
-    description: '',
-
-    requirements: '',
-
-    salary: {
-      min: '',
-
-      max: '',
-
-      currency: 'USD',
-    },
-
-    applicationDeadline: '',
-
-    featured: false,
-
-    active: true,
-  })
-
-  const [postJobErrors, setPostJobErrors] = useState({})
-
-  const [isPostJobLoading, setIsPostJobLoading] = useState(false)
-
-  const [postJobSuccess, setPostJobSuccess] = useState(false)
-
-  const jobTypes = [
-    'Full-time',
-    'Part-time',
-    'Contract',
-    'Internship',
-    'Remote',
-    'Hybrid',
-  ]
-
-  const categories = [
-    'Technology',
-    'Healthcare',
-    'Finance',
-    'Marketing',
-    'Sales',
-    'Education',
-    'Engineering',
-    'Design',
-    'Customer Service',
-    'Human Resources',
-    'Operations',
-    'Legal',
-    'Other',
-  ]
-
-  const experienceLevels = [
-    'Entry Level',
-    'Mid Level',
-    'Senior Level',
-    'Executive',
-    'Fresher',
-  ]
-
-  const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR']
-
-  const handlePostJobChange = (e) => {
-    const { name, value, type, checked } = e.target
-
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.')
-
-      setPostJobData((prev) => ({
-        ...prev,
-
-        [parent]: {
-          ...prev[parent],
-
-          [child]:
-            type === 'number' ? (value === '' ? '' : Number(value)) : value,
-        },
-      }))
-    } else {
-      setPostJobData((prev) => ({
-        ...prev,
-
-        [name]: type === 'checkbox' ? checked : value,
-      }))
-    }
-
-    // Clear error for this field when user starts typing
-
-    if (postJobErrors[name]) {
-      setPostJobErrors((prev) => ({
-        ...prev,
-
-        [name]: '',
-      }))
-    }
-  }
-
-  const validatePostJobForm = () => {
-    const newErrors = {}
-
-    if (!postJobData.title.trim()) {
-      newErrors.title = 'Job title is required'
-    } else if (postJobData.title.length < 3) {
-      newErrors.title = 'Job title must be at least 3 characters'
-    }
-
-    if (!postJobData.company.trim()) {
-      newErrors.company = 'Company name is required'
-    }
-
-    if (!postJobData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
-
-    if (!postJobData.type) {
-      newErrors.type = 'Job type is required'
-    }
-
-    if (!postJobData.category) {
-      newErrors.category = 'Category is required'
-    }
-
-    if (!postJobData.experience) {
-      newErrors.experience = 'Experience level is required'
-    }
-
-    if (!postJobData.description.trim()) {
-      newErrors.description = 'Description is required'
-    } else if (postJobData.description.length < 50) {
-      newErrors.description = 'Description must be at least 50 characters'
-    }
-
-    if (!postJobData.requirements.trim()) {
-      newErrors.requirements = 'Requirements are required'
-    } else if (postJobData.requirements.length < 20) {
-      newErrors.requirements = 'Requirements must be at least 20 characters'
-    }
-
-    // Salary validation
-
-    if (postJobData.salary.min && postJobData.salary.max) {
-      if (Number(postJobData.salary.min) >= Number(postJobData.salary.max)) {
-        newErrors['salary.max'] =
-          'Maximum salary must be greater than minimum salary'
-      }
-    }
-
-    // Date validation
-
-    if (postJobData.applicationDeadline) {
-      const deadline = new Date(postJobData.applicationDeadline)
-
-      const today = new Date()
-
-      today.setHours(0, 0, 0, 0)
-
-      if (deadline <= today) {
-        newErrors.applicationDeadline =
-          'Application deadline must be in the future'
-      }
-    }
-
-    setPostJobErrors(newErrors)
-
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handlePostJobSubmit = async (e) => {
-    e.preventDefault()
-
-    if (!validatePostJobForm()) {
-      return
-    }
-
-    setIsPostJobLoading(true)
-
-    try {
-      const response = await jobsAPI.createJob(postJobData)
-
-      setPostJobSuccess(true)
-
-      // Reset form after successful submission
-
-      setTimeout(() => {
-        setPostJobData({
-          title: '',
-
-          company: '',
-
-          location: '',
-
-          type: 'Full-time',
-
-          category: 'Technology',
-
-          experience: 'Mid Level',
-
-          description: '',
-
-          requirements: '',
-
-          salary: {
-            min: '',
-
-            max: '',
-
-            currency: 'USD',
-          },
-
-          applicationDeadline: '',
-
-          featured: false,
-
-          active: true,
-        })
-
-        setPostJobErrors({})
-
-        setPostJobSuccess(false)
-
-        setShowPostJobModal(false)
-      }, 3000)
-    } catch (error) {
-      setPostJobErrors({
-        submit: error.message || 'Failed to post job. Please try again.',
-      })
-    } finally {
-      setIsPostJobLoading(false)
-    }
-  }
-
-  const handlePostJobClick = () => {
-    console.log('Post Job button clicked')
-
-    console.log('Is authenticated:', isAuthenticated)
-
-    console.log('User:', user)
-
-    if (!isAuthenticated) {
-      // For testing, let's show the modal even without authentication
-
-      console.log('User not authenticated, showing modal anyway for testing')
-
-      setShowPostJobModal(true)
-
-      return
-    }
-
-    setShowPostJobModal(true)
-  }
-
-  const [formData, setFormData] = useState({
-    fullName: '',
-
-    email: '',
-
-    phone: '',
-
-    location: '',
-
-    jobTitle: '',
-
-    job: '', // Add job field for application
-
-    company: '',
-
-    jobType: 'Full-time',
-
-    experience: 'Mid Level',
-
-    skills: '',
-
-    linkedinProfile: '',
-
-    portfolio: '',
-
-    expectedSalary: '',
-
-    noticePeriod: '',
-
-    workMode: 'On-site',
-
-    resume: null,
-  })
-
-  const [errors, setErrors] = useState({})
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const [uploadProgress, setUploadProgress] = useState(0)
-
-  const [successMessage, setSuccessMessage] = useState('')
-
-  // Fetch available jobs for the application form
-
+  // Fetch available jobs for display
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await jobsAPI.getAllJobs({ limit: 20 })
-
-        setAvailableJobs(response.data.jobs || [])
+        const response = await jobsAPI.getAllJobs()
+        setAvailableJobs(response.data?.slice(0, 6) || []) // Show latest 6 jobs
       } catch (error) {
         console.error('Error fetching jobs:', error)
       }
@@ -341,1117 +34,381 @@ const Home = () => {
     fetchJobs()
   }, [])
 
-  const handleChange = (e) => {
-    const { name, value, type, files } = e.target
+  // Handle successful job posting
+  const handlePostJobSuccess = (jobData) => {
+    console.log('Job posted successfully:', jobData)
 
-    if (type === 'file') {
-      setFormData((prev) => ({
-        ...prev,
-
-        [name]: files[0],
-      }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-
-        [name]: value,
-      }))
-    }
-
-    // Clear error for this field
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-
-        [name]: '',
-      }))
-    }
+    // Show success message
+    setTimeout(() => {
+      setShowPostJobModal(false)
+      // Refresh dashboard data
+      fetchJobs()
+      fetchApplications()
+    }, 2000)
   }
 
-  const validateForm = () => {
-    const newErrors = {}
+  // Handle successful job application
+  const handleApplyJobSuccess = (applicationData) => {
+    console.log('Application submitted successfully:', applicationData)
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required'
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
-
-    if (!formData.jobTitle.trim()) {
-      newErrors.jobTitle = 'Job title is required'
-    }
-
-    if (!formData.job) {
-      newErrors.job = 'Please select a job to apply for'
-    }
-
-    if (!formData.skills.trim()) {
-      newErrors.skills = 'Skills are required'
-    }
-
-    if (!formData.resume) {
-      newErrors.resume = 'Resume file is required'
-    } else if (
-      !formData.resume.name.toLowerCase().endsWith('.pdf') &&
-      !formData.resume.name.toLowerCase().endsWith('.doc') &&
-      !formData.resume.name.toLowerCase().endsWith('.docx')
-    ) {
-      newErrors.resume = 'Please upload a PDF, DOC, or DOCX file'
-    }
-
-    setErrors(newErrors)
-
-    return Object.keys(newErrors).length === 0
+    // Show success message and redirect
+    setTimeout(() => {
+      setShowApplyJobModal(false)
+      if (isAuthenticated) {
+        // Refresh dashboard data before navigating
+        fetchJobs()
+        fetchApplications()
+        navigate('/dashboard')
+      }
+    }, 2000)
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    setIsSubmitting(true)
-
-    setUploadProgress(0)
-
-    try {
-      // Create FormData for file upload
-
-      const formDataToSend = new FormData()
-
-      // Add all form fields with correct field names for backend
-
-      formDataToSend.append('fullName', formData.fullName)
-
-      formDataToSend.append('email', formData.email)
-
-      formDataToSend.append('phone', formData.phone)
-
-      formDataToSend.append('location', formData.location)
-
-      formDataToSend.append('jobRole', formData.jobTitle)
-
-      formDataToSend.append('jobId', formData.job) // Changed to jobId
-
-      formDataToSend.append('experience', formData.experience)
-
-      formDataToSend.append('skills', formData.skills)
-
-      formDataToSend.append(
-        'coverLetter',
-        `Applying for ${formData.jobTitle} position via resume upload form`
-      )
-
-      // Add resume file
-
-      if (formData.resume) {
-        formDataToSend.append('resume', formData.resume)
-      }
-
-      // Debug: Log FormData contents
-
-      console.log('Submitting application with data:')
-
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(
-          `${key}:`,
-          value instanceof File ? `File: ${value.name}` : value
-        )
-      }
-
-      // Simulate upload progress
-
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-
-            return 90
-          }
-
-          return prev + 10
-        })
-      }, 200)
-
-      // Make real API call
-
-      const response = await applicationsAPI.createApplication(formDataToSend)
-
-      clearInterval(progressInterval)
-
-      setUploadProgress(100)
-
-      setSuccessMessage(
-        'Your application has been successfully submitted! We will contact you soon.'
-      )
-
-      // Reset form
-
-      setFormData({
-        fullName: '',
-
-        email: '',
-
-        phone: '',
-
-        location: '',
-
-        jobTitle: '',
-
-        job: '',
-
-        company: '',
-
-        jobType: 'Full-time',
-
-        experience: 'Mid Level',
-
-        skills: '',
-
-        linkedinProfile: '',
-
-        portfolio: '',
-
-        expectedSalary: '',
-
-        noticePeriod: '',
-
-        workMode: 'On-site',
-
-        resume: null,
-      })
-
-      // Reset file input
-
-      if (e.target.resume) {
-        e.target.resume.value = ''
-      }
-
-      // Close modal after success
-
-      setTimeout(() => {
-        setShowResumeModal(false)
-
-        setUploadProgress(0)
-
-        setSuccessMessage('')
-      }, 3000)
-    } catch (error) {
-      console.error('Application submission error:', error)
-
-      console.error('Error response:', error.response)
-
-      console.error('Error status:', error.response?.status)
-
-      console.error('Error data:', error.response?.data)
-
-      let errorMessage = 'Failed to submit application. Please try again.'
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      setErrors({ submit: errorMessage })
-
-      setUploadProgress(0)
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handlePostJobClick = () => {
+    console.log('Post Job button clicked')
+    console.log('Opening Dashboard Job Post modal')
+    setShowPostJobModal(true)
   }
 
-  const candidateServices = [
-    {
-      icon: 'fa-search',
-
-      image: '/jobsearch.jpeg',
-
-      title: 'Job Search Assistance',
-
-      description:
-        'Personalized job matching based on your skills, experience, and career goals. We connect you with opportunities that align with your aspirations.',
-    },
-
-    {
-      icon: 'fa-file-alt',
-
-      image: '/resumebuilder.jpeg',
-
-      title: 'Resume Building',
-
-      description:
-        'Professional resume optimization to highlight your strengths and stand out to employers. Our experts help you create compelling resumes.',
-    },
-
-    {
-      icon: 'fa-user-tie',
-
-      image: '/interviewpreparation.jpeg',
-
-      title: 'Interview Preparation',
-
-      description:
-        'Comprehensive interview coaching including mock interviews, feedback sessions, and confidence-building techniques to ace your interviews.',
-    },
-
-    {
-      icon: 'fa-chart-line',
-
-      image: '/careercunseling.jpeg',
-
-      title: 'Career Counseling',
-
-      description:
-        'Expert guidance on career path planning, skill development, and professional growth strategies to advance your career effectively.',
-    },
-  ]
-
-  const employerServices = [
-    {
-      icon: 'fa-users',
-
-      image: '/talent-acquisition.jpeg',
-
-      title: 'Talent Acquisition',
-
-      description:
-        'End-to-end recruitment solutions to find, attract, and hire the best talent for your organization. We handle the entire hiring process.',
-    },
-
-    {
-      icon: 'fa-filter',
-
-      image: '/candidate-screening.jpeg',
-
-      title: 'Candidate Screening',
-
-      description:
-        'Thorough screening and evaluation processes to ensure you get qualified, pre-vetted candidates who match your requirements perfectly.',
-    },
-
-    {
-      icon: 'fa-handshake',
-
-      image: '/staffing-solutions.jpeg',
-
-      title: 'Staffing Solutions',
-
-      description:
-        'Flexible staffing options including temporary, permanent, and contract placements to meet your dynamic business needs.',
-    },
-
-    {
-      icon: 'fa-briefcase',
-
-      image: '/executive-search.jpeg',
-
-      title: 'Executive Search',
-
-      description:
-        'Specialized executive recruitment for senior-level positions and leadership roles with confidentiality and precision.',
-    },
-  ]
+  const handleFindJobClick = () => {
+    console.log('Find Job button clicked')
+    console.log('Opening Dashboard Job Apply modal')
+    setShowApplyJobModal(true)
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      <main>
-        <Hero
-          onUploadResume={() => setShowResumeModal(true)}
-          onPostJob={handlePostJobClick}
-        />
+      {/* Only render main content when no modals are open */}
+      {!showPostJobModal && !showApplyJobModal && !showResumeModal && (
+        <main>
+          <Hero
+            onUploadResume={() => setShowResumeModal(true)}
+            onPostJob={handlePostJobClick}
+            onFindJob={handleFindJobClick}
+          />
 
-        <About />
+          <About />
 
-        {/* Services for Candidates */}
-
-        <section className="py-20 sm:py-24 bg-gradient-to-br from-primary/5 to-secondary/10 relative overflow-hidden">
-          {/* Background Elements */}
-
-          <div className="absolute inset-0 z-0">
-            <div className="absolute top-10 left-10 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
-
-            <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
-          </div>
-
-          <div className="container relative z-10 px-4">
-            {/* Section Header */}
-
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary">
-                Ready to Transform Your Career?
-              </h2>
-
-              <p className="text-lg sm:text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
-                Discover personalized solutions designed to accelerate your
-                professional growth and land your dream job
-              </p>
-
-              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-6"></div>
+          {/* Services for Candidates */}
+          <section className="py-20 sm:py-24 bg-gradient-to-br from-primary/5 to-secondary/10 relative overflow-hidden">
+            {/* Background Elements */}
+            <div className="absolute inset-0 z-0">
+              <div className="absolute top-10 left-10 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
             </div>
 
-            {/* Services Grid */}
-
-            <div className="space-y-8">
-              {candidateServices.map((service, index) => (
-                <div key={index} className="group relative">
-                  {/* Card Background */}
-
-                  <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 to-accent/5 rounded-2xl transform group-hover:scale-105 transition-all duration-300"></div>
-
-                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 lg:p-8 border border-gray-100">
-                    <div className="flex flex-col md:flex-row gap-4 sm:gap-6 lg:gap-8">
-                      {/* Left Side - Image */}
-
-                      <div className="md:w-2/5">
-                        <div className="relative overflow-hidden rounded-xl">
-                          <img
-                            src={service.image}
-                            alt={service.title}
-                            className="w-full h-48 sm:h-56 md:h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              e.target.onerror = null
-
-                              e.target.src = '/placeholder-service.jpg'
-                            }}
-                          />
-
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        </div>
-                      </div>
-
-                      {/* Right Side - Content */}
-
-                      <div className="md:w-3/5 flex flex-col justify-center">
-                        {/* Service Header */}
-
-                        <div className="flex items-center mb-4 sm:mb-6">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-secondary/20 to-accent/20 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 group-hover:scale-110 transition-transform">
-                            <i
-                              className={`fas ${service.icon} text-secondary text-lg sm:text-xl`}
-                            ></i>
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
-                              {service.title}
-                            </h3>
-
-                            <div className="flex items-center mt-1">
-                              <span className="text-secondary text-xs sm:text-sm font-medium">
-                                Personalized Career Support
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Service Description */}
-
-                        <p className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
-                          {service.description}
-                        </p>
-
-                        {/* Service Features */}
-
-                        <div className="space-y-2 mb-4 sm:mb-6">
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-secondary mr-2"></i>
-
-                            <span>Personalized approach</span>
-                          </div>
-
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-secondary mr-2"></i>
-
-                            <span>Expert guidance</span>
-                          </div>
-
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-secondary mr-2"></i>
-
-                            <span>Proven results</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <div className="container relative z-10 px-4">
+              {/* Section Header */}
+              <div className="text-center mb-20">
+                <div className="inline-flex items-center gap-2 bg-accent/10 rounded-full px-4 py-2 mb-6">
+                  <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+                  <span className="text-accent font-semibold text-sm">
+                    RECRUITMENT SOLUTIONS
+                  </span>
                 </div>
-              ))}
-            </div>
-
-            {/* Bottom CTA */}
-
-            <div className="text-center mt-12">
-              <div className="bg-gradient-to-r from-secondary/10 to-accent/10 rounded-2xl p-8 border border-secondary/20">
-                <h3 className="text-2xl font-bold text-primary mb-4">
-                  Ready to Take the Next Step?
-                </h3>
-
-                <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                  Join thousands of professionals who've transformed their
-                  careers with our expert guidance and support.
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary mb-6">
+                  Looking for
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-accent">
+                    {' '}
+                    Top Talent?
+                  </span>
+                </h2>
+                <p className="text-lg text-gray-600 mt-6 max-w-3xl mx-auto leading-relaxed">
+                  Transform your hiring process with our AI-powered recruitment
+                  platform. Find exceptional candidates who will drive your
+                  business forward.
                 </p>
-
-                <button
-                  onClick={() => setShowResumeModal(true)}
-                  className="px-8 py-3 bg-gradient-to-r from-secondary to-accent text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                >
-                  <i className="fas fa-paper-plane mr-2"></i>
-                  Start Your Journey
-                </button>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Services for Employers */}
+              {/* Services Grid - Modern Design */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {[
+                  {
+                    icon: 'fa-search',
+                    title: 'Talent Sourcing',
+                    description:
+                      'Proactive candidate sourcing across multiple channels to find the perfect match.',
+                    features: [
+                      'Database Search',
+                      'Social Media Recruiting',
+                      'Referral Programs',
+                    ],
+                    gradient: 'from-secondary to-accent',
+                    bgGradient: 'from-secondary/10 to-accent/10',
+                  },
+                  {
+                    icon: 'fa-user-tie',
+                    title: 'Executive Search',
+                    description:
+                      'Specialized executive recruitment for senior-level positions with confidentiality.',
+                    features: [
+                      'C-Level Recruitment',
+                      'Board Level Placements',
+                      'Confidential Search',
+                    ],
+                    gradient: 'from-primary to-secondary',
+                    bgGradient: 'from-primary/10 to-secondary/10',
+                  },
+                  {
+                    icon: 'fa-chart-line',
+                    title: 'Market Intelligence',
+                    description:
+                      'Comprehensive market analysis and salary benchmarking to inform your strategy.',
+                    features: [
+                      'Salary Reports',
+                      'Market Trends',
+                      'Competitive Analysis',
+                    ],
+                    gradient: 'from-accent to-primary',
+                    bgGradient: 'from-accent/10 to-primary/10',
+                  },
+                ].map((service, index) => (
+                  <div
+                    key={index}
+                    className={`group relative bg-gradient-to-br ${service.bgGradient} rounded-2xl p-8 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-white/50 backdrop-blur-sm`}
+                  >
+                    {/* Background decoration */}
+                    <div
+                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${service.gradient} opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`}
+                    ></div>
 
-        <section className="py-20 sm:py-24 bg-gradient-to-br from-accent/5 to-primary/10 relative overflow-hidden">
-          {/* Background Elements */}
-
-          <div className="absolute inset-0 z-0">
-            <div className="absolute top-10 right-10 w-64 h-64 bg-accent/10 rounded-full blur-3xl"></div>
-
-            <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
-          </div>
-
-          <div className="container relative z-10 px-4">
-            {/* Section Header */}
-
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary">
-                Looking for Top Talent?
-              </h2>
-
-              <p className="text-lg sm:text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
-                Find exceptional candidates who will drive your business forward
-                with our expert recruitment solutions
-              </p>
-
-              <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-6"></div>
-            </div>
-
-            {/* Services Grid */}
-
-            <div className="space-y-8">
-              {employerServices.map((service, index) => (
-                <div key={index} className="group relative">
-                  {/* Card Background */}
-
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-secondary/5 rounded-2xl transform group-hover:scale-105 transition-all duration-300"></div>
-
-                  <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-4 sm:p-6 lg:p-8 border border-gray-100">
-                    <div className="flex flex-col md:flex-row gap-4 sm:gap-6 lg:gap-8">
-                      {/* Left Side - Image */}
-
-                      <div className="md:w-2/5">
-                        <div className="relative overflow-hidden rounded-xl">
-                          <img
-                            src={service.image}
-                            alt={service.title}
-                            className="w-full h-48 sm:h-56 md:h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              e.target.onerror = null
-
-                              e.target.src = '/placeholder-service.jpg'
-                            }}
-                          />
-
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        </div>
-                      </div>
-
-                      {/* Right Side - Content */}
-
-                      <div className="md:w-3/5 flex flex-col justify-center">
-                        {/* Service Header */}
-
-                        <div className="flex items-center mb-4 sm:mb-6">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-accent/20 to-secondary/20 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 group-hover:scale-110 transition-transform">
-                            <i
-                              className={`fas ${service.icon} text-accent text-lg sm:text-xl`}
-                            ></i>
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
-                              {service.title}
-                            </h3>
-
-                            <div className="flex items-center mt-1">
-                              <span className="text-accent text-xs sm:text-sm font-medium">
-                                Expert Hiring Solutions
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Service Description */}
-
-                        <p className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
-                          {service.description}
-                        </p>
-
-                        {/* Service Features */}
-
-                        <div className="space-y-2 mb-4 sm:mb-6">
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-accent mr-2"></i>
-
-                            <span>End-to-end solutions</span>
-                          </div>
-
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-accent mr-2"></i>
-
-                            <span>Expert recruiters</span>
-                          </div>
-
-                          <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                            <i className="fas fa-check-circle text-accent mr-2"></i>
-
-                            <span>Quality assurance</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom CTA */}
-
-            <div className="text-center mt-12">
-              <div className="bg-gradient-to-r from-accent/10 to-secondary/10 rounded-2xl p-8 border border-accent/20">
-                <h3 className="text-2xl font-bold text-primary mb-4">
-                  Ready to Find Your Next Star Player?
-                </h3>
-
-                <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                  Partner with us to access top talent and streamline your
-                  hiring process with our proven recruitment strategies.
-                </p>
-
-                <button
-                  onClick={handlePostJobClick}
-                  className="px-8 py-3 bg-gradient-to-r from-accent to-secondary text-primary font-bold rounded-full hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                >
-                  <i className="fas fa-briefcase mr-2"></i>
-                  Post a Job Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Post Job Modal */}
-
-        {showPostJobModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-              {/* Background overlay */}
-
-              <div
-                className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-                onClick={() => setShowPostJobModal(false)}
-              ></div>
-
-              {/* Modal panel */}
-
-              <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
-                {/* Modal Header */}
-
-                <div className="bg-primary text-white px-6 py-4 border-b">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="bg-secondary/20 rounded-full p-2 mr-3">
-                        <i className="fas fa-briefcase text-secondary"></i>
-                      </div>
-
-                      <h2 className="text-xl font-bold">Post a New Job</h2>
-                    </div>
-
-                    <button
-                      onClick={() => setShowPostJobModal(false)}
-                      className="text-white/80 hover:text-white transition-colors"
+                    {/* Icon */}
+                    <div
+                      className={`relative w-16 h-16 bg-gradient-to-br ${service.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
                     >
-                      <i className="fas fa-times text-xl"></i>
-                    </button>
+                      <i
+                        className={`fas ${service.icon} text-white text-xl`}
+                      ></i>
+                    </div>
+
+                    {/* Content */}
+                    <h3 className="text-2xl font-bold text-primary mb-4 group-hover:text-accent transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                      {service.description}
+                    </p>
+
+                    {/* Features */}
+                    <div className="space-y-3">
+                      {service.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div
+                            className={`w-5 h-5 bg-gradient-to-br ${service.gradient} rounded-full flex items-center justify-center flex-shrink-0`}
+                          >
+                            <i className="fas fa-check text-white text-xs"></i>
+                          </div>
+                          <span className="text-gray-700 text-sm font-medium">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Hover effect */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity pointer-events-none`}
+                    ></div>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="px-6 py-6">
-                  {/* Success message */}
-
-                  {postJobSuccess && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-                      <div className="flex">
-                        <i className="fas fa-check-circle text-green-400 mr-3"></i>
-
-                        <div>
-                          <h3 className="text-sm font-medium text-green-800">
-                            Job Posted Successfully!
-                          </h3>
-
-                          <p className="text-sm text-green-700 mt-1">
-                            Your job has been posted and is now live.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Error message */}
-
-                  {postJobErrors.submit && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                      <div className="flex">
-                        <i className="fas fa-exclamation-circle text-red-400 mr-3"></i>
-
-                        <div>
-                          <h3 className="text-sm font-medium text-red-800">
-                            Error
-                          </h3>
-
-                          <p className="text-sm text-red-700 mt-1">
-                            {postJobErrors.submit}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Post Job Form */}
-
-                  <form onSubmit={handlePostJobSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Job Title */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Job Title *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="title"
-                          value={postJobData.title}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.title
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="e.g. Senior Software Developer"
-                        />
-
-                        {postJobErrors.title && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.title}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Company */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Company Name *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="company"
-                          value={postJobData.company}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.company
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="e.g. Tech Corp"
-                        />
-
-                        {postJobErrors.company && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.company}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Location */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Location *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="location"
-                          value={postJobData.location}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.location
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="e.g. New York, NY"
-                        />
-
-                        {postJobErrors.location && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.location}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Job Type */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Job Type *
-                        </label>
-
-                        <select
-                          name="type"
-                          value={postJobData.type}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.type
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">Select Job Type</option>
-
-                          {jobTypes.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-
-                        {postJobErrors.type && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.type}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Category */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Category *
-                        </label>
-
-                        <select
-                          name="category"
-                          value={postJobData.category}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.category
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">Select Category</option>
-
-                          {categories.map((category) => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
-
-                        {postJobErrors.category && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.category}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Experience Level */}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Experience Level *
-                        </label>
-
-                        <select
-                          name="experience"
-                          value={postJobData.experience}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors.experience
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">Select Experience Level</option>
-
-                          {experienceLevels.map((level) => (
-                            <option key={level} value={level}>
-                              {level}
-                            </option>
-                          ))}
-                        </select>
-
-                        {postJobErrors.experience && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors.experience}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Job Description *
-                      </label>
-
-                      <textarea
-                        name="description"
-                        value={postJobData.description}
-                        onChange={handlePostJobChange}
-                        rows={4}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-vertical ${
-                          postJobErrors.description
-                            ? 'border-red-300'
-                            : 'border-gray-300'
-                        }`}
-                        placeholder="Describe the role, responsibilities, and what you're looking for..."
-                      />
-
-                      {postJobErrors.description && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {postJobErrors.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Requirements */}
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Requirements *
-                      </label>
-
-                      <textarea
-                        name="requirements"
-                        value={postJobData.requirements}
-                        onChange={handlePostJobChange}
-                        rows={3}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-vertical ${
-                          postJobErrors.requirements
-                            ? 'border-red-300'
-                            : 'border-gray-300'
-                        }`}
-                        placeholder="List the required skills, qualifications, and experience..."
-                      />
-
-                      {postJobErrors.requirements && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {postJobErrors.requirements}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Salary */}
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Min Salary
-                        </label>
-
-                        <input
-                          type="number"
-                          name="salary.min"
-                          value={postJobData.salary.min}
-                          onChange={handlePostJobChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                          placeholder="50000"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Max Salary
-                        </label>
-
-                        <input
-                          type="number"
-                          name="salary.max"
-                          value={postJobData.salary.max}
-                          onChange={handlePostJobChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                            postJobErrors['salary.max']
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="80000"
-                        />
-
-                        {postJobErrors['salary.max'] && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {postJobErrors['salary.max']}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Currency
-                        </label>
-
-                        <select
-                          name="salary.currency"
-                          value={postJobData.salary.currency}
-                          onChange={handlePostJobChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                        >
-                          {currencies.map((currency) => (
-                            <option key={currency} value={currency}>
-                              {currency}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Application Deadline */}
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Application Deadline
-                      </label>
-
-                      <input
-                        type="date"
-                        name="applicationDeadline"
-                        value={postJobData.applicationDeadline}
-                        onChange={handlePostJobChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                          postJobErrors.applicationDeadline
-                            ? 'border-red-300'
-                            : 'border-gray-300'
-                        }`}
-                      />
-
-                      {postJobErrors.applicationDeadline && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {postJobErrors.applicationDeadline}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Featured Job */}
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="featured"
-                        id="featured"
-                        checked={postJobData.featured}
-                        onChange={handlePostJobChange}
-                        className="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent"
-                      />
-
-                      <label
-                        htmlFor="featured"
-                        className="ml-2 text-sm text-gray-700"
-                      >
-                        Feature this job (highlighted listing)
-                      </label>
-                    </div>
-
-                    {/* Submit Button */}
-
-                    <div className="flex justify-end space-x-4 pt-6 border-t">
-                      <button
-                        type="button"
-                        onClick={() => setShowPostJobModal(false)}
-                        className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        type="submit"
-                        disabled={isPostJobLoading}
-                        className="px-6 py-2 bg-gradient-to-r from-secondary to-accent text-primary font-bold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isPostJobLoading ? (
-                          <span className="flex items-center">
-                            <i className="fas fa-spinner fa-spin mr-2"></i>
-                            Posting...
-                          </span>
-                        ) : (
-                          <span className="flex items-center">
-                            <i className="fas fa-paper-plane mr-2"></i>
-                            Post Job
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+              {/* CTA Section */}
+              <div className="mt-16 text-center">
+                <button
+                  onClick={() => {
+                    setShowPostJobModal(true)
+                  }}
+                  className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-secondary to-accent text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                >
+                  <span>Start Hiring Today</span>
+                  <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                  <div className="absolute inset-0 bg-gradient-to-r from-secondary to-accent rounded-2xl blur-xl opacity-50 group-hover:opacity-70 -z-10"></div>
+                </button>
+                <p className="text-gray-500 mt-4 text-sm">
+                  No upfront costs • Pay only when you hire • 30-day guarantee
+                </p>
               </div>
             </div>
-          </div>
-        )}
+          </section>
 
-        <Contact />
-      </main>
+          {/* Available Jobs Section */}
+          <section className="py-20 sm:py-24 bg-gradient-to-br from-gray-50 to-white">
+            <div className="container px-4">
+              {/* Section Header */}
+              <div className="text-center mb-20">
+                <div className="inline-flex items-center gap-2 bg-secondary/10 rounded-full px-4 py-2 mb-6">
+                  <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
+                  <span className="text-secondary font-semibold text-sm">
+                    CAREER OPPORTUNITIES
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary mb-6">
+                  Latest
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-accent">
+                    {' '}
+                    Opportunities
+                  </span>
+                </h2>
+                <p className="text-xl text-gray-600 mt-6 max-w-3xl mx-auto leading-relaxed">
+                  Discover exciting career opportunities with leading companies
+                  that match your skills and aspirations.
+                </p>
+              </div>
+
+              {/* Jobs Grid - Modern Design */}
+              {availableJobs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {availableJobs.map((job, index) => (
+                    <div
+                      key={job.id || index}
+                      className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100 overflow-hidden"
+                    >
+                      {/* Header with gradient accent */}
+                      <div className="h-2 bg-gradient-to-r from-secondary to-accent"></div>
+
+                      <div className="p-8">
+                        {/* Company and Type */}
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-secondary/20 to-accent/20 rounded-xl flex items-center justify-center">
+                              <i className="fas fa-building text-accent"></i>
+                            </div>
+                            <div>
+                              <p className="font-bold text-primary text-lg">
+                                {job.company}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {job.type}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="bg-accent/10 rounded-full px-3 py-1">
+                            <span className="text-accent text-xs font-semibold">
+                              NEW
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Job Title */}
+                        <h3 className="text-2xl font-bold text-primary mb-4 group-hover:text-accent transition-colors">
+                          {job.title}
+                        </h3>
+
+                        {/* Job Details */}
+                        <div className="space-y-4 mb-6">
+                          <div className="flex items-center gap-3 text-gray-600">
+                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <i className="fas fa-map-marker-alt text-accent text-sm"></i>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {job.location}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-600">
+                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <i className="fas fa-money-bill text-accent text-sm"></i>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {job.salary}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-600">
+                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <i className="fas fa-clock text-accent text-sm"></i>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {job.experience || 'Entry Level'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Apply Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedJob(job)
+                            setShowApplyJobModal(true)
+                          }}
+                          className="w-full group/btn bg-gradient-to-r from-secondary to-accent text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+                        >
+                          <span>Apply Now</span>
+                          <i className="fas fa-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
+                        </button>
+                      </div>
+
+                      {/* Hover effect overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
+                  </div>
+                  <h3 className="text-2xl font-bold text-primary mb-4">
+                    No positions available
+                  </h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    Check back soon for exciting career opportunities with
+                    leading companies.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowApplyJobModal(true)
+                    }}
+                    className="bg-gradient-to-r from-secondary to-accent text-white px-8 py-3 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300"
+                  >
+                    Submit Your Resume
+                  </button>
+                </div>
+              )}
+
+              {/* View All Jobs CTA */}
+              {availableJobs.length > 0 && (
+                <div className="text-center mt-16">
+                  <button
+                    onClick={() => {
+                      navigate('/dashboard')
+                    }}
+                    className="group inline-flex items-center gap-3 text-primary font-semibold text-lg hover:text-accent transition-colors"
+                  >
+                    <span>View All Opportunities</span>
+                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                  </button>
+                  <p className="text-gray-500 mt-2 text-sm">
+                    {availableJobs.length}+ positions available across multiple
+                    industries
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <Contact />
+        </main>
+      )}
 
       {/* Resume Upload Modal */}
-
       {showResumeModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {/* Background overlay */}
-
             <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
               onClick={() => setShowResumeModal(false)}
             ></div>
 
             {/* Modal panel */}
-
             <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
               {/* Modal Header */}
-
               <div className="bg-primary text-white px-6 py-4 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="bg-secondary/20 rounded-full p-2 mr-3">
                       <i className="fas fa-file-upload text-secondary"></i>
                     </div>
-
                     <h2 className="text-xl font-bold">Upload Your Resume</h2>
                   </div>
-
                   <button
                     onClick={() => setShowResumeModal(false)}
                     className="text-white/80 hover:text-white transition-colors"
@@ -1462,374 +419,43 @@ const Home = () => {
               </div>
 
               {/* Modal Body */}
-
               <div className="max-h-[80vh] overflow-y-auto">
-                <form onSubmit={handleSubmit} className="p-6">
-                  {successMessage && (
-                    <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <i className="fas fa-check-circle text-green-400"></i>
-                        </div>
-
-                        <div className="ml-3">
-                          <p className="text-sm text-green-700">
-                            {successMessage}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {errors.submit && (
-                    <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <i className="fas fa-exclamation-circle text-red-400"></i>
-                        </div>
-
-                        <div className="ml-3">
-                          <p className="text-sm text-red-700">
-                            {errors.submit}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Personal Information */}
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-primary mb-4">
-                      Personal Information
+                <div className="p-6">
+                  <div className="text-center py-12">
+                    <i className="fas fa-cloud-upload-alt text-6xl text-accent mb-4"></i>
+                    <h3 className="text-xl font-semibold text-primary mb-2">
+                      Upload Your Resume
                     </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Full Name *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="fullName"
-                          value={formData.fullName}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.fullName
-                              ? 'border-red-500'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="John Doe"
-                          disabled={isSubmitting}
-                        />
-
-                        {errors.fullName && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.fullName}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email *
-                        </label>
-
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.email ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          placeholder="john@example.com"
-                          disabled={isSubmitting}
-                        />
-
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.email}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone *
-                        </label>
-
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.phone ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          placeholder="+1 (555) 123-4567"
-                          disabled={isSubmitting}
-                        />
-
-                        {errors.phone && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.phone}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Location *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="location"
-                          value={formData.location}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.location
-                              ? 'border-red-500'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="New York, NY"
-                          disabled={isSubmitting}
-                        />
-
-                        {errors.location && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.location}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Professional Information */}
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-primary mb-4">
-                      Professional Information
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Job Title *
-                        </label>
-
-                        <input
-                          type="text"
-                          name="jobTitle"
-                          value={formData.jobTitle}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.jobTitle
-                              ? 'border-red-500'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="Software Engineer"
-                          disabled={isSubmitting}
-                        />
-
-                        {errors.jobTitle && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.jobTitle}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Experience Level
-                        </label>
-
-                        <select
-                          name="experience"
-                          value={formData.experience}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                          disabled={isSubmitting}
-                        >
-                          <option value="Entry Level">Entry Level</option>
-
-                          <option value="Mid Level">Mid Level</option>
-
-                          <option value="Senior Level">Senior Level</option>
-
-                          <option value="Manager">Manager</option>
-
-                          <option value="Director">Director</option>
-
-                          <option value="Executive">Executive</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Apply for Position *
-                        </label>
-
-                        <select
-                          name="job"
-                          value={formData.job}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                            errors.job ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          disabled={isSubmitting}
-                        >
-                          <option value="">Select a job position</option>
-
-                          {availableJobs.map((job) => (
-                            <option key={job._id} value={job._id}>
-                              {job.title} at {job.company} - {job.location}
-                            </option>
-                          ))}
-                        </select>
-
-                        {errors.job && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.job}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Skills *
-                      </label>
-
-                      <textarea
-                        name="skills"
-                        value={formData.skills}
-                        onChange={handleChange}
-                        rows={2}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent ${
-                          errors.skills ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="JavaScript, React, Node.js, Python, etc."
-                        disabled={isSubmitting}
-                      />
-
-                      {errors.skills && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {errors.skills}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Resume Upload */}
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-primary mb-4">
-                      Resume Upload
-                    </h3>
-
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-accent transition-colors">
-                      <div className="mb-4">
-                        <i className="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
-                      </div>
-
-                      <div className="mb-4">
-                        <label className="cursor-pointer">
-                          <span className="text-accent font-medium">
-                            Click to upload
-                          </span>
-
-                          <span className="text-gray-600">
-                            {' '}
-                            or drag and drop
-                          </span>
-
-                          <input
-                            type="file"
-                            name="resume"
-                            onChange={handleChange}
-                            accept=".pdf,.doc,.docx"
-                            className="hidden"
-                            disabled={isSubmitting}
-                          />
-                        </label>
-                      </div>
-
-                      <p className="text-sm text-gray-500">
-                        PDF, DOC, or DOCX (MAX. 5MB)
-                      </p>
-
-                      {formData.resume && (
-                        <div className="mt-4 text-sm text-green-600">
-                          <i className="fas fa-check-circle mr-2"></i>
-
-                          {formData.resume.name}
-                        </div>
-                      )}
-
-                      {errors.resume && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {errors.resume}
-                        </p>
-                      )}
-                    </div>
-
-                    {uploadProgress > 0 && (
-                      <div className="mt-4">
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
-                          <span>Uploading...</span>
-
-                          <span>{uploadProgress}%</span>
-                        </div>
-
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-accent h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submit Button */}
-
-                  <div className="flex justify-end space-x-3 pt-4 border-t">
+                    <p className="text-gray-600 mb-6">
+                      Join our talent pool and let top recruiters find you
+                    </p>
                     <button
-                      type="button"
                       onClick={() => setShowResumeModal(false)}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      disabled={isSubmitting}
+                      className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
                     >
-                      Cancel
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-secondary hover:bg-secondary/90 text-primary font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <i className="fas fa-spinner fa-spin mr-2"></i>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-paper-plane mr-2"></i>
-                          Submit Resume
-                        </>
-                      )}
+                      Close
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Dashboard Job Post Modal */}
+      <DashboardJobPostModal
+        isOpen={showPostJobModal}
+        onClose={() => setShowPostJobModal(false)}
+        onSuccess={handlePostJobSuccess}
+      />
+
+      {/* Dashboard Job Apply Modal */}
+      <DashboardJobApplyModal
+        isOpen={showApplyJobModal}
+        onClose={() => setShowApplyJobModal(false)}
+        onSuccess={handleApplyJobSuccess}
+      />
     </div>
   )
 }

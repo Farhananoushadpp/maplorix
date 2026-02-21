@@ -16,11 +16,15 @@ import {
 
 import { motion, AnimatePresence } from 'framer-motion'
 
+import React, { useEffect } from 'react'
+
 // Context
 
 import { AuthProvider } from './context/AuthContext'
 
 import { ApplicationProvider } from './context/ApplicationContext'
+
+import { DataProvider } from './context/DataContext'
 
 // Components
 
@@ -191,18 +195,97 @@ const AnimatedRoutes = () => {
  */
 
 const App = () => {
+  // Global error handler for unhandled promise rejections (especially reCAPTCHA)
+  useEffect(() => {
+    const handleUnhandledRejection = (event) => {
+      // Prevent reCAPTCHA timeout errors from crashing the app
+      if (
+        event.reason &&
+        event.reason.message &&
+        event.reason.message.includes('timeout')
+      ) {
+        console.warn('reCAPTCHA timeout handled:', event.reason)
+        event.preventDefault()
+        return
+      }
+      // Log other unhandled rejections
+      console.error('Unhandled promise rejection:', event.reason)
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
+  // Global event listener for application events
+  useEffect(() => {
+    const handleApplicationPosted = (event) => {
+      console.log(
+        '🌐 Global App received applicationPosted event:',
+        event.detail
+      )
+
+      // Store in dashboardApplications sessionStorage for Dashboard to pick up when it mounts
+      const newApplication = event.detail.application
+      if (newApplication) {
+        const existingApps = JSON.parse(
+          sessionStorage.getItem('dashboardApplications') || '[]'
+        )
+        existingApps.unshift(newApplication) // Add to beginning
+        sessionStorage.setItem(
+          'dashboardApplications',
+          JSON.stringify(existingApps)
+        )
+        console.log(
+          '🌐 Stored application in dashboardApplications sessionStorage'
+        )
+      }
+    }
+
+    const handleJobPosted = (event) => {
+      console.log('🌐 Global App received jobPosted event:', event.detail)
+
+      // Store in dashboard_jobs sessionStorage for Dashboard to pick up when it mounts
+      const newJob = event.detail.job
+      if (newJob) {
+        const existingJobs = JSON.parse(
+          sessionStorage.getItem('dashboard_jobs') || '[]'
+        )
+        existingJobs.unshift(newJob) // Add to beginning
+        sessionStorage.setItem('dashboard_jobs', JSON.stringify(existingJobs))
+        console.log(
+          '🌐 Global App: Stored job in dashboard_jobs sessionStorage'
+        )
+      }
+    }
+
+    // Add global event listeners
+    window.addEventListener('applicationPosted', handleApplicationPosted)
+    window.addEventListener('jobPosted', handleJobPosted)
+
+    // Clean up on unmount
+    return () => {
+      window.removeEventListener('applicationPosted', handleApplicationPosted)
+      window.removeEventListener('jobPosted', handleJobPosted)
+    }
+  }, [])
+
   return (
     <AuthProvider>
       <ApplicationProvider>
-        <Router>
-          <Header />
+        <DataProvider>
+          <Router>
+            <Header />
 
-          <AnimatedRoutes />
+            <AnimatedRoutes />
 
-          <Footer />
+            <Footer />
 
-          <ScrollToTop />
-        </Router>
+            <ScrollToTop />
+          </Router>
+        </DataProvider>
       </ApplicationProvider>
     </AuthProvider>
   )

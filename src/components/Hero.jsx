@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jobsAPI } from '../services/api'
 
-const Hero = ({ onPostJob }) => {
+const Hero = ({ onPostJob, onFindJob }) => {
   const navigate = useNavigate()
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [featuredJobs, setFeaturedJobs] = useState([])
@@ -10,7 +10,7 @@ const Hero = ({ onPostJob }) => {
   const [loading, setLoading] = useState(true)
   const videoRef = useRef(null)
 
-  const videos = ['/job1.mp4', '/job2.mp4', '/job3.mp4']
+  const videos = ['/job1.webm', '/job2.webm', '/job3.webm']
 
   const handleHireTalentClick = () => {
     console.log('Hero handleHireTalentClick called')
@@ -29,7 +29,16 @@ const Hero = ({ onPostJob }) => {
   }
 
   const handleFindJobClick = () => {
-    navigate('/apply')
+    console.log('Hero handleFindJobClick called')
+    console.log('onFindJob function:', onFindJob)
+
+    if (onFindJob) {
+      console.log('Calling onFindJob function')
+      onFindJob()
+    } else {
+      console.log('No onFindJob function, navigating to apply page')
+      navigate('/apply')
+    }
   }
 
   useEffect(() => {

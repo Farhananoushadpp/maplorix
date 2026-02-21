@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { jobsAPI } from '../services/api'
 
 const JobPost = () => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
   const [formData, setFormData] = useState({
     // Job Details (matching backend API field names)
     title: '',
@@ -213,6 +218,11 @@ const JobPost = () => {
       newErrors.salaryMax = 'Maximum salary must be greater than minimum salary'
     }
 
+    // Currency validation - must be AED
+    if (formData.currency !== 'AED') {
+      newErrors.currency = 'Currency must be AED'
+    }
+
     return newErrors
   }
 
@@ -261,34 +271,17 @@ const JobPost = () => {
       const jobData = {
         // Required fields
         title: formData.title,
-        company: formData.company,
         location: formData.location,
-        type: formData.type,
-        category:
-          formData.category === 'Other'
-            ? formData.customCategory
-            : formData.category,
-        experience: formData.experience,
-        description: formData.description,
-        requirements: formData.requirements,
+        postedBy: user?.role === 'admin' ? 'admin' : 'user', // Determine if user or admin
 
-        // Optional fields - flatten salary object
-        salaryMin: formData.salaryMin
-          ? parseFloat(formData.salaryMin)
-          : undefined,
-        salaryMax: formData.salaryMax
-          ? parseFloat(formData.salaryMax)
-          : undefined,
-        currency: formData.currency,
-        applicationDeadline: formData.applicationDeadline
-          ? new Date(formData.applicationDeadline)
-          : undefined,
-        featured: formData.featured,
-        active: true,
-        postedDate: new Date(),
+        // Optional fields
+        company: formData.company || 'Maplorix',
+        type: formData.type || 'Full-time',
+        description: formData.description || '',
       }
 
       console.log('Submitting job data:', jobData)
+      console.log('Currency in payload:', jobData.currency) // Verify currency is AED
 
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -309,19 +302,66 @@ const JobPost = () => {
       clearInterval(progressInterval)
       setUploadProgress(100)
 
-      setSubmitMessage(
-        '🎉 Thank you for posting your job! Your listing has been successfully submitted and will be reviewed shortly. Qualified candidates will be able to apply soon.'
-      )
+      setSubmitMessage('🎉 Job posted successfully')
 
-      // Emit custom event to refresh dashboard
-      window.dispatchEvent(
-        new CustomEvent('jobPosted', {
+      // Dispatch jobPosted event for real-time Dashboard update
+      console.log('Checking response structure:', response)
+      console.log('response.data:', response.data)
+      console.log('response itself:', response)
+
+      // Check multiple possible response structures for the job
+      let responseJobData = null
+
+      if (response.data?.job) {
+        responseJobData = response.data.job
+        console.log('📋 Found job in response.data.job')
+      } else if (response.data) {
+        responseJobData = response.data.job || response.data
+        console.log('📋 Found job in response.data')
+      } else if (response.job) {
+        responseJobData = response.job
+        console.log('📋 Found job in response.job')
+      } else if (response._id || response.title) {
+        responseJobData = response
+        console.log('📋 Response itself is the job')
+      }
+
+      if (responseJobData) {
+        const jobEvent = new CustomEvent('jobPosted', {
           detail: {
-            success: true,
-            job: response.data?.job || jobData,
+            job: responseJobData,
+            timestamp: new Date().toISOString(),
           },
         })
-      )
+        window.dispatchEvent(jobEvent)
+        console.log('📋 Dispatched jobPosted event:', responseJobData)
+      } else {
+        console.log('❌ No job found in response, skipping event dispatch')
+        console.log(
+          '❌ Full response structure:',
+          JSON.stringify(response, null, 2)
+        )
+      }
+
+      // Store in sessionStorage for persistence
+      if (response.data?.job) {
+        const recentJobs = JSON.parse(
+          sessionStorage.getItem('recentJobs') || '[]'
+        )
+        recentJobs.unshift({
+          ...response.data.job,
+          postedAt: new Date().toISOString(),
+        })
+        // Keep only last 5 jobs
+        const limitedJobs = recentJobs.slice(0, 5)
+        sessionStorage.setItem('recentJobs', JSON.stringify(limitedJobs))
+      }
+
+      // Auto-scroll to top for success message visibility
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      })
 
       // Reset form
       setFormData({
@@ -359,6 +399,12 @@ const JobPost = () => {
         featured: false,
         urgent: false,
       })
+
+      // Redirect to dashboard after successful submission
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 2000)
+
       setErrors({})
       setUploadProgress(0)
 
@@ -852,7 +898,7 @@ const JobPost = () => {
                             ? 'border-red-500'
                             : 'border-border-color'
                         }`}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || true} // Always disabled to maintain AED default
                       >
                         {currencyOptions.map((option) => (
                           <option key={option.value} value={option.value}>

@@ -9,28 +9,34 @@ const AllApplicationsEnhanced = () => {
     current: 1,
     pageSize: 10,
     total: 0,
-    pages: 0
+    pages: 0,
   })
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    jobRole: '',           // Job Role / Title filter
-    candidateName: '',      // Candidate Name filter
-    minExp: '',            // Experience minimum
-    maxExp: '',            // Experience maximum
-    minSalary: '',          // Salary minimum
-    maxSalary: '',          // Salary maximum
-    applicationId: '',      // Application ID filter
-    dateFrom: '',           // Date range from
-    dateTo: '',             // Date range to
-    search: '',             // Text search
-    sortBy: 'createdAt',     // Sort field
-    sortOrder: 'desc'        // Sort order
+  // Filter states - match Dashboard structure
+  const [filters, setFilters] = useState(() => {
+    // Restore filters from Dashboard if available
+    const savedFilters = sessionStorage.getItem('applicationFilters')
+    return savedFilters
+      ? JSON.parse(savedFilters)
+      : {
+          role: '', // Job Role search
+          experience: '', // Experience level
+          salary: '', // Min salary
+          sortBy: 'createdAt', // Sort field
+          sortOrder: 'desc', // Sort order
+        }
   })
 
   const experienceLevels = [
-    'fresher', '1-3', '3-5', '5+', '10+',
-    'Entry Level', 'Mid Level', 'Senior Level', 'Executive'
+    'fresher',
+    '1-3',
+    '3-5',
+    '5+',
+    '10+',
+    'Entry Level',
+    'Mid Level',
+    'Senior Level',
+    'Executive',
   ]
 
   const sortOptions = [
@@ -38,38 +44,40 @@ const AllApplicationsEnhanced = () => {
     { value: 'jobRole', label: 'Job Role' },
     { value: 'candidateName', label: 'Candidate Name' },
     { value: 'experience', label: 'Experience' },
-    { value: 'expectedSalary', label: 'Expected Salary' }
+    { value: 'expectedSalary', label: 'Expected Salary' },
   ]
 
   // Fetch applications with filters
   const fetchApplications = async (page = 1) => {
     setLoading(true)
     try {
-      // Build query parameters
-      const params = new URLSearchParams()
-      
-      // Add pagination
-      params.append('page', page)
-      params.append('limit', 10)
-      
-      // Add filters
-      if (filters.jobRole) params.append('jobRole', filters.jobRole)
-      if (filters.candidateName) params.append('candidateName', filters.candidateName)
-      if (filters.minExp) params.append('minExp', filters.minExp)
-      if (filters.maxExp) params.append('maxExp', filters.maxExp)
-      if (filters.minSalary) params.append('minSalary', filters.minSalary)
-      if (filters.maxSalary) params.append('maxSalary', filters.maxSalary)
-      if (filters.applicationId) params.append('applicationId', filters.applicationId)
-      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
-      if (filters.dateTo) params.append('dateTo', filters.dateTo)
-      if (filters.search) params.append('search', filters.search)
-      if (filters.sortBy) params.append('sortBy', filters.sortBy)
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
+      // Build query parameters using simplified filters
+      const params = {
+        page,
+        limit: pagination.pageSize,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+      }
 
-      const response = await applicationsAPI.getAllApplications(params.toString())
-      
-      setApplications(response.data.data.applications)
-      setPagination(response.data.data.pagination)
+      // Add role filter if specified
+      if (filters.role) {
+        params.search = filters.role
+      }
+
+      // Add experience filter if specified
+      if (filters.experience) {
+        params.experience = filters.experience
+      }
+
+      // Add salary filter if specified
+      if (filters.salary) {
+        params.minSalary = parseInt(filters.salary)
+      }
+
+      const response = await applicationsAPI.getAllApplications(params)
+
+      setApplications(response.data?.data?.applications || [])
+      setPagination(response.data?.data?.pagination || {})
     } catch (error) {
       console.error('Error fetching applications:', error)
     } finally {
@@ -79,9 +87,9 @@ const AllApplicationsEnhanced = () => {
 
   // Handle filter changes
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -104,7 +112,7 @@ const AllApplicationsEnhanced = () => {
       dateTo: '',
       search: '',
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     })
     fetchApplications(1)
   }
@@ -147,16 +155,21 @@ const AllApplicationsEnhanced = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">All Applications</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            All Applications
+          </h1>
           <p className="text-gray-600">
-            Manage and filter all job applications with advanced filtering options.
+            Manage and filter all job applications with advanced filtering
+            options.
           </p>
         </div>
 
         {/* Filters Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Advanced Filters</h2>
-          
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Advanced Filters
+          </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Job Role / Title Filter */}
             <div>
@@ -180,7 +193,9 @@ const AllApplicationsEnhanced = () => {
               <input
                 type="text"
                 value={filters.candidateName}
-                onChange={(e) => handleFilterChange('candidateName', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange('candidateName', e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., John Doe, Jane Smith"
               />
@@ -198,8 +213,10 @@ const AllApplicationsEnhanced = () => {
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Min Experience</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
+                  {experienceLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -208,8 +225,10 @@ const AllApplicationsEnhanced = () => {
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Max Experience</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
+                  {experienceLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -224,14 +243,18 @@ const AllApplicationsEnhanced = () => {
                 <input
                   type="text"
                   value={filters.minSalary}
-                  onChange={(e) => handleFilterChange('minSalary', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('minSalary', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Min Salary"
                 />
                 <input
                   type="text"
                   value={filters.maxSalary}
-                  onChange={(e) => handleFilterChange('maxSalary', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('maxSalary', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Max Salary"
                 />
@@ -246,7 +269,9 @@ const AllApplicationsEnhanced = () => {
               <input
                 type="text"
                 value={filters.applicationId}
-                onChange={(e) => handleFilterChange('applicationId', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange('applicationId', e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Application ID"
               />
@@ -261,7 +286,9 @@ const AllApplicationsEnhanced = () => {
                 <input
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('dateFrom', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
@@ -298,13 +325,17 @@ const AllApplicationsEnhanced = () => {
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
                 <select
                   value={filters.sortOrder}
-                  onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('sortOrder', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="desc">Newest First</option>
@@ -341,7 +372,9 @@ const AllApplicationsEnhanced = () => {
           ) : applications.length === 0 ? (
             <div className="p-8 text-center">
               <i className="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
-              <p className="text-gray-500">No applications found matching your criteria.</p>
+              <p className="text-gray-500">
+                No applications found matching your criteria.
+              </p>
               <p className="text-sm text-gray-400 mt-2">
                 Try adjusting your filters or search terms.
               </p>
@@ -384,10 +417,13 @@ const AllApplicationsEnhanced = () => {
                   {applications.map((application) => (
                     <tr key={application._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {application._id ? application._id.substring(0, 8) + '...' : 'N/A'}
+                        {application._id
+                          ? application._id.substring(0, 8) + '...'
+                          : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {application.fullName || `${application.firstName || ''} ${application.lastName || ''}`}
+                        {application.fullName ||
+                          `${application.firstName || ''} ${application.lastName || ''}`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {application.email}
@@ -405,36 +441,44 @@ const AllApplicationsEnhanced = () => {
                         {new Date(application.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          application.status === 'submitted' 
-                            ? 'bg-green-100 text-green-800'
-                            : application.status === 'under-review'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : application.status === 'shortlisted'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            application.status === 'submitted'
+                              ? 'bg-green-100 text-green-800'
+                              : application.status === 'under-review'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : application.status === 'shortlisted'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
                           {application.status || 'Unknown'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => handleViewApplication(application._id)}
+                            onClick={() =>
+                              handleViewApplication(application._id)
+                            }
                             className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                             title="View Details"
                           >
                             <i className="fas fa-eye"></i>
                           </button>
                           <button
-                            onClick={() => handleEditApplication(application._id)}
+                            onClick={() =>
+                              handleEditApplication(application._id)
+                            }
                             className="text-green-600 hover:text-green-900 text-sm font-medium"
                             title="Edit Application"
                           >
                             <i className="fas fa-edit"></i>
                           </button>
                           <button
-                            onClick={() => handleDeleteApplication(application._id)}
+                            onClick={() =>
+                              handleDeleteApplication(application._id)
+                            }
                             className="text-red-600 hover:text-red-900 text-sm font-medium"
                             title="Delete Application"
                           >
@@ -461,22 +505,24 @@ const AllApplicationsEnhanced = () => {
               >
                 Previous
               </button>
-              
+
               {/* Page Numbers */}
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                    page === pagination.current
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      page === pagination.current
+                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
               <button
                 onClick={() => handlePageChange(pagination.current + 1)}
                 disabled={pagination.current === pagination.pages}

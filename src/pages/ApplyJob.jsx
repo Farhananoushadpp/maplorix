@@ -1,14 +1,19 @@
-// Job Application Page Component
+// Job Application Page Component - Handles applications from Home Banner and Feed Apply Now
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { applicationsAPI } from '../services/api'
 
 const ApplyJob = () => {
   const navigate = useNavigate()
+  const location = useLocation()
 
   // Google reCAPTCHA site key - replace with your actual site key
   const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // Test key, replace with production key
+
+  // Check for job context from navigation state (Feed Apply Now)
+  const jobContext = location.state || {}
+  console.log('📋 ApplyJob: Received job context:', jobContext)
 
   const [formData, setFormData] = useState({
     // Essential Personal Information
@@ -20,16 +25,28 @@ const ApplyJob = () => {
     location: '',
 
     // Essential Professional Information
-    jobRole: '',
+    jobRole: jobContext.jobTitle || '', // Pre-fill from Feed context
     experience: '',
-    expectedSalary: '',
+    skills: '', // Backend expects string, not array
+    currentCompany: '',
+    currentDesignation: '',
+    expectedSalary: {
+      min: '',
+      max: '',
+      currency: 'USD',
+    },
+    noticePeriod: '30 days',
 
     // Optional but useful
     resume: null,
     linkedinProfile: '',
     portfolio: '',
-    source: 'website',
+    source: jobContext.source || 'website', // Track source: 'adminFeed' or 'website'
     captchaToken: '', // For Google reCAPTCHA
+
+    // Additional context from Feed
+    jobCompany: jobContext.company || '',
+    jobDescription: jobContext.jobDescription || '',
   })
 
   const [errors, setErrors] = useState({})
@@ -119,8 +136,8 @@ const ApplyJob = () => {
       newErrors.experience = 'Experience level is required'
     }
 
-    // CAPTCHA validation
-    if (!formData.captchaToken) {
+    // CAPTCHA validation - optional during development
+    if (process.env.NODE_ENV === 'production' && !formData.captchaToken) {
       newErrors.captcha = 'Please complete the CAPTCHA verification'
     }
 
@@ -142,6 +159,26 @@ const ApplyJob = () => {
     }
   }
 
+  const handleCaptchaError = () => {
+    console.warn('reCAPTCHA error occurred')
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA verification failed. Please try again.',
+    }))
+  }
+
+  const handleCaptchaExpired = () => {
+    console.warn('reCAPTCHA expired')
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: '',
+    }))
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA expired. Please verify again.',
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -152,45 +189,115 @@ const ApplyJob = () => {
     setIsSubmitting(true)
 
     try {
-      // Create FormData for file upload
-      const submitData = new FormData()
+      let response
 
-      // Add all form fields with correct backend field names
-      Object.keys(formData).forEach((key) => {
-        if (key === 'resume' && formData[key]) {
-          submitData.append('resume', formData[key])
-        } else if (key === 'captchaToken') {
-          // Always send captchaToken (required for validation)
-          submitData.append(key, formData[key] || '')
-        } else if (formData[key] !== null && formData[key] !== '') {
-          submitData.append(key, formData[key])
+      // Only use FormData if there's a resume file
+      if (formData.resume) {
+        console.log(
+          'Resume file detected:',
+          formData.resume.name,
+          'Type:',
+          formData.resume.type,
+          'Size:',
+          formData.resume.size
+        )
+
+        // Create FormData for file upload
+        const submitData = new FormData()
+
+        // Add all form fields with correct backend field names
+        submitData.append('fullName', formData.fullName)
+        submitData.append('email', formData.email)
+        submitData.append('phone', formData.phone)
+        submitData.append('location', formData.location)
+        submitData.append('jobRole', formData.jobRole)
+        submitData.append('experience', formData.experience)
+        submitData.append('skills', formData.skills)
+        submitData.append('currentCompany', formData.currentCompany)
+        submitData.append('currentDesignation', formData.currentDesignation)
+
+        // Handle expectedSalary as JSON string
+        if (formData.expectedSalary) {
+          submitData.append(
+            'expectedSalary',
+            JSON.stringify(formData.expectedSalary)
+          )
         }
-      })
 
-      // Submit application
-      const response = await applicationsAPI.createApplication(submitData)
+        submitData.append('noticePeriod', formData.noticePeriod)
+        submitData.append(
+          'captchaToken',
+          formData.captchaToken || 'development-bypass'
+        )
+        submitData.append('resume', formData.resume)
+
+        console.log('Submitting application with resume file')
+        response = await applicationsAPI.createApplication(submitData)
+      } else {
+        // Send as JSON without file upload
+        const applicationData = {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+          jobRole: formData.jobRole,
+          experience: formData.experience,
+          skills: formData.skills,
+          currentCompany: formData.currentCompany,
+          currentDesignation: formData.currentDesignation,
+          expectedSalary: formData.expectedSalary,
+          noticePeriod: formData.noticePeriod,
+          captchaToken: formData.captchaToken || 'development-bypass',
+        }
+
+        console.log(
+          'Submitting application without resume file:',
+          applicationData
+        )
+        response = await applicationsAPI.createApplication(applicationData)
+      }
 
       console.log('Application submitted successfully:', response)
 
-      // Dispatch event to notify Dashboard
+      // Dispatch event to notify Dashboard IMMEDIATELY (before any timeout/navigation)
       const applicationData = {
         _id: response.data?.application?._id || Date.now().toString(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        fullName: `${formData.firstName} ${formData.lastName}`,
+        fullName: formData.fullName,
         email: formData.email,
-        jobRole: formData.jobRole,
-        status: 'submitted',
-        createdAt: new Date().toISOString(),
         phone: formData.phone,
         location: formData.location,
+        jobRole: formData.jobRole,
         experience: formData.experience,
+        skills: formData.skills,
+        currentCompany: formData.currentCompany,
+        currentDesignation: formData.currentDesignation,
+        expectedSalary: formData.expectedSalary,
+        noticePeriod: formData.noticePeriod,
+        status: 'submitted', // Use valid enum value
+        createdAt: new Date().toISOString(),
       }
 
+      console.log('🚀 Dispatching applicationPosted event:', applicationData)
       window.dispatchEvent(
-        new CustomEvent('applicationSubmitted', {
+        new CustomEvent('applicationPosted', {
           detail: { application: applicationData },
         })
+      )
+
+      // Store in dashboardApplications sessionStorage for persistence - completely isolated
+      const dashboardApplications = JSON.parse(
+        sessionStorage.getItem('dashboardApplications') || '[]'
+      )
+      dashboardApplications.unshift({
+        ...applicationData,
+        submittedAt: new Date().toISOString(),
+      })
+      sessionStorage.setItem(
+        'dashboardApplications',
+        JSON.stringify(dashboardApplications)
+      )
+      console.log(
+        '📋 ApplyJob: Stored application in dashboardApplications sessionStorage'
       )
 
       setSubmitSuccess(true)
@@ -209,7 +316,15 @@ const ApplyJob = () => {
           // Essential Professional Information
           jobRole: '',
           experience: '',
-          expectedSalary: '',
+          skills: '',
+          currentCompany: '',
+          currentDesignation: '',
+          expectedSalary: {
+            min: '',
+            max: '',
+            currency: 'USD',
+          },
+          noticePeriod: '30 days',
 
           // Optional but useful
           resume: null,
@@ -217,6 +332,10 @@ const ApplyJob = () => {
           portfolio: '',
           source: 'website',
           captchaToken: '',
+
+          // Additional context fields
+          jobCompany: '',
+          jobDescription: '',
         })
         // Reset reCAPTCHA
         if (window.grecaptcha) {
@@ -534,6 +653,11 @@ const ApplyJob = () => {
                 <ReCAPTCHA
                   sitekey={RECAPTCHA_SITE_KEY}
                   onChange={handleCaptchaChange}
+                  onErrored={handleCaptchaError}
+                  onExpired={handleCaptchaExpired}
+                  asyncScriptOnLoad={() => {
+                    console.log('reCAPTCHA script loaded')
+                  }}
                 />
                 {errors.captcha && (
                   <p className="mt-2 text-sm text-red-600 text-center">

@@ -9,59 +9,77 @@ const AllJobs = () => {
     current: 1,
     pageSize: 10,
     total: 0,
-    pages: 0
+    pages: 0,
   })
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    role: '',           // Job Role / Title
-    minExp: '',        // Experience minimum
-    maxExp: '',        // Experience maximum
-    minSalary: '',      // Salary minimum
-    maxSalary: '',      // Salary maximum
-    location: '',       // Job location
-    jobId: '',         // Job ID
-    dateFrom: '',       // Date range from
-    dateTo: '',         // Date range to
-    search: '',        // Text search
-    sortBy: 'createdAt', // Sort field
-    sortOrder: 'desc'    // Sort order
+  // Filter states - match Dashboard structure
+  const [filters, setFilters] = useState(() => {
+    // Restore filters from Dashboard if available
+    const savedFilters = sessionStorage.getItem('jobFilters')
+    const parsed = savedFilters ? JSON.parse(savedFilters) : {}
+    return {
+      role: parsed.role || '',
+      experience: parsed.experience || '',
+      salary: parsed.salary || '',
+      salaryRange: parsed.salaryRange || '',
+      sortBy: parsed.sortBy || 'createdAt',
+      sortOrder: parsed.sortOrder || 'desc',
+    }
   })
 
   const experienceLevels = [
-    'fresher', '1-3', '3-5', '5+', '10+',
-    'Entry Level', 'Mid Level', 'Senior Level', 'Executive'
+    'fresher',
+    '1-3',
+    '3-5',
+    '5+',
+    '10+',
+    'Entry Level',
+    'Mid Level',
+    'Senior Level',
+    'Executive',
   ]
 
   // Fetch jobs with filters
   const fetchJobs = async (page = 1) => {
     setLoading(true)
     try {
-      // Build query parameters
-      const params = new URLSearchParams()
-      
-      // Add pagination
-      params.append('page', page)
-      params.append('limit', 10)
-      
-      // Add filters
-      if (filters.role) params.append('role', filters.role)
-      if (filters.minExp) params.append('minExp', filters.minExp)
-      if (filters.maxExp) params.append('maxExp', filters.maxExp)
-      if (filters.minSalary) params.append('minSalary', filters.minSalary)
-      if (filters.maxSalary) params.append('maxSalary', filters.maxSalary)
-      if (filters.location) params.append('location', filters.location)
-      if (filters.jobId) params.append('jobId', filters.jobId)
-      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
-      if (filters.dateTo) params.append('dateTo', filters.dateTo)
-      if (filters.search) params.append('search', filters.search)
-      if (filters.sortBy) params.append('sortBy', filters.sortBy)
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
+      // Build query parameters using simplified filters
+      const params = {
+        page,
+        limit: pagination.pageSize,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+      }
 
-      const response = await jobsAPI.getAllJobs(params.toString())
-      
-      setJobs(response.data.data.jobs)
-      setPagination(response.data.data.pagination)
+      // Add role filter if specified
+      if (filters.role) {
+        params.search = filters.role
+      }
+
+      // Add experience filter if specified
+      if (filters.experience) {
+        params.experience = filters.experience
+      }
+
+      // Add salary filter if specified
+      if (filters.salary) {
+        params.minSalary = parseInt(filters.salary)
+      }
+
+      // Add salary range filter if specified
+      if (filters.salaryRange) {
+        const [min, max] = filters.salaryRange.split('-').map(Number)
+        params.salaryMin = min
+        params.salaryMax = max
+      }
+
+      const response = await jobsAPI.getAllJobs(params)
+
+      console.log('🔍 API Response:', response)
+      console.log('🔍 Response data:', response.data)
+
+      setJobs(response.data?.data?.jobs || [])
+      setPagination(response.data?.data?.pagination || {})
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
@@ -71,9 +89,9 @@ const AllJobs = () => {
 
   // Handle filter changes
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
@@ -84,20 +102,16 @@ const AllJobs = () => {
 
   // Clear filters
   const clearFilters = () => {
-    setFilters({
+    const cleared = {
       role: '',
-      minExp: '',
-      maxExp: '',
-      minSalary: '',
-      maxSalary: '',
-      location: '',
-      jobId: '',
-      dateFrom: '',
-      dateTo: '',
-      search: '',
+      experience: '',
+      salary: '',
+      salaryRange: '',
       sortBy: 'createdAt',
-      sortOrder: 'desc'
-    })
+      sortOrder: 'desc',
+    }
+    setFilters(cleared)
+    sessionStorage.removeItem('jobFilters')
     fetchJobs(1)
   }
 
@@ -117,15 +131,13 @@ const AllJobs = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">All Jobs</h1>
-          <p className="text-gray-600">
-            Manage and filter all posted jobs
-          </p>
+          <p className="text-gray-600">Manage and filter all posted jobs</p>
         </div>
 
         {/* Filters Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Filters</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Job Role / Title Filter */}
             <div>
@@ -153,8 +165,10 @@ const AllJobs = () => {
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Min Experience</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
+                  {experienceLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -163,8 +177,10 @@ const AllJobs = () => {
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Max Experience</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
+                  {experienceLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -179,14 +195,18 @@ const AllJobs = () => {
                 <input
                   type="text"
                   value={filters.minSalary}
-                  onChange={(e) => handleFilterChange('minSalary', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('minSalary', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Min Salary"
                 />
                 <input
                   type="text"
                   value={filters.maxSalary}
-                  onChange={(e) => handleFilterChange('maxSalary', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('maxSalary', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Max Salary"
                 />
@@ -230,7 +250,9 @@ const AllJobs = () => {
                 <input
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('dateFrom', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
@@ -274,7 +296,9 @@ const AllJobs = () => {
                 </select>
                 <select
                   value={filters.sortOrder}
-                  onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange('sortOrder', e.target.value)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="desc">Newest First</option>
@@ -310,7 +334,9 @@ const AllJobs = () => {
             </div>
           ) : jobs.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500">No jobs found matching your criteria.</p>
+              <p className="text-gray-500">
+                No jobs found matching your criteria.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -359,11 +385,13 @@ const AllJobs = () => {
                         {new Date(job.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          job.isActive 
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            job.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
                           {job.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -400,22 +428,24 @@ const AllJobs = () => {
               >
                 Previous
               </button>
-              
+
               {/* Page Numbers */}
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                    page === pagination.current
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      page === pagination.current
+                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
               <button
                 onClick={() => handlePageChange(pagination.current + 1)}
                 disabled={pagination.current === pagination.pages}

@@ -1,11 +1,21 @@
-// Admin Posts Page - LinkedIn-style job posting interface
+// Admin Posts Page - Backend Integration with API
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { jobsAPI } from '../services/api'
+import { useData } from '../context/DataContext'
 import { useNavigate } from 'react-router-dom'
 
 const AdminPosts = () => {
   const { user } = useAuth()
+  const {
+    jobs,
+    loading,
+    error,
+    fetchJobs,
+    createJob,
+    updateJob,
+    deleteJob,
+    clearError,
+  } = useData()
   const navigate = useNavigate()
 
   // Check if user is admin
@@ -16,552 +26,695 @@ const AdminPosts = () => {
     }
   }, [user, navigate])
 
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingPost, setEditingPost] = useState(null)
+  const [errors, setErrors] = useState({})
+  const [postsToShow, setPostsToShow] = useState(5)
+  const [successMessage, setSuccessMessage] = useState('')
 
-  // Form state for creating/editing posts
+  // Form state for creating/editing job vacancies
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
-    type: 'job', // job, update, announcement
-    visibility: 'public', // public, private
-    tags: [],
-    featured: false,
-    attachments: [], // Changed from single file to array for multiple images
-    images: [], // Separate field for images
+    location: '',
+    experience: '',
+    salary: '',
+    requirements: '',
+    description: '',
+    postedDate: new Date().toISOString().split('T')[0],
   })
 
-  // Fetch existing posts
+  // Fetch existing posts from backend
   useEffect(() => {
     fetchPosts()
   }, [])
 
   const fetchPosts = async () => {
     try {
-      setLoading(true)
-      const response = await jobsAPI.getAllJobs({ limit: 20 })
-      setPosts(response.data.jobs || [])
+      const response = await fetchJobs()
+      console.log('📋 AdminPosts: Fetched jobs from backend:', response)
+      // The posts will be updated by the useEffect below when jobs state changes
     } catch (error) {
       console.error('Error fetching posts:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
-  const handleCreatePost = () => {
-    setEditingPost(null)
-    setFormData({
-      title: '',
-      content: '',
-      type: 'job',
-      visibility: 'public',
-      tags: [],
-      featured: false,
-      attachments: [],
-      images: [],
-    })
-    setShowCreateModal(true)
+  // Remove local posts state - use jobs directly from context
+
+  // Validate form fields
+  const validateForm = () => {
+    const newErrors = {}
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Job Title is required'
+    }
+    if (!formData.location.trim()) {
+      newErrors.location = 'Location is required'
+    }
+    if (!formData.experience.trim()) {
+      newErrors.experience = 'Experience level is required'
+    }
+    if (!formData.salary.trim()) {
+      newErrors.salary = 'Salary is required'
+    }
+    if (!formData.requirements.trim()) {
+      newErrors.requirements = 'Requirements are required'
+    }
+    if (!formData.description.trim()) {
+      newErrors.description = 'Job Description is required'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
+  // Handle form input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }))
+    }
+  }
+
+  // Create new job vacancy
+  const handleCreatePost = async (e) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      const jobData = {
+        title: formData.title,
+        location: formData.location,
+        experience: formData.experience,
+        salary: formData.salary,
+        requirements: formData.requirements,
+        description: formData.description,
+        postedDate: formData.postedDate,
+        type: 'Full-time', // Default job type
+        postedBy: 'admin', // Since this is admin posts page
+      }
+
+      await createJob(jobData)
+
+      setSuccessMessage('Job vacancy created successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+
+      // Reset form
+      resetForm()
+      setShowCreateModal(false)
+
+      console.log('✅ AdminPosts: Job vacancy created successfully')
+    } catch (error) {
+      console.error('❌ Error creating job vacancy:', error)
+      setSuccessMessage('Failed to create job vacancy')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
+  }
+
+  // Update existing job vacancy
+  const handleUpdatePost = async (e) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      const jobData = {
+        title: formData.title,
+        location: formData.location,
+        experience: formData.experience,
+        salary: formData.salary,
+        requirements: formData.requirements,
+        description: formData.description,
+        postedDate: formData.postedDate,
+      }
+
+      await updateJob(editingPost._id, jobData)
+
+      setSuccessMessage('Job vacancy updated successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+
+      // Reset form
+      resetForm()
+      setEditingPost(null)
+      setShowCreateModal(false)
+
+      console.log('✅ AdminPosts: Job vacancy updated successfully')
+    } catch (error) {
+      console.error('❌ Error updating job vacancy:', error)
+      setSuccessMessage('Failed to update job vacancy')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
+  }
+
+  // Delete job vacancy
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this job vacancy?')) {
+      return
+    }
+
+    try {
+      await deleteJob(postId)
+
+      setSuccessMessage('Job vacancy deleted successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+
+      console.log('✅ AdminPosts: Job vacancy deleted successfully')
+    } catch (error) {
+      console.error('❌ Error deleting job vacancy:', error)
+      setSuccessMessage('Failed to delete job vacancy')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
+  }
+
+  // Open edit modal
   const handleEditPost = (post) => {
     setEditingPost(post)
     setFormData({
-      title: post.title || '',
-      content: post.description || '',
-      type: 'job',
-      visibility: 'public',
-      tags: post.skills ? post.skills.split(',').map((s) => s.trim()) : [],
-      featured: post.featured || false,
-      attachments: [],
-      images: post.images || [],
+      title: post.title || post.jobTitle || '',
+      location: post.location || 'Remote', // Default value for existing posts
+      experience: post.experience || '',
+      salary: post.salary || '',
+      requirements: post.requirements || '',
+      description: post.description || post.jobDescription || '',
+      postedDate: post.postedDate || new Date().toISOString().split('T')[0],
     })
     setShowCreateModal(true)
+    setErrors({})
   }
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files)
-    const newImages = []
-
-    files.forEach((file) => {
-      // Validate file type (images only)
-      if (file.type.startsWith('image/')) {
-        // Validate file size (5MB max)
-        if (file.size <= 5 * 1024 * 1024) {
-          const reader = new FileReader()
-          reader.onload = (event) => {
-            newImages.push({
-              file: file,
-              preview: event.target.result,
-              id: Date.now() + Math.random(),
-            })
-            if (newImages.length === files.length) {
-              setFormData((prev) => ({
-                ...prev,
-                images: [...prev.images, ...newImages],
-              }))
-            }
-          }
-          reader.readAsDataURL(file)
-        } else {
-          alert('Image size must be less than 5MB')
-        }
-      } else {
-        alert('Only image files are allowed (JPG, PNG, GIF, WebP)')
-      }
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      location: '',
+      experience: '',
+      salary: '',
+      requirements: '',
+      description: '',
+      postedDate: new Date().toISOString().split('T')[0],
     })
+    setErrors({})
   }
 
-  const removeImage = (imageId) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((img) => img.id !== imageId),
-    }))
+  // Close modal
+  const handleCloseModal = () => {
+    setShowCreateModal(false)
+    setEditingPost(null)
+    resetForm()
   }
 
-  const handleSubmitPost = async (e) => {
-    e.preventDefault()
-    try {
-      const postData = {
-        ...formData,
-        company: user.company || 'Maplorix',
-        location: 'Remote',
-        jobType: 'Full-time',
-        category: 'Technology',
-        experienceLevel: 'Mid Level',
-        workLocationType: 'Remote',
-        salaryMin: '',
-        salaryMax: '',
-        salaryType: 'Annual',
-        currency: 'AED',
-        description: formData.content,
-        requirements: '',
-        responsibilities: '',
-        benefits: '',
-        skills: formData.tags.join(', '),
-        applicationDeadline: '',
-        applicationMethod: 'Email',
-        applicationEmail: user.email,
-        applicationUrl: '',
-        tags: formData.tags.join(', '),
-        featured: formData.featured,
-        urgent: false,
-      }
-
-      if (editingPost) {
-        await jobsAPI.updateJob(editingPost._id, postData)
-      } else {
-        await jobsAPI.createJob(postData)
-      }
-
-      setShowCreateModal(false)
-      fetchPosts() // Refresh posts list
-    } catch (error) {
-      console.error('Error saving post:', error)
-    }
-  }
-
-  const handleDeletePost = async (postId) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      try {
-        await jobsAPI.deleteJob(postId)
-        fetchPosts()
-      } catch (error) {
-        console.error('Error deleting post:', error)
-      }
-    }
-  }
-
-  const handleToggleFeatured = async (post) => {
-    try {
-      await jobsAPI.updateJob(post._id, { ...post, featured: !post.featured })
-      fetchPosts()
-    } catch (error) {
-      console.error('Error toggling featured:', error)
-    }
-  }
-
-  if (!user || user.role !== 'admin') {
+  if (loading?.jobs) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <i className="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600">
-            You don't have permission to access this page.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-accent mb-4"></i>
-          <p className="text-gray-600">Loading posts...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin posts...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Posts</h1>
-              <p className="text-gray-600 mt-1">
-                Create and manage job posts like LinkedIn
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          <div className="flex items-center">
+            <i className="fas fa-check-circle mr-2"></i>
+            {successMessage}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          <div className="flex items-center">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            {error}
             <button
-              onClick={handleCreatePost}
-              className="bg-accent text-white px-6 py-3 rounded-lg hover:bg-accent/90 transition-colors flex items-center"
+              onClick={clearError}
+              className="ml-4 text-white hover:text-gray-200"
             >
-              <i className="fas fa-plus mr-2"></i>
-              Create Post
+              <i className="fas fa-times"></i>
             </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* feed */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <i className="fas fa-briefcase text-6xl text-gray-300 mb-4"></i>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No posts yet
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Create your first job post to get started
-            </p>
-            <button
-              onClick={handleCreatePost}
-              className="bg-accent text-white px-6 py-3 rounded-lg hover:bg-accent/90 transition-colors"
-            >
-              Create First Post
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {posts.map((post) => (
-              <div
-                key={post._id}
-                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-primary">Admin Posts</h1>
+              <span className="text-sm text-gray-500">
+                Manage job vacancies
+              </span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-4 py-2 bg-white text-primary rounded-lg hover:bg-gray-100 transition-all duration-300 font-semibold"
               >
-                {/* Post Header */}
-                <div className="p-6 border-b">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                        <i className="fas fa-briefcase text-white"></i>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {post.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {post.company} •{' '}
-                          {new Date(post.createdAt).toLocaleDateString()}
+                <i className="fas fa-arrow-left mr-2"></i>
+                Back to Dashboard
+              </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all duration-300 font-semibold"
+              >
+                <i className="fas fa-plus mr-2"></i>
+                Create Job Vacancy
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="card bg-white p-6 border-l-4 border-accent">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Total Vacancies
+                </p>
+                <p className="text-3xl font-bold text-primary mt-2">
+                  {jobs.length}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Posted positions</p>
+              </div>
+              <div className="w-12 h-12 bg-accent bg-opacity-10 rounded-lg flex items-center justify-center">
+                <i className="fas fa-briefcase text-accent text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-white p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Active
+                </p>
+                <p className="text-3xl font-bold text-primary mt-2">
+                  {jobs.length}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Currently active</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-check-circle text-green-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-white p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Recent
+                </p>
+                <p className="text-3xl font-bold text-primary mt-2">
+                  {
+                    jobs.filter((post) => {
+                      const postDate = new Date(post.createdAt)
+                      const weekAgo = new Date()
+                      weekAgo.setDate(weekAgo.getDate() - 7)
+                      return postDate >= weekAgo
+                    }).length
+                  }
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-clock text-purple-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Job Vacancy Button */}
+        <div className="mb-8">
+          <div className="text-center">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-8 py-4 bg-accent text-white text-lg font-semibold rounded-lg hover:bg-accent/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <i className="fas fa-plus-circle mr-3 text-xl"></i>
+              Create New Job Vacancy
+            </button>
+            <p className="text-sm text-gray-500 mt-3">
+              Post a new job vacancy to the Feed page
+            </p>
+          </div>
+        </div>
+
+        {/* Job Vacancies Table */}
+        <div className="card bg-white shadow-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-accent bg-opacity-10 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-briefcase text-accent"></i>
+                </div>
+                <h3 className="text-lg font-semibold text-primary">
+                  Job Vacancies
+                </h3>
+              </div>
+              <div className="text-sm text-gray-500">
+                {jobs.length} vacancies
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Job Title
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Experience
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Salary
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Posted Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {jobs.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      <div className="flex flex-col items-center">
+                        <i className="fas fa-briefcase text-4xl text-gray-300 mb-4"></i>
+                        <p className="text-lg font-medium">
+                          No job vacancies posted yet
                         </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {post.featured && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          <i className="fas fa-star mr-1"></i>
-                          Featured
-                        </span>
-                      )}
-                      <div className="relative">
-                        <button className="text-gray-400 hover:text-gray-600 p-1">
-                          <i className="fas fa-ellipsis-h"></i>
+                        <p className="text-sm text-gray-400 mt-2">
+                          Create your first job vacancy to get started
+                        </p>
+                        <button
+                          onClick={() => setShowCreateModal(true)}
+                          className="mt-6 px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all duration-300 font-semibold"
+                        >
+                          <i className="fas fa-plus mr-2"></i>
+                          Create Job Vacancy
                         </button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Post Content */}
-                <div className="p-6">
-                  {/* Images */}
-                  {post.images && post.images.length > 0 && (
-                    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {post.images.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image.preview || image.url}
-                            alt={`Post image ${index + 1}`}
-                            className="w-full h-48 sm:h-56 object-cover rounded-lg border border-gray-200 group-hover:shadow-md transition-shadow"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg flex items-center justify-center">
-                            <i className="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </td>
+                  </tr>
+                ) : (
+                  jobs.slice(0, postsToShow).map((post) => (
+                    <tr key={post._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {post.imageUrl && (
+                            <div className="flex-shrink-0 h-10 w-10 mr-3">
+                              <img
+                                className="h-10 w-10 rounded-full object-cover"
+                                src={post.imageUrl}
+                                alt=""
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {post.title || post.jobTitle}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {post._id}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {post.experience}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {post.salary}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(post.postedDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleEditPost(post)}
+                          className="text-accent hover:text-accent-dark mr-3"
+                        >
+                          <i className="fas fa-edit mr-1"></i>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeletePost(post._id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <i className="fas fa-trash mr-1"></i>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                  <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                      {post.description}
-                    </p>
-                  </div>
-
-                  {post.skills && (
-                    <div className="mt-4">
-                      <div className="flex flex-wrap gap-2">
-                        {post.skills.split(',').map((skill, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent bg-opacity-20 text-accent"
-                          >
-                            {skill.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {post.location && (
-                    <div className="mt-4 flex items-center text-sm text-gray-600">
-                      <i className="fas fa-map-marker-alt mr-2"></i>
-                      {post.location}
-                    </div>
-                  )}
-
-                  {post.jobType && (
-                    <div className="mt-2 flex items-center text-sm text-gray-600">
-                      <i className="fas fa-clock mr-2"></i>
-                      {post.jobType}
-                    </div>
-                  )}
-                </div>
-
-                {/* Post Actions */}
-                <div className="px-6 py-4 bg-gray-50 border-t rounded-b-lg">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                      <button className="text-gray-600 hover:text-accent transition-colors">
-                        <i className="far fa-heart mr-1"></i>
-                        Like
-                      </button>
-                      <button className="text-gray-600 hover:text-accent transition-colors">
-                        <i className="far fa-comment mr-1"></i>
-                        Comment
-                      </button>
-                      <button className="text-gray-600 hover:text-accent transition-colors">
-                        <i className="far fa-share mr-1"></i>
-                        Share
-                      </button>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleToggleFeatured(post)}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                          post.featured
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        <i className={`fas fa-star mr-1`}></i>
-                        {post.featured ? 'Featured' : 'Feature'}
-                      </button>
-                      <button
-                        onClick={() => handleEditPost(post)}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded hover:bg-blue-200 transition-colors"
-                      >
-                        <i className="fas fa-edit mr-1"></i>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeletePost(post._id)}
-                        className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded hover:bg-red-200 transition-colors"
-                      >
-                        <i className="fas fa-trash mr-1"></i>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* See More / Show Less Button */}
+        {jobs.length > 5 && (
+          <div className="text-center mt-6">
+            <button
+              onClick={() =>
+                setPostsToShow(postsToShow === 5 ? jobs.length : 5)
+              }
+              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              {postsToShow === 5 ? (
+                <>
+                  <i className="fas fa-chevron-down mr-2"></i>
+                  See More ({jobs.length - 5} more)
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-chevron-up mr-2"></i>
+                  Show Less
+                </>
+              )}
+            </button>
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Create/Edit Post Modal */}
+      {/* Create/Edit Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black opacity-50"
-              onClick={() => setShowCreateModal(false)}
-            ></div>
-            <div className="relative bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-lg">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {editingPost ? 'Edit Post' : 'Create New Post'}
-                  </h2>
-                  <button
-                    onClick={() => setShowCreateModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <i className="fas fa-times text-xl"></i>
-                  </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {editingPost ? 'Edit Job Vacancy' : 'Create Job Vacancy'}
+                </h2>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <form
+              onSubmit={editingPost ? handleUpdatePost : handleCreatePost}
+              className="p-6"
+            >
+              <div className="space-y-6">
+                {/* Job Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title || ''}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                      errors.title ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g. Senior Frontend Developer"
+                  />
+                  {errors.title && (
+                    <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location || ''}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                      errors.location ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g. New York, NY"
+                  />
+                  {errors.location && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.location}
+                    </p>
+                  )}
+                </div>
+
+                {/* Experience and Salary */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Experience <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="experience"
+                      value={formData.experience || ''}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                        errors.experience ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select experience</option>
+                      <option value="Entry Level">Entry Level</option>
+                      <option value="Mid Level">Mid Level</option>
+                      <option value="Senior Level">Senior Level</option>
+                      <option value="Executive">Executive</option>
+                    </select>
+                    {errors.experience && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.experience}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Salary <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="salary"
+                      value={formData.salary || ''}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                        errors.salary ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g. 80,000 - 120,000 AED"
+                    />
+                    {errors.salary && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.salary}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Posted Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Posted Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="postedDate"
+                    value={formData.postedDate || ''}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                      errors.postedDate ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                </div>
+
+                {/* Requirements */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Requirements <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="requirements"
+                    value={formData.requirements || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                      errors.requirements ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="List the key requirements for this position..."
+                  />
+                  {errors.requirements && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.requirements}
+                    </p>
+                  )}
+                </div>
+
+                {/* Job Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
+                      errors.description ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Provide a detailed description of the role and responsibilities..."
+                  />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.description}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <form onSubmit={handleSubmitPost} className="p-6">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Post Title *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) =>
-                        setFormData({ ...formData, title: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-                      placeholder="e.g., Senior React Developer Needed"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Content *
-                    </label>
-                    <textarea
-                      value={formData.content}
-                      onChange={(e) =>
-                        setFormData({ ...formData, content: e.target.value })
-                      }
-                      rows={8}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent resize-vertical"
-                      placeholder="Describe the job role, requirements, and what you're looking for..."
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Images
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                      <label
-                        htmlFor="image-upload"
-                        className="cursor-pointer flex flex-col items-center justify-center w-full py-8 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <i className="fas fa-cloud-upload-alt text-3xl mb-2"></i>
-                        <span className="text-sm font-medium">
-                          Click to upload images
-                        </span>
-                        <span className="text-xs text-gray-500 mt-1">
-                          JPG, PNG, GIF, WebP (Max 5MB each)
-                        </span>
-                      </label>
-
-                      {/* Image Previews */}
-                      {formData.images.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {formData.images.map((image) => (
-                            <div key={image.id} className="relative group">
-                              <img
-                                src={image.preview}
-                                alt="Preview"
-                                className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeImage(image.id)}
-                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <i className="fas fa-times text-xs"></i>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tags (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.tags.join(', ')}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          tags: e.target.value
-                            .split(',')
-                            .map((tag) => tag.trim())
-                            .filter((tag) => tag),
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-                      placeholder="React, Node.js, MongoDB, JavaScript"
-                    />
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      checked={formData.featured}
-                      onChange={(e) =>
-                        setFormData({ ...formData, featured: e.target.checked })
-                      }
-                      className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
-                    />
-                    <label
-                      htmlFor="featured"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Feature this post
-                    </label>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
-                  >
-                    {editingPost ? 'Update Post' : 'Create Post'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="mt-8 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
+                >
+                  {editingPost ? 'Update Vacancy' : 'Create Vacancy'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

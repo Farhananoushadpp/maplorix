@@ -2,17 +2,54 @@
 
 import axios from 'axios'
 
-// Create axios instance with base configuration
+// Try to connect to available backend ports (prioritize 4001)
+const API_PORTS = [4001, 4000, 4002, 4003]
 
+// Create axios instance with default configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
-
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4001/api',
   timeout: 10000,
-
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+// Function to update baseURL if needed
+const updateApiBaseUrl = async () => {
+  if (import.meta.env.VITE_API_URL) {
+    return
+  }
+
+  // Try each port to see which one is available
+  for (const port of API_PORTS) {
+    try {
+      const response = await fetch(`http://localhost:${port}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1000),
+      })
+      if (response.ok) {
+        console.log(`Connected to backend on port ${port}`)
+        api.defaults.baseURL = `http://localhost:${port}/api`
+        return
+      }
+    } catch (error) {
+      // Port not available, try next
+    }
+  }
+}
+
+// Try to update the base URL on initialization
+console.log('🔧 API Service: Initializing port detection...')
+updateApiBaseUrl()
+  .then(() => {
+    console.log(
+      '🔧 API Service: Initialization complete, baseURL:',
+      api.defaults.baseURL
+    )
+  })
+  .catch((error) => {
+    console.error('🔧 API Service: Initialization failed:', error)
+  })
 
 // Request interceptor to add auth token
 
@@ -32,14 +69,43 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle errors
+// Response interceptor to handle errors and retry with different ports
 
 api.interceptors.response.use(
   (response) => {
     return response
   },
 
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+
+    // If it's a network error or connection refused, try other ports
+    if (!error.response && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      // Try other ports
+      const currentPort = api.defaults.baseURL.match(/:(\d+)\//)?.[1]
+      const otherPorts = API_PORTS.filter((p) => p !== currentPort)
+
+      for (const port of otherPorts) {
+        try {
+          const testResponse = await fetch(`http://localhost:${port}/health`, {
+            signal: AbortSignal.timeout(1000),
+          })
+          if (testResponse.ok) {
+            console.log(`Switching to backend on port ${port}`)
+            api.defaults.baseURL = `http://localhost:${port}/api`
+            originalRequest.baseURL = `http://localhost:${port}/api`
+            // Remove the /api prefix if it's already in the URL
+            originalRequest.url = originalRequest.url.replace(/^\/api/, '')
+            return api(originalRequest)
+          }
+        } catch (e) {
+          // Port not available, try next
+        }
+      }
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken')
       localStorage.removeItem('user')
@@ -92,43 +158,67 @@ export const authAPI = {
 export const jobsAPI = {
   getAllJobs: async (params = {}) => {
     const response = await api.get('/jobs', { params })
-
     return response.data
   },
 
   getJobById: async (id) => {
     const response = await api.get(`/jobs/${id}`)
-
     return response.data
   },
 
   getFeaturedJobs: async (params = {}) => {
     const response = await api.get('/jobs/featured', { params })
+    return response.data
+  },
 
+  getRecentJobs: async (params = {}) => {
+    const response = await api.get('/jobs/recent', { params })
     return response.data
   },
 
   createJob: async (jobData) => {
     const response = await api.post('/jobs', jobData)
-
     return response.data
   },
 
   updateJob: async (id, jobData) => {
     const response = await api.put(`/jobs/${id}`, jobData)
-
     return response.data
   },
 
   deleteJob: async (id) => {
     const response = await api.delete(`/jobs/${id}`)
-
     return response.data
   },
 
   getJobStats: async () => {
     const response = await api.get('/jobs/stats')
+    return response.data
+  },
 
+  // Enhanced methods for dashboard integration
+  getJobsForDashboard: async (filters = {}) => {
+    const response = await api.get('/jobs', {
+      params: {
+        ...filters,
+        limit: 50,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    })
+    return response.data
+  },
+
+  getJobsForFeed: async (filters = {}) => {
+    const response = await api.get('/jobs', {
+      params: {
+        ...filters,
+        status: 'active',
+        limit: 100,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    })
     return response.data
   },
 }
@@ -138,35 +228,32 @@ export const jobsAPI = {
 export const applicationsAPI = {
   getAllApplications: async (params = {}) => {
     const response = await api.get('/applications', { params })
-
     return response.data
   },
 
   getApplicationById: async (id) => {
     const response = await api.get(`/applications/${id}`)
-
     return response.data
   },
 
   createApplication: async (formData) => {
+    // Increased timeout for file uploads
     const response = await api.post('/applications', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 60000, // Increased to 60 seconds for file uploads
     })
-
     return response.data
   },
 
   updateApplication: async (id, applicationData) => {
     const response = await api.put(`/applications/${id}`, applicationData)
-
     return response.data
   },
 
   deleteApplication: async (id) => {
     const response = await api.delete(`/applications/${id}`)
-
     return response.data
   },
 
@@ -174,13 +261,34 @@ export const applicationsAPI = {
     const response = await api.get(`/applications/${id}/resume`, {
       responseType: 'blob',
     })
-
     return response
   },
 
   getApplicationStats: async () => {
     const response = await api.get('/applications/stats')
+    return response.data
+  },
 
+  // Enhanced methods for dashboard integration
+  getApplicationsForDashboard: async (filters = {}) => {
+    const response = await api.get('/applications', {
+      params: {
+        ...filters,
+        limit: 100,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    })
+    return response.data
+  },
+
+  createApplicationFromFeed: async (applicationData) => {
+    const response = await api.post('/applications', applicationData)
+    return response.data
+  },
+
+  getApplicationsByJobId: async (jobId) => {
+    const response = await api.get(`/applications/job/${jobId}`)
     return response.data
   },
 }

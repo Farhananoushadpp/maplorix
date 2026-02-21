@@ -12,18 +12,21 @@ export const ApplicationProvider = ({ children }) => {
   useEffect(() => {
     const handleApplicationSubmitted = (event) => {
       console.log('Application submitted event received:', event.detail)
-      
+
       // Add the new application to the state
       const newApplication = event.detail.application
-      setApplications(prev => [newApplication, ...prev])
+      setApplications((prev) => [newApplication, ...prev])
     }
 
-    // Add event listener
-    window.addEventListener('applicationSubmitted', handleApplicationSubmitted)
+    // Add event listener - changed from applicationSubmitted to applicationPosted
+    window.addEventListener('applicationPosted', handleApplicationSubmitted)
 
     // Clean up event listener
     return () => {
-      window.removeEventListener('applicationSubmitted', handleApplicationSubmitted)
+      window.removeEventListener(
+        'applicationPosted',
+        handleApplicationSubmitted
+      )
     }
   }, [])
 
@@ -33,7 +36,7 @@ export const ApplicationProvider = ({ children }) => {
     error,
     setApplications,
     setLoading,
-    setError
+    setError,
   }
 
   return (
@@ -46,7 +49,9 @@ export const ApplicationProvider = ({ children }) => {
 export const useApplicationContext = () => {
   const context = useContext(ApplicationContext)
   if (!context) {
-    throw new Error('useApplicationContext must be used within an ApplicationProvider')
+    throw new Error(
+      'useApplicationContext must be used within an ApplicationProvider'
+    )
   }
   return context
 }
