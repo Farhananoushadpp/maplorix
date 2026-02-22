@@ -28,7 +28,7 @@ const DashboardJobApplyModal = ({
         ...prefillData,
       }))
     }
-  }, [isOpen, JSON.stringify(prefillData)])
+  }, [isOpen, prefillData])
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target
@@ -94,11 +94,11 @@ const DashboardJobApplyModal = ({
         console.log(`  ${key}:`, value)
       }
 
-      // Submit to backend API
+      // Submit to backend API using the proper API service
       console.log('🚀 Starting application submission...')
       const startTime = Date.now()
 
-      // TEMPORARY: Try JSON submission instead of FormData to test backend
+      // Prepare the application data
       const jsonData = {
         fullName: formData.fullName,
         email: formData.email,
@@ -113,67 +113,196 @@ const DashboardJobApplyModal = ({
         location: 'Dubai, UAE',
       }
 
-      console.log('📤 Testing JSON submission (no FormData):')
-      console.log('  JSON data:', jsonData)
+      // Check if user is authenticated
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        // For non-authenticated users, create a temporary guest application
+        console.log('👤 Guest user detected - submitting application without authentication')
+        
+        // Try direct submission without auth headers
+        try {
+          const guestResponse = await fetch('http://localhost:4001/api/applications', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(jsonData),
+          })
 
-      // Try direct JSON submission
-      const response = await fetch('http://localhost:4000/api/applications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonData),
-      })
+          if (!guestResponse.ok) {
+            if (guestResponse.status === 401) {
+              throw new Error('Please login to submit applications. Click the Login button to continue.')
+            }
+            throw new Error(`HTTP error! status: ${guestResponse.status}`)
+          }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+          const result = await guestResponse.json()
+          console.log('✅ Guest application submission successful:', result)
+          
+          // Dispatch global event
+          window.dispatchEvent(new CustomEvent('applicationPosted', {
+            detail: {
+              application: result.data || result,
+              timestamp: new Date().toISOString()
+            }
+          }))
+          console.log('🌐 Dispatched applicationPosted event')
+
+          // Show success message
+          if (onSuccess) {
+            onSuccess(
+              `Application submitted successfully for "${formData.jobRole}"!`
+            )
+          }
+
+          const endTime = Date.now()
+          console.log(
+            `✅ Application submitted successfully in ${endTime - startTime}ms`
+          )
+
+          // Reset form and close
+          setFormData({
+            fullName: '',
+            email: '',
+            phone: '',
+            jobRole: '',
+            experience: 'Entry Level',
+            expectedSalary: '',
+            currency: 'AED',
+            coverLetter: '',
+            resume: null,
+          })
+
+          setTimeout(() => {
+            onClose()
+          }, 1000)
+          
+          return // Exit early for guest users
+        } catch (guestError) {
+          console.error('❌ Guest submission failed:', guestError)
+          throw guestError
+        }
       }
 
-      const result = await response.json()
-      console.log('✅ JSON submission successful:', result)
+      // For authenticated users, use the API service with fallback
+      console.log('🔐 Authenticated user detected - using API service')
+      try {
+        const response = await applicationsAPI.createApplicationFromFeed(jsonData)
+        console.log('✅ Application submission successful:', response)
 
-      const endTime = Date.now()
-      console.log(
-        `✅ Application submitted successfully in ${endTime - startTime}ms`
-      )
-
-      // Show success message
-      if (onSuccess) {
-        onSuccess(
-          `Application submitted successfully for "${formData.jobRole}"!`
+        const endTime = Date.now()
+        console.log(
+          `✅ Application submitted successfully in ${endTime - startTime}ms`
         )
+
+        // Dispatch global event to notify other components (like Dashboard)
+        window.dispatchEvent(new CustomEvent('applicationPosted', {
+          detail: {
+            application: response.data || response,
+            timestamp: new Date().toISOString()
+          }
+        }))
+        console.log('🌐 Dispatched applicationPosted event')
+
+        // Show success message
+        if (onSuccess) {
+          onSuccess(
+            `Application submitted successfully for "${formData.jobRole}"!`
+          )
+        }
+
+        // Reset form and close
+        setFormData({
+          fullName: '',
+          email: '',
+          phone: '',
+          jobRole: '',
+          experience: 'Entry Level',
+          expectedSalary: '',
+          currency: 'AED',
+          coverLetter: '',
+          resume: null,
+        })
+
+        setTimeout(() => {
+          onClose()
+        }, 1000)
+      } catch (apiError) {
+        console.error('❌ API service failed, trying fallback:', apiError)
+        
+        // Fallback: Try direct fetch with different approach
+        try {
+          const fallbackResponse = await fetch('http://localhost:4000/api/applications', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(jsonData),
+          })
+
+          if (!fallbackResponse.ok) {
+            throw new Error(`Fallback failed: ${fallbackResponse.status}`)
+          }
+
+          const result = await fallbackResponse.json()
+          console.log('✅ Fallback submission successful:', result)
+
+          // Dispatch global event
+          window.dispatchEvent(new CustomEvent('applicationPosted', {
+            detail: {
+              application: result.data || result,
+              timestamp: new Date().toISOString()
+            }
+          }))
+
+          // Show success message
+          if (onSuccess) {
+            onSuccess(
+              `Application submitted successfully for "${formData.jobRole}"!`
+            )
+          }
+
+          // Reset form and close
+          setFormData({
+            fullName: '',
+            email: '',
+            phone: '',
+            jobRole: '',
+            experience: 'Entry Level',
+            expectedSalary: '',
+            currency: 'AED',
+            coverLetter: '',
+            resume: null,
+          })
+
+          setTimeout(() => {
+            onClose()
+          }, 1000)
+        } catch (fallbackError) {
+          console.error('❌ Fallback also failed:', fallbackError)
+          throw apiError // Throw the original error
+        }
       }
-
-      // Reset form and close
-      setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        jobRole: '',
-        experience: 'Entry Level',
-        expectedSalary: '',
-        currency: 'AED',
-        coverLetter: '',
-        resume: null,
-      })
-
-      setTimeout(() => {
-        onClose()
-      }, 1000)
     } catch (error) {
-      console.error('Failed to submit application:', error)
-      console.error(
-        'Error response data:',
-        JSON.stringify(error.response?.data, null, 2)
-      )
-      console.error('Error status:', error.response?.status)
+      console.error('❌ Failed to submit application:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      })
 
       // Show more detailed error message
       let errorMessage = 'Failed to submit application. Please try again.'
 
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         errorMessage =
-          'Submission timed out. This might be due to a large file upload. Please try again with a smaller file or check your internet connection.'
+          'Request timed out. The server is taking too long to respond. Please try again in a moment.'
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Application endpoint not found. Please contact support.'
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error occurred. Please try again later.'
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error.response?.data?.error) {
@@ -183,6 +312,7 @@ const DashboardJobApplyModal = ({
       }
 
       alert(`Failed to submit application: ${errorMessage}`)
+      console.error('❌ Full error object:', error)
     } finally {
       setIsSubmitting(false)
     }

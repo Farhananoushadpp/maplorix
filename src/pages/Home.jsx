@@ -15,6 +15,7 @@ const Home = () => {
   const [showPostJobModal, setShowPostJobModal] = useState(false)
   const [showApplyJobModal, setShowApplyJobModal] = useState(false)
   const [availableJobs, setAvailableJobs] = useState([])
+  const [successMessage, setSuccessMessage] = useState('')
 
   const { user, isAuthenticated } = useAuth()
   const { fetchJobs, fetchApplications } = useData()
@@ -39,28 +40,35 @@ const Home = () => {
     console.log('Job posted successfully:', jobData)
 
     // Show success message
+    setSuccessMessage(`Job "${jobData.title || 'Position'}" posted successfully!`)
+    
     setTimeout(() => {
       setShowPostJobModal(false)
+      setSuccessMessage('')
       // Refresh dashboard data
       fetchJobs()
       fetchApplications()
-    }, 2000)
+    }, 3000)
   }
 
   // Handle successful job application
   const handleApplyJobSuccess = (applicationData) => {
     console.log('Application submitted successfully:', applicationData)
 
+    // Show success message
+    setSuccessMessage(`Application submitted successfully for "${applicationData.jobRole || 'Position'}"!`)
+
     // Show success message and redirect
     setTimeout(() => {
       setShowApplyJobModal(false)
+      setSuccessMessage('')
       if (isAuthenticated) {
         // Refresh dashboard data before navigating
         fetchJobs()
         fetchApplications()
         navigate('/dashboard')
       }
-    }, 2000)
+    }, 3000)
   }
 
   const handlePostJobClick = () => {
@@ -309,7 +317,12 @@ const Home = () => {
                               <i className="fas fa-money-bill text-accent text-sm"></i>
                             </div>
                             <span className="text-sm font-medium">
-                              {job.salary}
+                              {job.salary 
+                                ? typeof job.salary === 'object' 
+                                  ? `${job.salary.currency || ''} ${job.salary.min || ''}${job.salary.max ? ` - ${job.salary.max}` : ''}`
+                                  : job.salary
+                                : 'Not specified'
+                              }
                             </span>
                           </div>
                           <div className="flex items-center gap-3 text-gray-600">
@@ -317,7 +330,7 @@ const Home = () => {
                               <i className="fas fa-clock text-accent text-sm"></i>
                             </div>
                             <span className="text-sm font-medium">
-                              {job.experience || 'Entry Level'}
+                              {job.type || job.jobType || 'Full-time'}
                             </span>
                           </div>
                         </div>
@@ -439,6 +452,16 @@ const Home = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+          <div className="flex items-center gap-3">
+            <i className="fas fa-check-circle"></i>
+            <span>{successMessage}</span>
           </div>
         </div>
       )}

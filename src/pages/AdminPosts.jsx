@@ -1,5 +1,5 @@
 // Admin Posts Page - Backend Integration with API
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { useNavigate } from 'react-router-dom'
@@ -31,6 +31,27 @@ const AdminPosts = () => {
   const [errors, setErrors] = useState({})
   const [postsToShow, setPostsToShow] = useState(5)
   const [successMessage, setSuccessMessage] = useState('')
+  const [deletingPostId, setDeletingPostId] = useState(null)
+
+  // Helper function to parse salary string to object
+  const parseSalary = (salaryString) => {
+    if (!salaryString || typeof salaryString === 'object') {
+      return salaryString
+    }
+    
+    // Try to parse formats like "80,000 - 120,000 AED" or "50000 AED"
+    const match = salaryString.match(/(\d+[,\d]*)\s*(?:-\s*(\d+[,\d]*))?\s*([A-Z]{3})?/i)
+    if (match) {
+      const [, min, max, currency] = match
+      return {
+        min: min.replace(/,/g, ''),
+        max: max ? max.replace(/,/g, '') : undefined,
+        currency: currency || 'AED'
+      }
+    }
+    
+    return { min: salaryString, currency: 'AED' }
+  }
 
   // Form state for creating/editing job vacancies
   const [formData, setFormData] = useState({
@@ -43,12 +64,8 @@ const AdminPosts = () => {
     postedDate: new Date().toISOString().split('T')[0],
   })
 
-  // Fetch existing posts from backend
-  useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  const fetchPosts = async () => {
+  // Fetch existing posts from backend - defined before useEffect
+  const fetchPosts = useCallback(async () => {
     try {
       const response = await fetchJobs()
       console.log('📋 AdminPosts: Fetched jobs from backend:', response)
@@ -56,7 +73,12 @@ const AdminPosts = () => {
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
-  }
+  }, [fetchJobs])
+
+  // Fetch existing posts from backend
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
 
   // Remove local posts state - use jobs directly from context
 
@@ -113,7 +135,7 @@ const AdminPosts = () => {
         title: formData.title,
         location: formData.location,
         experience: formData.experience,
-        salary: formData.salary,
+        salary: parseSalary(formData.salary),
         requirements: formData.requirements,
         description: formData.description,
         postedDate: formData.postedDate,
@@ -151,7 +173,7 @@ const AdminPosts = () => {
         title: formData.title,
         location: formData.location,
         experience: formData.experience,
-        salary: formData.salary,
+        salary: parseSalary(formData.salary),
         requirements: formData.requirements,
         description: formData.description,
         postedDate: formData.postedDate,
@@ -181,6 +203,7 @@ const AdminPosts = () => {
       return
     }
 
+    setDeletingPostId(postId)
     try {
       await deleteJob(postId)
 
@@ -192,6 +215,8 @@ const AdminPosts = () => {
       console.error('❌ Error deleting job vacancy:', error)
       setSuccessMessage('Failed to delete job vacancy')
       setTimeout(() => setSuccessMessage(''), 3000)
+    } finally {
+      setDeletingPostId(null)
     }
   }
 
@@ -202,7 +227,11 @@ const AdminPosts = () => {
       title: post.title || post.jobTitle || '',
       location: post.location || 'Remote', // Default value for existing posts
       experience: post.experience || '',
-      salary: post.salary || '',
+      salary: post.salary 
+      ? typeof post.salary === 'object' 
+        ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
+        : post.salary
+      : '',
       requirements: post.requirements || '',
       description: post.description || post.jobDescription || '',
       postedDate: post.postedDate || new Date().toISOString().split('T')[0],
@@ -470,7 +499,12 @@ const AdminPosts = () => {
                         {post.experience}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {post.salary}
+                        {post.salary 
+                          ? typeof post.salary === 'object' 
+                            ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
+                            : post.salary
+                          : 'Not specified'
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(post.postedDate).toLocaleDateString()}
@@ -485,10 +519,20 @@ const AdminPosts = () => {
                         </button>
                         <button
                           onClick={() => handleDeletePost(post._id)}
-                          className="text-red-600 hover:text-red-800"
+                          disabled={deletingPostId === post._id}
+                          className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                          <i className="fas fa-trash mr-1"></i>
-                          Delete
+                          {deletingPostId === post._id ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-trash mr-1"></i>
+                              Delete
+                            </>
+                          )}
                         </button>
                       </td>
                     </tr>

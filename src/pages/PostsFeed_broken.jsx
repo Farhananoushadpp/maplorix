@@ -291,7 +291,12 @@ const PostsFeed = () => {
                       </span>
                       <span className="flex items-center">
                         <i className="fas fa-money-bill mr-1"></i>
-                        {post.salary}
+                        {post.salary 
+                          ? typeof post.salary === 'object' 
+                            ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
+                            : post.salary
+                          : 'Not specified'
+                        }
                       </span>
                       <span className="flex items-center">
                         <i className="fas fa-calendar mr-1"></i>

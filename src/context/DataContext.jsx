@@ -1,5 +1,5 @@
 // Data Context for managing jobs and applications state
-import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react'
 import { jobsAPI, applicationsAPI } from '../services/api'
 
 // Data context
@@ -64,7 +64,6 @@ const DATA_ACTIONS = {
 
   // Common
   CLEAR_ERROR: 'CLEAR_ERROR',
-  UPDATE_STATS: 'UPDATE_STATS',
 }
 
 // Reducer
@@ -261,12 +260,6 @@ const dataReducer = (state, action) => {
         error: null,
       }
 
-    case DATA_ACTIONS.UPDATE_STATS:
-      return {
-        ...state,
-        stats: action.payload,
-      }
-
     default:
       return state
   }
@@ -277,11 +270,17 @@ export const DataProvider = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState)
 
   // Stats calculation - safely memoized to prevent infinite loops
-  useEffect(() => {
+  // Calculate stats using useMemo to avoid infinite loops
+  const stats = useMemo(() => {
     // Only calculate if we have valid data
     if (!Array.isArray(state.jobs) || !Array.isArray(state.applications)) {
-      console.log('⚠️ Stats: Invalid data arrays, skipping calculation')
-      return
+      console.log('⚠️ Stats: Invalid data arrays, returning default stats')
+      return {
+        totalJobs: 0,
+        recentJobs: 0,
+        totalApplications: 0,
+        recentApplications: 0,
+      }
     }
 
     console.log(
@@ -310,24 +309,11 @@ export const DataProvider = ({ children }) => {
     }
 
     console.log('📊 Stats: New stats calculated:', newStats)
-
-    // Only update stats if they actually changed (prevent infinite loops)
-    const statsChanged =
-      newStats.totalJobs !== state.stats.totalJobs ||
-      newStats.recentJobs !== state.stats.recentJobs ||
-      newStats.totalApplications !== state.stats.totalApplications ||
-      newStats.recentApplications !== state.stats.recentApplications
-
-    console.log('🔄 Stats: Stats changed?', statsChanged)
-
-    if (statsChanged) {
-      console.log('📤 Stats: Dispatching UPDATE_STATS action')
-      dispatch({ type: DATA_ACTIONS.UPDATE_STATS, payload: newStats })
-    }
-  }, [state.jobs.length, state.applications.length]) // Only depend on array lengths
+    return newStats
+  }, [state.jobs, state.applications]) // Only depend on jobs and applications arrays
 
   // Jobs actions
-  const fetchJobs = async (filters = {}) => {
+  const fetchJobs = useCallback(async (filters = {}) => {
     try {
       dispatch({ type: DATA_ACTIONS.FETCH_JOBS_START })
       const response = await jobsAPI.getJobsForDashboard(filters)
@@ -343,9 +329,9 @@ export const DataProvider = ({ children }) => {
       dispatch({ type: DATA_ACTIONS.FETCH_JOBS_FAILURE, payload: errorMessage })
       throw error
     }
-  }
+  }, [])
 
-  const fetchJobsForFeed = async (filters = {}) => {
+  const fetchJobsForFeed = useCallback(async (filters = {}) => {
     try {
       dispatch({ type: DATA_ACTIONS.FETCH_JOBS_START })
       const response = await jobsAPI.getJobsForFeed(filters)
@@ -363,7 +349,7 @@ export const DataProvider = ({ children }) => {
       dispatch({ type: DATA_ACTIONS.FETCH_JOBS_FAILURE, payload: errorMessage })
       throw error
     }
-  }
+  }, [])
 
   const createJob = async (jobData) => {
     try {
@@ -515,6 +501,7 @@ export const DataProvider = ({ children }) => {
   // Simplified context value without useMemo to stop infinite loop
   const value = {
     ...state,
+    stats, // Use memoized stats instead of state.stats
     // Jobs
     fetchJobs,
     fetchJobsForFeed,

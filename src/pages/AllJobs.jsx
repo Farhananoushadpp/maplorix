@@ -5,12 +5,23 @@ import { jobsAPI } from '../services/api'
 const AllJobs = () => {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
     pages: 0,
   })
+
+  // Auto-clear success message after 3 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('')
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
 
   // Filter states - match Dashboard structure
   const [filters, setFilters] = useState(() => {
@@ -376,10 +387,10 @@ const AllJobs = () => {
                         {job.location}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.experience}
+                        {job.type || job.jobType || 'Not specified'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.salary}
+                        {job.salary ? `${job.salary.currency || ''} ${job.salary.min || ''}${job.salary.max ? ` - ${job.salary.max}` : ''}` : 'Not specified'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(job.createdAt).toLocaleDateString()}
@@ -457,6 +468,16 @@ const AllJobs = () => {
           </div>
         )}
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+          <div className="flex items-center gap-3">
+            <i className="fas fa-check-circle"></i>
+            <span>{successMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

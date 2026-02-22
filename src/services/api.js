@@ -2,12 +2,12 @@
 
 import axios from 'axios'
 
-// Try to connect to available backend ports (prioritize 4001)
-const API_PORTS = [4001, 4000, 4002, 4003]
+// Try to connect to available backend ports (prioritize 4000 since backend is running there)
+const API_PORTS = [4000, 4001, 4002, 4003]
 
 // Create axios instance with default configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -283,7 +283,9 @@ export const applicationsAPI = {
   },
 
   createApplicationFromFeed: async (applicationData) => {
-    const response = await api.post('/applications', applicationData)
+    const response = await api.post('/applications', applicationData, {
+      timeout: 30000, // Increased to 30 seconds for application submission
+    })
     return response.data
   },
 
