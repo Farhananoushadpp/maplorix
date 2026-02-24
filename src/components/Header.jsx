@@ -76,7 +76,7 @@ const Header = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <ul className="flex items-center space-x-8 list-none m-0 p-0">
-                {NAVIGATION_ITEMS.map((item) => (
+                {NAVIGATION_ITEMS.slice(0, 3).map((item) => (
                   <li key={item.id}>
                     <Link
                       to={item.path}
@@ -109,6 +109,17 @@ const Header = () => {
                     </Link>
                   </li>
                 )}
+                {NAVIGATION_ITEMS.slice(3).map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      to={item.path}
+                      onClick={handleNavClick}
+                      className={`nav-link ${isActiveRoute(item.path) ? 'active' : ''}`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
               {/* Profile Dropdown */}
               <div className="relative">
@@ -219,7 +230,7 @@ const Header = () => {
             }`}
           >
             <ul className="space-y-4 py-4 list-none m-0 p-0">
-              {NAVIGATION_ITEMS.map((item) => (
+              {NAVIGATION_ITEMS.slice(0, 3).map((item) => (
                 <li key={item.id}>
                   <Link
                     to={item.path}
@@ -258,6 +269,19 @@ const Header = () => {
                   </Link>
                 </li>
               )}
+              {NAVIGATION_ITEMS.slice(3).map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to={item.path}
+                    onClick={handleNavClick}
+                    className={`nav-link block w-full text-left py-2 ${
+                      isActiveRoute(item.path) ? 'active' : ''
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

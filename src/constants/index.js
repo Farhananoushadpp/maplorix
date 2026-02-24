@@ -31,9 +31,9 @@ export const NAVIGATION_ITEMS = [
 
   { id: 'about', label: 'About Us', path: ROUTES.ABOUT },
 
-  { id: 'contact', label: 'Contact Us', path: ROUTES.CONTACT },
-
   { id: 'posts', label: 'feed', path: ROUTES.POSTS_FEED },
+
+  { id: 'contact', label: 'Contact Us', path: ROUTES.CONTACT },
 ]
 
 // Contact Information

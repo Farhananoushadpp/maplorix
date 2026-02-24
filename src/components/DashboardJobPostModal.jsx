@@ -44,7 +44,8 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
           max: formData.salaryMax,
           currency: formData.currency,
         },
-        postedBy: 'admin', // Required by backend
+        postedBy: 'user', // User-posted job (different from admin posts)
+        status: 'pending', // Don't show in feed - only admin posts should be active
         source: 'dashboard-home-banner', // Track source
       }
 

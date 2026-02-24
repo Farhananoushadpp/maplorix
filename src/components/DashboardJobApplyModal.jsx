@@ -68,10 +68,9 @@ const DashboardJobApplyModal = ({
       formDataToSend.append('name', formData.fullName) // Backend might also accept 'name'
       formDataToSend.append('position', formData.jobRole) // Backend might expect 'position'
 
-      // Only add resume if it exists and is a valid file - TEMPORARILY DISABLED FOR TESTING
+      // Add resume if it exists and is a valid file
       console.log('🔍 Resume check - formData.resume:', formData.resume)
       if (
-        false && // Temporarily disabled
         formData.resume &&
         formData.resume instanceof File &&
         formData.resume.size > 0
@@ -84,9 +83,7 @@ const DashboardJobApplyModal = ({
           'bytes'
         )
       } else {
-        console.log(
-          '⚠️ Resume upload temporarily disabled for testing - submitting without resume'
-        )
+        console.log('⚠️ No resume file provided - submitting without resume')
       }
 
       console.log('📤 Submitting application with data:')
@@ -117,35 +114,44 @@ const DashboardJobApplyModal = ({
       const token = localStorage.getItem('authToken')
       if (!token) {
         // For non-authenticated users, create a temporary guest application
-        console.log('👤 Guest user detected - submitting application without authentication')
-        
+        console.log(
+          '👤 Guest user detected - submitting application without authentication'
+        )
+
         // Try direct submission without auth headers
         try {
-          const guestResponse = await fetch('http://localhost:4001/api/applications', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(jsonData),
-          })
+          const guestResponse = await fetch(
+            'http://localhost:4000/api/applications',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(jsonData),
+            }
+          )
 
           if (!guestResponse.ok) {
             if (guestResponse.status === 401) {
-              throw new Error('Please login to submit applications. Click the Login button to continue.')
+              throw new Error(
+                'Please login to submit applications. Click the Login button to continue.'
+              )
             }
             throw new Error(`HTTP error! status: ${guestResponse.status}`)
           }
 
           const result = await guestResponse.json()
           console.log('✅ Guest application submission successful:', result)
-          
+
           // Dispatch global event
-          window.dispatchEvent(new CustomEvent('applicationPosted', {
-            detail: {
-              application: result.data || result,
-              timestamp: new Date().toISOString()
-            }
-          }))
+          window.dispatchEvent(
+            new CustomEvent('applicationPosted', {
+              detail: {
+                application: result.data || result,
+                timestamp: new Date().toISOString(),
+              },
+            })
+          )
           console.log('🌐 Dispatched applicationPosted event')
 
           // Show success message
@@ -176,7 +182,7 @@ const DashboardJobApplyModal = ({
           setTimeout(() => {
             onClose()
           }, 1000)
-          
+
           return // Exit early for guest users
         } catch (guestError) {
           console.error('❌ Guest submission failed:', guestError)
@@ -184,11 +190,43 @@ const DashboardJobApplyModal = ({
         }
       }
 
-      // For authenticated users, use the API service with fallback
-      console.log('🔐 Authenticated user detected - using API service')
+      // For authenticated users, use the API service with FormData for file upload
+      console.log(
+        '🔐 Authenticated user detected - using API service with FormData'
+      )
       try {
-        const response = await applicationsAPI.createApplicationFromFeed(jsonData)
+        // Use FormData for file upload instead of JSON
+        const response = await applicationsAPI.createApplication(formDataToSend)
         console.log('✅ Application submission successful:', response)
+        console.log(
+          '📋 Full response structure:',
+          JSON.stringify(response, null, 2)
+        )
+
+        // Update the selected application with the response data
+        if (response && response.data) {
+          console.log('📋 Response data:', response.data)
+
+          // Extract the correct application data structure
+          const applicationData =
+            response.data?.data?.application ||
+            response.data?.application ||
+            response.data?.data ||
+            response.data ||
+            response
+
+          console.log('📄 Extracted application data:', applicationData)
+          console.log(
+            '📄 Full application structure:',
+            JSON.stringify(applicationData, null, 2)
+          )
+          console.log(
+            '🔍 Resume in submitted application:',
+            applicationData?.resume
+          )
+
+          // The application will be available in the dashboard through the data context
+        }
 
         const endTime = Date.now()
         console.log(
@@ -196,12 +234,14 @@ const DashboardJobApplyModal = ({
         )
 
         // Dispatch global event to notify other components (like Dashboard)
-        window.dispatchEvent(new CustomEvent('applicationPosted', {
-          detail: {
-            application: response.data || response,
-            timestamp: new Date().toISOString()
-          }
-        }))
+        window.dispatchEvent(
+          new CustomEvent('applicationPosted', {
+            detail: {
+              application: response.data || response,
+              timestamp: new Date().toISOString(),
+            },
+          })
+        )
         console.log('🌐 Dispatched applicationPosted event')
 
         // Show success message
@@ -229,17 +269,20 @@ const DashboardJobApplyModal = ({
         }, 1000)
       } catch (apiError) {
         console.error('❌ API service failed, trying fallback:', apiError)
-        
+
         // Fallback: Try direct fetch with different approach
         try {
-          const fallbackResponse = await fetch('http://localhost:4000/api/applications', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(jsonData),
-          })
+          const fallbackResponse = await fetch(
+            'http://localhost:4000/api/applications',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(jsonData),
+            }
+          )
 
           if (!fallbackResponse.ok) {
             throw new Error(`Fallback failed: ${fallbackResponse.status}`)
@@ -249,12 +292,14 @@ const DashboardJobApplyModal = ({
           console.log('✅ Fallback submission successful:', result)
 
           // Dispatch global event
-          window.dispatchEvent(new CustomEvent('applicationPosted', {
-            detail: {
-              application: result.data || result,
-              timestamp: new Date().toISOString()
-            }
-          }))
+          window.dispatchEvent(
+            new CustomEvent('applicationPosted', {
+              detail: {
+                application: result.data || result,
+                timestamp: new Date().toISOString(),
+              },
+            })
+          )
 
           // Show success message
           if (onSuccess) {
@@ -290,7 +335,7 @@ const DashboardJobApplyModal = ({
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data
+        data: error.response?.data,
       })
 
       // Show more detailed error message

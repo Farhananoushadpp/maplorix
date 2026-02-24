@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
+import api from '../services/api'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -26,6 +27,10 @@ const Dashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [deletingJobId, setDeletingJobId] = useState(null)
   const [deletingApplicationId, setDeletingApplicationId] = useState(null)
+  const [applicationsToShow, setApplicationsToShow] = useState(5)
+  const [showAllApplications, setShowAllApplications] = useState(false)
+  const [jobsToShow, setJobsToShow] = useState(5)
+  const [showAllJobs, setShowAllJobs] = useState(false)
 
   // Stats state - use context stats instead of local
   const stats = contextStats
@@ -43,8 +48,9 @@ const Dashboard = () => {
   const [applicationFilters, setApplicationFilters] = useState({
     fullName: '',
     email: '',
-    status: '',
     jobRole: '',
+    experience: '',
+    expectedSalary: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
   })
@@ -56,16 +62,16 @@ const Dashboard = () => {
 
     const fetchData = async () => {
       if (!isMounted) return
-      
+
       try {
         console.log('🚀 Dashboard: Starting data fetch...')
         const [jobsData, applicationsData] = await Promise.all([
           fetchJobs(),
           fetchApplications(),
         ])
-        
+
         if (!isMounted) return
-        
+
         console.log('📋 Dashboard: Data fetched from backend')
         console.log('📊 Jobs:', jobsData?.length || 0, 'jobs')
         console.log(
@@ -90,12 +96,38 @@ const Dashboard = () => {
     }
   }, [])
 
-  // Debug: Log current data state (only when data changes)
   useEffect(() => {
     if (jobs.length > 0 || applications.length > 0) {
       console.log('🔍 Dashboard Data Updated:')
       console.log('  Jobs:', jobs.length, 'items')
       console.log('  Applications:', applications.length, 'items')
+
+      // Log sample data structures
+      if (jobs.length > 0) {
+        const sampleJob = jobs.find((job) => job.title === 'tytuuiuityiiyyi')
+        if (sampleJob) {
+          console.log('📋 Sample Job Data (tytuuiuityiiyyi):', sampleJob)
+        } else {
+          console.log('📋 Sample Job Data (first job):', jobs[0])
+        }
+      }
+
+      // Log sample application data
+      if (applications.length > 0) {
+        const sampleApp = applications.find(
+          (app) =>
+            app.fullName &&
+            app.fullName.toLowerCase().includes('farhanatyyu'.toLowerCase())
+        )
+        if (sampleApp) {
+          console.log('📋 Sample Application Data (farhanatyyu):', sampleApp)
+        } else {
+          console.log(
+            '📋 Sample Application Data (first app):',
+            applications[0]
+          )
+        }
+      }
     }
   }, [jobs.length, applications.length])
 
@@ -111,7 +143,9 @@ const Dashboard = () => {
             (job.title &&
               job.title.toLowerCase().includes(jobFilters.role.toLowerCase()))
           const matchesExperience =
-            !jobFilters.experience || (job.experience && job.experience === jobFilters.experience) || (job.type && job.type === jobFilters.experience)
+            !jobFilters.experience ||
+            (job.experience && job.experience === jobFilters.experience) ||
+            (job.type && job.type === jobFilters.experience)
           const matchesSalary =
             !jobFilters.salary ||
             (job.salary &&
@@ -123,9 +157,14 @@ const Dashboard = () => {
               job.location
                 .toLowerCase()
                 .includes(jobFilters.location.toLowerCase()))
+          const matchesPostedBy = job.postedBy === 'user' // Only show user-posted jobs in Dashboard
 
           return (
-            matchesRole && matchesExperience && matchesSalary && matchesLocation
+            matchesRole &&
+            matchesExperience &&
+            matchesSalary &&
+            matchesLocation &&
+            matchesPostedBy
           )
         })
         .sort((a, b) => {
@@ -164,17 +203,33 @@ const Dashboard = () => {
               application.email
                 .toLowerCase()
                 .includes(applicationFilters.email.toLowerCase()))
-          const matchesStatus =
-            !applicationFilters.status ||
-            application.status === applicationFilters.status
           const matchesJobRole =
             !applicationFilters.jobRole ||
             (application.jobRole &&
               application.jobRole
                 .toLowerCase()
                 .includes(applicationFilters.jobRole.toLowerCase()))
+          const matchesExperience =
+            !applicationFilters.experience ||
+            (application.experience &&
+              application.experience === applicationFilters.experience)
+          const matchesSalary =
+            !applicationFilters.expectedSalary ||
+            (application.expectedSalary &&
+              (typeof application.expectedSalary === 'object'
+                ? application.expectedSalary.min &&
+                  parseInt(application.expectedSalary.min) >=
+                    parseInt(applicationFilters.expectedSalary)
+                : parseInt(application.expectedSalary) >=
+                  parseInt(applicationFilters.expectedSalary)))
 
-          return matchesName && matchesEmail && matchesStatus && matchesJobRole
+          return (
+            matchesName &&
+            matchesEmail &&
+            matchesJobRole &&
+            matchesExperience &&
+            matchesSalary
+          )
         })
         .sort((a, b) => {
           const { sortBy, sortOrder } = applicationFilters
@@ -195,7 +250,9 @@ const Dashboard = () => {
 
   // Delete handlers
   const handleDeleteJob = async (job) => {
-    if (!window.confirm(`Are you sure you want to delete the job "${job.title}"?`)) {
+    if (
+      !window.confirm(`Are you sure you want to delete the job "${job.title}"?`)
+    ) {
       return
     }
 
@@ -215,14 +272,20 @@ const Dashboard = () => {
   }
 
   const handleDeleteApplication = async (application) => {
-    if (!window.confirm(`Are you sure you want to delete the application from "${application.fullName}"?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the application from "${application.fullName}"?`
+      )
+    ) {
       return
     }
 
     setDeletingApplicationId(application._id)
     try {
       await deleteApplication(application._id)
-      setSuccessMessage(`Application from "${application.fullName}" deleted successfully!`)
+      setSuccessMessage(
+        `Application from "${application.fullName}" deleted successfully!`
+      )
       setTimeout(() => setSuccessMessage(''), 3000)
       console.log('✅ Application deleted successfully')
     } catch (error) {
@@ -245,13 +308,247 @@ const Dashboard = () => {
     setSelectedApplication(null)
   }
 
-  // Logout handler
+  // Force refresh data function
+  const forceRefreshData = async () => {
+    console.log('🔄 Force refreshing data...')
+    try {
+      const [jobsData, applicationsData] = await Promise.all([
+        fetchJobs({ forceRefresh: true }),
+        fetchApplications({ forceRefresh: true }),
+      ])
+      console.log('✅ Data refreshed successfully')
+      setSuccessMessage('Data refreshed successfully!')
+      setTimeout(() => setSuccessMessage(''), 2000)
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error)
+      setSuccessMessage('Failed to refresh data')
+      setTimeout(() => setSuccessMessage(''), 2000)
+    }
+  }
+
+  // Test function to manually add resume data for testing
+  const addTestResumeData = () => {
+    if (!selectedApplication || !selectedApplication._id) {
+      setSuccessMessage('No application selected')
+      setTimeout(() => setSuccessMessage(''), 2000)
+      return
+    }
+
+    console.log('🧪 Adding test resume data for debugging...')
+
+    // Create mock resume data
+    const testResumeData = {
+      filename: `resume_${selectedApplication._id}.pdf`,
+      originalName: 'test_resume.pdf',
+      size: 1024,
+      contentType: 'application/pdf',
+      data: 'JVBERi0xLjQKJeLjz9M=', // Base64 for minimal PDF
+    }
+
+    // Update selected application with test resume
+    const updatedApplication = {
+      ...selectedApplication,
+      resume: testResumeData,
+    }
+
+    console.log('🧪 Test resume data added:', testResumeData)
+    setSelectedApplication(updatedApplication)
+    setSuccessMessage('Test resume data added for debugging!')
+    setTimeout(() => setSuccessMessage(''), 3000)
+  }
   const handleLogout = async () => {
     try {
       await logout()
       navigate('/')
     } catch (error) {
       console.error('❌ Error during logout:', error)
+    }
+  }
+
+  // Download resume handler
+  const handleDownloadResume = async (applicationId) => {
+    try {
+      console.log('🔽 Downloading resume for application:', applicationId)
+
+      // First, check if we have the application data with resume info
+      const application = applications.find((app) => app._id === applicationId)
+
+      if (application && application.resume && application.resume.data) {
+        // Resume is stored as base64 data in the application object
+        console.log('📄 Resume found in application data')
+
+        try {
+          // Decode base64 data
+          const binaryString = atob(application.resume.data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+
+          const blob = new Blob([bytes], {
+            type: application.resume.contentType || 'application/octet-stream',
+          })
+
+          // Create download link
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download =
+            application.resume.originalName || `resume_${applicationId}.pdf`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+
+          console.log('✅ Resume downloaded successfully from application data')
+          setSuccessMessage('Resume downloaded successfully!')
+          setTimeout(() => setSuccessMessage(''), 2000)
+          return
+        } catch (decodeError) {
+          console.error('❌ Error decoding resume data:', decodeError)
+        }
+      }
+
+      // If not found in application data, try the API endpoint
+      console.log('🌐 Trying API endpoint for resume download')
+      const { applicationsAPI } = await import('../services/api')
+      const response = await applicationsAPI.downloadResume(applicationId)
+
+      // Check if response has data
+      if (!response.data || response.data.size === 0) {
+        setSuccessMessage('No resume file available for this application')
+        setTimeout(() => setSuccessMessage(''), 3000)
+        return
+      }
+
+      // Create a blob from the response
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      })
+
+      // Create a temporary URL and trigger download
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers['content-disposition']
+      let filename = `resume_${applicationId}.pdf`
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      console.log('✅ Resume downloaded successfully from API')
+      setSuccessMessage('Resume downloaded successfully!')
+      setTimeout(() => setSuccessMessage(''), 2000)
+    } catch (error) {
+      console.error('❌ Error downloading resume:', error)
+      if (error.response?.status === 404) {
+        setSuccessMessage('No resume file available for this application')
+      } else if (error.response?.status === 401) {
+        setSuccessMessage('Authentication required to download resume')
+      } else if (error.response?.status === 403) {
+        setSuccessMessage('You do not have permission to download this resume')
+      } else {
+        setSuccessMessage('Failed to download resume - please try again')
+      }
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
+  }
+
+  // View resume handler (opens in new tab)
+  const handleViewResume = async (applicationId) => {
+    try {
+      console.log('👁️ Viewing resume for application:', applicationId)
+
+      // First, check if we have the application data with resume info
+      const application = applications.find((app) => app._id === applicationId)
+
+      if (application && application.resume && application.resume.data) {
+        // Resume is stored as base64 data in the application object
+        console.log('📄 Resume found in application data')
+
+        try {
+          // Decode base64 data
+          const binaryString = atob(application.resume.data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+
+          const blob = new Blob([bytes], {
+            type: application.resume.contentType || 'application/octet-stream',
+          })
+
+          // Create URL and open in new tab
+          const url = window.URL.createObjectURL(blob)
+          const newWindow = window.open(url, '_blank')
+
+          // Clean up the URL object after a delay
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url)
+          }, 1000)
+
+          console.log('✅ Resume opened in new tab from application data')
+          setSuccessMessage('Resume opened in new tab!')
+          setTimeout(() => setSuccessMessage(''), 2000)
+          return
+        } catch (decodeError) {
+          console.error('❌ Error decoding resume data:', decodeError)
+        }
+      }
+
+      // If not found in application data, try the API endpoint
+      console.log('🌐 Trying API endpoint for resume view')
+      const { applicationsAPI } = await import('../services/api')
+      const response = await applicationsAPI.downloadResume(applicationId)
+
+      // Check if response has data
+      if (!response.data || response.data.size === 0) {
+        setSuccessMessage('No resume file available for this application')
+        setTimeout(() => setSuccessMessage(''), 3000)
+        return
+      }
+
+      // Create a blob from the response
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      })
+
+      // Create a URL and open in new tab
+      const url = window.URL.createObjectURL(blob)
+      const newWindow = window.open(url, '_blank')
+
+      // Clean up the URL object after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+      }, 1000)
+
+      console.log('✅ Resume opened in new tab from API')
+      setSuccessMessage('Resume opened in new tab!')
+      setTimeout(() => setSuccessMessage(''), 2000)
+    } catch (error) {
+      console.error('❌ Error viewing resume:', error)
+      if (error.response?.status === 404) {
+        setSuccessMessage('No resume file available for this application')
+      } else if (error.response?.status === 401) {
+        setSuccessMessage('Authentication required to view resume')
+      } else if (error.response?.status === 403) {
+        setSuccessMessage('You do not have permission to view this resume')
+      } else {
+        setSuccessMessage('Failed to view resume - please try again')
+      }
+      setTimeout(() => setSuccessMessage(''), 3000)
     }
   }
 
@@ -287,6 +584,14 @@ const Dashboard = () => {
               </span>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={forceRefreshData}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold"
+                title="Force refresh data from database"
+              >
+                <i className="fas fa-sync-alt mr-2"></i>
+                Refresh
+              </button>
               <button
                 onClick={() => navigate('/')}
                 className="px-4 py-2 bg-white text-primary rounded-lg hover:bg-secondary/10 transition-all duration-300 font-semibold border border-border-color"
@@ -424,6 +729,24 @@ const Dashboard = () => {
                   <option value="Senior Level">Senior Level</option>
                   <option value="Executive">Executive</option>
                 </select>
+                <select
+                  value={jobFilters.salary}
+                  onChange={(e) =>
+                    setJobFilters((prev) => ({
+                      ...prev,
+                      salary: e.target.value,
+                    }))
+                  }
+                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                >
+                  <option value="">All Salaries</option>
+                  <option value="3000">3000+</option>
+                  <option value="5000">5000+</option>
+                  <option value="7000">7000+</option>
+                  <option value="10000">10000+</option>
+                  <option value="15000">15000+</option>
+                  <option value="20000">20000+</option>
+                </select>
                 <input
                   type="text"
                   placeholder="Location..."
@@ -441,6 +764,7 @@ const Dashboard = () => {
                     setJobFilters({
                       role: '',
                       experience: '',
+                      salary: '',
                       location: '',
                       sortBy: 'createdAt',
                       sortOrder: 'desc',
@@ -460,63 +784,117 @@ const Dashboard = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {filterJobs(jobs).map((job) => (
-                    <div
-                      key={job._id}
-                      className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-primary">
-                          {job.title || 'N/A'}
-                        </h4>
-                        <span className="text-xs text-text-light">
-                          {new Date(job.createdAt).toLocaleDateString()}
-                        </span>
+                  {filterJobs(jobs)
+                    .slice(0, showAllJobs ? undefined : jobsToShow)
+                    .map((job) => (
+                      <div
+                        key={job._id}
+                        className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-primary">
+                            {job.title || 'N/A'}
+                          </h4>
+                          <span className="text-xs text-text-light">
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-sm text-text-light">
+                          <p>
+                            <i className="fas fa-building mr-2"></i>
+                            {job.company || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-map-marker-alt mr-2"></i>
+                            {job.location || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-briefcase mr-2"></i>
+                            {job.type || job.jobType || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-chart-line mr-2"></i>
+                            {job.experience || 'Entry Level'}
+                          </p>
+                          <p>
+                            <i className="fas fa-money-bill mr-2"></i>
+                            {job.salary && (job.salary.min || job.salary.max)
+                              ? `${job.salary.currency || 'AED'} ${job.salary.min || ''}${
+                                  job.salary.min && job.salary.max ? ' - ' : ''
+                                }${job.salary.max || ''}${
+                                  job.salary.min && !job.salary.max ? '+' : ''
+                                }`
+                              : 'Competitive'}
+                          </p>
+                          <p>
+                            <i className="fas fa-info-circle mr-2"></i>
+                            {job.description && job.description.trim()
+                              ? job.description.length > 50
+                                ? `${job.description.substring(0, 50)}...`
+                                : job.description
+                              : 'No description provided'}
+                          </p>
+                          <p>
+                            <i className="fas fa-list-check mr-2"></i>
+                            {job.requirements && job.requirements.trim()
+                              ? job.requirements.length > 50
+                                ? `${job.requirements.substring(0, 50)}...`
+                                : job.requirements
+                              : 'No specific requirements'}
+                          </p>
+                        </div>
+                        <div className="mt-3 flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedJob(job)
+                              setShowJobModal(true)
+                            }}
+                            className="px-3 py-1 bg-accent text-white rounded text-sm hover:bg-accent/90 transition-colors"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJob(job)}
+                            disabled={deletingJobId === job._id}
+                            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                          >
+                            {deletingJobId === job._id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-trash"></i>
+                                Delete
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      <div className="space-y-1 text-sm text-text-light">
-                        <p>
-                          <i className="fas fa-building mr-2"></i>
-                          {job.company || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-map-marker-alt mr-2"></i>
-                          {job.location || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-briefcase mr-2"></i>
-                          {job.type || job.jobType || 'Not specified'}
-                        </p>
-                      </div>
-                      <div className="mt-3 flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedJob(job)
-                            setShowJobModal(true)
-                          }}
-                          className="px-3 py-1 bg-accent text-white rounded text-sm hover:bg-accent/90 transition-colors"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => handleDeleteJob(job)}
-                          disabled={deletingJobId === job._id}
-                          className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                        >
-                          {deletingJobId === job._id ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <i className="fas fa-trash"></i>
-                              Delete
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
+              )}
+
+              {/* See More/Less Button for Jobs */}
+              {filterJobs(jobs).length > jobsToShow && (
+                <div className="p-4 border-t border-border-color">
+                  <button
+                    onClick={() => setShowAllJobs(!showAllJobs)}
+                    className="w-full px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {showAllJobs ? (
+                      <>
+                        <i className="fas fa-chevron-up"></i>
+                        See Less
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-chevron-down"></i>
+                        See More ({filterJobs(jobs).length - jobsToShow} more)
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
@@ -568,28 +946,47 @@ const Dashboard = () => {
                   className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
                 />
                 <select
-                  value={applicationFilters.status}
+                  value={applicationFilters.experience}
                   onChange={(e) =>
                     setApplicationFilters((prev) => ({
                       ...prev,
-                      status: e.target.value,
+                      experience: e.target.value,
                     }))
                   }
                   className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
                 >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="reviewed">Reviewed</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="">All Experience</option>
+                  <option value="Entry Level">Entry Level</option>
+                  <option value="Mid Level">Mid Level</option>
+                  <option value="Senior Level">Senior Level</option>
+                  <option value="Executive">Executive</option>
+                </select>
+                <select
+                  value={applicationFilters.expectedSalary}
+                  onChange={(e) =>
+                    setApplicationFilters((prev) => ({
+                      ...prev,
+                      expectedSalary: e.target.value,
+                    }))
+                  }
+                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                >
+                  <option value="">All Salaries</option>
+                  <option value="3000">3000+</option>
+                  <option value="5000">5000+</option>
+                  <option value="7000">7000+</option>
+                  <option value="10000">10000+</option>
+                  <option value="15000">15000+</option>
+                  <option value="20000">20000+</option>
                 </select>
                 <button
                   onClick={() =>
                     setApplicationFilters({
                       fullName: '',
                       email: '',
-                      status: '',
                       jobRole: '',
+                      experience: '',
+                      expectedSalary: '',
                       sortBy: 'createdAt',
                       sortOrder: 'desc',
                     })
@@ -608,81 +1005,138 @@ const Dashboard = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {filterApplications(applications).map((application) => (
-                    <div
-                      key={application._id}
-                      className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-primary">
-                          {application.fullName || 'N/A'}
-                        </h4>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            application.status === 'approved'
-                              ? 'bg-secondary/20 text-secondary'
-                              : application.status === 'rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-accent/20 text-accent'
-                          }`}
-                        >
-                          {application.status || 'pending'}
-                        </span>
+                  {filterApplications(applications)
+                    .slice(
+                      0,
+                      showAllApplications ? undefined : applicationsToShow
+                    )
+                    .map((application) => (
+                      <div
+                        key={application._id}
+                        className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-primary">
+                            {application.fullName || 'N/A'}
+                          </h4>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              application.status === 'approved'
+                                ? 'bg-secondary/20 text-secondary'
+                                : application.status === 'rejected'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-accent/20 text-accent'
+                            }`}
+                          >
+                            {application.status || 'pending'}
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-sm text-text-light">
+                          <p>
+                            <i className="fas fa-envelope mr-2"></i>
+                            {application.email || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-phone mr-2"></i>
+                            {application.phone || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-briefcase mr-2"></i>
+                            {application.jobRole || 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-chart-line mr-2"></i>
+                            {application.experience || 'Entry Level'}
+                          </p>
+                          <p>
+                            <i className="fas fa-money-bill mr-2"></i>
+                            {application.expectedSalary
+                              ? typeof application.expectedSalary === 'object'
+                                ? application.expectedSalary.amount ||
+                                  application.expectedSalary.min
+                                  ? `${application.expectedSalary.currency || 'AED'} ${application.expectedSalary.amount || application.expectedSalary.min}`
+                                  : `${application.expectedSalary.currency || 'AED'} (Not specified)`
+                                : `${application.currency || 'AED'} ${application.expectedSalary}`
+                              : 'Not specified'}
+                          </p>
+                          <p>
+                            <i className="fas fa-file-alt mr-2"></i>
+                            {application.coverLetter &&
+                            application.coverLetter.trim().length > 0
+                              ? application.coverLetter.length > 50
+                                ? `${application.coverLetter.substring(0, 50)}...`
+                                : application.coverLetter
+                              : 'Not specified'}
+                          </p>
+                        </div>
+                        <div className="mt-3 flex space-x-2">
+                          <button
+                            onClick={() => {
+                              console.log(
+                                '🔍 Opening application details:',
+                                application
+                              )
+                              console.log('🔍 Application ID:', application._id)
+                              console.log(
+                                '🔍 Application fullName:',
+                                application.fullName
+                              )
+                              console.log(
+                                '🔍 Application email:',
+                                application.email
+                              )
+                              setSelectedApplication(application)
+                              setShowApplicationModal(true)
+                            }}
+                            className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleDeleteApplication(application)}
+                            disabled={deletingApplicationId === application._id}
+                            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                          >
+                            {deletingApplicationId === application._id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-trash"></i>
+                                Delete
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      <div className="space-y-1 text-sm text-text-light">
-                        <p>
-                          <i className="fas fa-envelope mr-2"></i>
-                          {application.email || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-phone mr-2"></i>
-                          {application.phone || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-briefcase mr-2"></i>
-                          {application.jobRole || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-chart-line mr-2"></i>
-                          {application.experience || 'Not specified'}
-                        </p>
-                        <p>
-                          <i className="fas fa-money-bill mr-2"></i>
-                          {application.expectedSalary
-                            ? `${application.currency} ${application.expectedSalary}`
-                            : 'Not specified'}
-                        </p>
-                      </div>
-                      <div className="mt-3 flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedApplication(application)
-                            setShowApplicationModal(true)
-                          }}
-                          className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => handleDeleteApplication(application)}
-                          disabled={deletingApplicationId === application._id}
-                          className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                        >
-                          {deletingApplicationId === application._id ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <i className="fas fa-trash"></i>
-                              Delete
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
+              )}
+
+              {/* See More/Less Button */}
+              {filterApplications(applications).length > applicationsToShow && (
+                <div className="p-4 border-t border-border-color">
+                  <button
+                    onClick={() => setShowAllApplications(!showAllApplications)}
+                    className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {showAllApplications ? (
+                      <>
+                        <i className="fas fa-chevron-up"></i>
+                        See Less
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-chevron-down"></i>
+                        See More (
+                        {filterApplications(applications).length -
+                          applicationsToShow}{' '}
+                        more)
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
@@ -724,9 +1178,10 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Salary</h3>
                   <p className="text-gray-600">
-                    {selectedJob.salary
-                      ? `${selectedJob.salary.currency} ${selectedJob.salary.min}${selectedJob.salary.max ? ` - ${selectedJob.salary.max}` : ''}`
-                      : 'Not specified'}
+                    {selectedJob.salary &&
+                    (selectedJob.salary.min || selectedJob.salary.max)
+                      ? `${selectedJob.salary.currency || 'AED'} ${selectedJob.salary.min || ''}${selectedJob.salary.min && selectedJob.salary.max ? ' - ' : ''}${selectedJob.salary.max || ''}${selectedJob.salary.min && !selectedJob.salary.max ? '+' : ''}`
+                      : 'Competitive'}
                   </p>
                 </div>
                 <div>
@@ -734,7 +1189,7 @@ const Dashboard = () => {
                     Experience Level
                   </h3>
                   <p className="text-gray-600">
-                    {selectedJob.experience || selectedJob.experienceLevel || 'Not specified'}
+                    {selectedJob.experience || 'Entry Level'}
                   </p>
                 </div>
                 <div>
@@ -791,6 +1246,11 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="p-6">
+              {/* Debug: Show selected application data */}
+              {console.log(
+                '🎯 Modal opened with selectedApplication:',
+                selectedApplication
+              )}
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
@@ -823,7 +1283,7 @@ const Dashboard = () => {
                     Experience Level
                   </h3>
                   <p className="text-gray-600">
-                    {selectedApplication.experience || 'Not specified'}
+                    {selectedApplication.experience || 'Entry Level'}
                   </p>
                 </div>
                 <div>
@@ -832,7 +1292,12 @@ const Dashboard = () => {
                   </h3>
                   <p className="text-gray-600">
                     {selectedApplication.expectedSalary
-                      ? `${selectedApplication.currency} ${selectedApplication.expectedSalary}`
+                      ? typeof selectedApplication.expectedSalary === 'object'
+                        ? selectedApplication.expectedSalary.amount ||
+                          selectedApplication.expectedSalary.min
+                          ? `${selectedApplication.expectedSalary.currency || 'AED'} ${selectedApplication.expectedSalary.amount || selectedApplication.expectedSalary.min}`
+                          : `${selectedApplication.expectedSalary.currency || 'AED'} (Not specified)`
+                        : `${selectedApplication.currency || 'AED'} ${selectedApplication.expectedSalary}`
                       : 'Not specified'}
                   </p>
                 </div>
@@ -841,43 +1306,211 @@ const Dashboard = () => {
                     Cover Letter
                   </h3>
                   <p className="text-gray-600 whitespace-pre-wrap">
-                    {selectedApplication.coverLetter || 'Not specified'}
+                    {selectedApplication.coverLetter &&
+                    selectedApplication.coverLetter.trim().length > 0
+                      ? selectedApplication.coverLetter
+                      : 'Not specified'}
                   </p>
                 </div>
                 <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Resume/CV
+                  </h3>
+                  {/* Debug: Log resume data structure */}
+                  {console.log(
+                    '🔍 Resume data structure:',
+                    selectedApplication.resume
+                  )}
+                  {selectedApplication.resume &&
+                  (selectedApplication.resume.filename ||
+                    selectedApplication.resume.originalName ||
+                    selectedApplication.resume.data ||
+                    selectedApplication.resume.size > 0) ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        <i className="fas fa-file-pdf-alt mr-2"></i>
+                        {selectedApplication.resume.originalName ||
+                          selectedApplication.resume.filename}
+                        <span className="ml-2 text-xs text-gray-500">
+                          (
+                          {Math.round(
+                            (selectedApplication.resume.size || 0) / 1024
+                          )}{' '}
+                          KB)
+                        </span>
+                      </p>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() =>
+                            handleViewResume(selectedApplication._id)
+                          }
+                          className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                        >
+                          <i className="fas fa-eye mr-2"></i>
+                          View Resume
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDownloadResume(selectedApplication._id)
+                          }
+                          className="px-3 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors text-sm font-medium"
+                        >
+                          <i className="fas fa-download mr-2"></i>
+                          Download Resume
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        <i className="fas fa-file-alt mr-2"></i>
+                        No resume uploaded
+                      </p>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            // Check if we have a valid selected application
+                            if (
+                              !selectedApplication ||
+                              !selectedApplication._id
+                            ) {
+                              console.log('❌ No valid application selected')
+                              setSuccessMessage('No application selected')
+                              setTimeout(() => setSuccessMessage(''), 2000)
+                              return
+                            }
+
+                            console.log(
+                              '🔄 Force refreshing application data from backend...'
+                            )
+                            console.log(
+                              '📋 Application ID:',
+                              selectedApplication._id
+                            )
+
+                            fetchApplications(true) // Force refresh with cache busting
+
+                            // Also fetch the specific application details
+                            const fetchApplicationDetails = async () => {
+                              try {
+                                const response = await api.get(
+                                  `/applications/${selectedApplication._id}`
+                                )
+                                console.log('📋 API Response:', response)
+                                console.log(
+                                  '📋 Response data structure:',
+                                  JSON.stringify(response.data, null, 2)
+                                )
+
+                                // Handle different response structures
+                                const applicationData =
+                                  response.data?.data?.application || // New structure: data.application
+                                  response.data?.application || // Alternative: data.application
+                                  response.data?.data || // Original: data
+                                  response.data || // Direct: response
+                                  response // Fallback: response
+
+                                if (applicationData) {
+                                  console.log(
+                                    '📄 Fresh application data:',
+                                    applicationData
+                                  )
+                                  console.log(
+                                    '📄 Complete application structure:',
+                                    JSON.stringify(applicationData, null, 2)
+                                  )
+                                  console.log(
+                                    '🔍 Resume in fresh data:',
+                                    applicationData.resume
+                                  )
+                                  console.log(
+                                    '🔍 Resume type:',
+                                    typeof applicationData.resume
+                                  )
+                                  console.log(
+                                    '🔍 Resume keys:',
+                                    applicationData.resume
+                                      ? Object.keys(applicationData.resume)
+                                      : 'no resume object'
+                                  )
+                                  // Update the selected application with fresh data
+                                  setSelectedApplication(applicationData)
+                                  setSuccessMessage(
+                                    'Application data refreshed!'
+                                  )
+                                  setTimeout(() => setSuccessMessage(''), 2000)
+                                } else {
+                                  console.log(
+                                    '⚠️ No application data in response'
+                                  )
+                                  setSuccessMessage('No application data found')
+                                  setTimeout(() => setSuccessMessage(''), 2000)
+                                }
+                              } catch (error) {
+                                console.error(
+                                  '❌ Error fetching application details:',
+                                  error
+                                )
+                                setSuccessMessage(
+                                  'Failed to fetch application details'
+                                )
+                                setTimeout(() => setSuccessMessage(''), 2000)
+                              }
+                            }
+
+                            fetchApplicationDetails()
+                          }}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                        >
+                          <i className="fas fa-sync-alt mr-2"></i>
+                          Refresh Data
+                        </button>
+                        <button
+                          onClick={addTestResumeData}
+                          className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
+                          title="Add test resume data for debugging"
+                        >
+                          <i className="fas fa-flask mr-2"></i>
+                          Test Resume
+                        </button>
+                        <button
+                          disabled
+                          className="px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
+                          title="No resume available"
+                        >
+                          <i className="fas fa-eye mr-2"></i>
+                          View Resume
+                        </button>
+                        <button
+                          disabled
+                          className="px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
+                          title="No resume available"
+                        >
+                          <i className="fas fa-download mr-2"></i>
+                          Download Resume
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Status</h3>
-                  <span
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      selectedApplication.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : selectedApplication.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
+                  <p className="text-gray-600">
                     {selectedApplication.status || 'pending'}
-                  </span>
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
                     Submitted Date
                   </h3>
                   <p className="text-gray-600">
-                    {new Date(selectedApplication.createdAt).toLocaleString()}
+                    {selectedApplication.createdAt
+                      ? new Date(selectedApplication.createdAt).toLocaleString()
+                      : 'Not specified'}
                   </p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-check-circle"></i>
-            <span>{successMessage}</span>
           </div>
         </div>
       )}

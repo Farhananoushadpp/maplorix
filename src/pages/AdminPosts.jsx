@@ -10,13 +10,16 @@ const AdminPosts = () => {
     jobs,
     loading,
     error,
-    fetchJobs,
+    fetchJobsForFeed,
     createJob,
     updateJob,
     deleteJob,
     clearError,
   } = useData()
   const navigate = useNavigate()
+
+  // Separate state for admin jobs (feed jobs)
+  const [adminJobs, setAdminJobs] = useState([])
 
   // Check if user is admin
   useEffect(() => {
@@ -38,18 +41,20 @@ const AdminPosts = () => {
     if (!salaryString || typeof salaryString === 'object') {
       return salaryString
     }
-    
+
     // Try to parse formats like "80,000 - 120,000 AED" or "50000 AED"
-    const match = salaryString.match(/(\d+[,\d]*)\s*(?:-\s*(\d+[,\d]*))?\s*([A-Z]{3})?/i)
+    const match = salaryString.match(
+      /(\d+[,\d]*)\s*(?:-\s*(\d+[,\d]*))?\s*([A-Z]{3})?/i
+    )
     if (match) {
       const [, min, max, currency] = match
       return {
         min: min.replace(/,/g, ''),
         max: max ? max.replace(/,/g, '') : undefined,
-        currency: currency || 'AED'
+        currency: currency || 'AED',
       }
     }
-    
+
     return { min: salaryString, currency: 'AED' }
   }
 
@@ -67,13 +72,13 @@ const AdminPosts = () => {
   // Fetch existing posts from backend - defined before useEffect
   const fetchPosts = useCallback(async () => {
     try {
-      const response = await fetchJobs()
-      console.log('📋 AdminPosts: Fetched jobs from backend:', response)
-      // The posts will be updated by the useEffect below when jobs state changes
+      const response = await fetchJobsForFeed()
+      console.log('📋 AdminPosts: Fetched admin jobs from feed:', response)
+      setAdminJobs(response || [])
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
-  }, [fetchJobs])
+  }, [fetchJobsForFeed])
 
   // Fetch existing posts from backend
   useEffect(() => {
@@ -140,7 +145,8 @@ const AdminPosts = () => {
         description: formData.description,
         postedDate: formData.postedDate,
         type: 'Full-time', // Default job type
-        postedBy: 'admin', // Since this is admin posts page
+        postedBy: 'admin', // Admin-posted job (shows in feed)
+        status: 'active', // Show in feed - admin approved posts
       }
 
       await createJob(jobData)
@@ -151,6 +157,9 @@ const AdminPosts = () => {
       // Reset form
       resetForm()
       setShowCreateModal(false)
+
+      // Refresh admin jobs list
+      fetchPosts()
 
       console.log('✅ AdminPosts: Job vacancy created successfully')
     } catch (error) {
@@ -177,6 +186,7 @@ const AdminPosts = () => {
         requirements: formData.requirements,
         description: formData.description,
         postedDate: formData.postedDate,
+        status: 'active', // Maintain active status for admin posts
       }
 
       await updateJob(editingPost._id, jobData)
@@ -210,6 +220,9 @@ const AdminPosts = () => {
       setSuccessMessage('Job vacancy deleted successfully!')
       setTimeout(() => setSuccessMessage(''), 3000)
 
+      // Refresh admin jobs list
+      fetchPosts()
+
       console.log('✅ AdminPosts: Job vacancy deleted successfully')
     } catch (error) {
       console.error('❌ Error deleting job vacancy:', error)
@@ -227,11 +240,11 @@ const AdminPosts = () => {
       title: post.title || post.jobTitle || '',
       location: post.location || 'Remote', // Default value for existing posts
       experience: post.experience || '',
-      salary: post.salary 
-      ? typeof post.salary === 'object' 
-        ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
-        : post.salary
-      : '',
+      salary: post.salary
+        ? typeof post.salary === 'object'
+          ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
+          : post.salary
+        : '',
       requirements: post.requirements || '',
       description: post.description || post.jobDescription || '',
       postedDate: post.postedDate || new Date().toISOString().split('T')[0],
@@ -339,7 +352,7 @@ const AdminPosts = () => {
                   Total Vacancies
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
-                  {jobs.length}
+                  {adminJobs.length}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Posted positions</p>
               </div>
@@ -420,7 +433,7 @@ const AdminPosts = () => {
                 </h3>
               </div>
               <div className="text-sm text-gray-500">
-                {jobs.length} vacancies
+                {adminJobs.length} vacancies
               </div>
             </div>
           </div>
@@ -472,7 +485,7 @@ const AdminPosts = () => {
                     </td>
                   </tr>
                 ) : (
-                  jobs.slice(0, postsToShow).map((post) => (
+                  adminJobs.slice(0, postsToShow).map((post) => (
                     <tr key={post._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -499,12 +512,11 @@ const AdminPosts = () => {
                         {post.experience}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {post.salary 
-                          ? typeof post.salary === 'object' 
+                        {post.salary
+                          ? typeof post.salary === 'object'
                             ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
                             : post.salary
-                          : 'Not specified'
-                        }
+                          : 'Not specified'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(post.postedDate).toLocaleDateString()}
@@ -544,18 +556,18 @@ const AdminPosts = () => {
         </div>
 
         {/* See More / Show Less Button */}
-        {jobs.length > 5 && (
+        {adminJobs.length > 5 && (
           <div className="text-center mt-6">
             <button
               onClick={() =>
-                setPostsToShow(postsToShow === 5 ? jobs.length : 5)
+                setPostsToShow(postsToShow === 5 ? adminJobs.length : 5)
               }
               className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               {postsToShow === 5 ? (
                 <>
                   <i className="fas fa-chevron-down mr-2"></i>
-                  See More ({jobs.length - 5} more)
+                  See More ({adminJobs.length - 5} more)
                 </>
               ) : (
                 <>

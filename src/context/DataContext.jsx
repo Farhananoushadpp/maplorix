@@ -1,5 +1,12 @@
 // Data Context for managing jobs and applications state
-import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react'
 import { jobsAPI, applicationsAPI } from '../services/api'
 
 // Data context
@@ -316,7 +323,13 @@ export const DataProvider = ({ children }) => {
   const fetchJobs = useCallback(async (filters = {}) => {
     try {
       dispatch({ type: DATA_ACTIONS.FETCH_JOBS_START })
-      const response = await jobsAPI.getJobsForDashboard(filters)
+      // Add timestamp to force refresh if requested
+      const params = { ...filters }
+      if (filters.forceRefresh) {
+        params._t = Date.now() // Cache busting parameter
+        delete params.forceRefresh
+      }
+      const response = await jobsAPI.getJobsForDashboard(params)
       // Handle both response formats: direct array or wrapped in object
       const jobsData = Array.isArray(response)
         ? response
@@ -403,12 +416,17 @@ export const DataProvider = ({ children }) => {
   const fetchApplications = async (filters = {}) => {
     try {
       dispatch({ type: DATA_ACTIONS.FETCH_APPLICATIONS_START })
-      const response =
-        await applicationsAPI.getApplicationsForDashboard(filters)
-      // Handle both response formats: direct array or wrapped in object
+      // Add timestamp to force refresh if requested
+      const params = { ...filters }
+      if (filters.forceRefresh) {
+        params._t = Date.now() // Cache busting parameter
+        delete params.forceRefresh
+      }
+      const response = await applicationsAPI.getApplicationsForDashboard(params)
+      // Handle backend response structure: {success: true, data: {applications: [...], pagination: {...}}}
       const applicationsData = Array.isArray(response)
         ? response
-        : response.applications || response.data?.applications || []
+        : response.data?.applications || response.applications || []
       dispatch({
         type: DATA_ACTIONS.FETCH_APPLICATIONS_SUCCESS,
         payload: applicationsData,

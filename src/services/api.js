@@ -7,12 +7,27 @@ const API_PORTS = [4000, 4001, 4002, 4003]
 
 // Create axios instance with default configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
-  timeout: 10000,
+  baseURL: 'http://localhost:4001/api', // Use port 4001 (backend is running on 4001)
+  timeout: 15000, // Reduced from 10000 to 15000 to give more time but still reasonable
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+// Add cache-busting interceptor for GET requests
+api.interceptors.request.use(
+  (config) => {
+    // Add cache-busting query parameter to GET requests
+    if (config.method === 'get') {
+      const separator = config.url.includes('?') ? '&' : '?'
+      config.url += `${separator}_t=${Date.now()}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 // Function to update baseURL if needed
 const updateApiBaseUrl = async () => {
@@ -213,7 +228,7 @@ export const jobsAPI = {
     const response = await api.get('/jobs', {
       params: {
         ...filters,
-        status: 'active',
+        status: 'active', // Only show admin posts (active status)
         limit: 100,
         sortBy: 'createdAt',
         sortOrder: 'desc',
@@ -284,7 +299,7 @@ export const applicationsAPI = {
 
   createApplicationFromFeed: async (applicationData) => {
     const response = await api.post('/applications', applicationData, {
-      timeout: 30000, // Increased to 30 seconds for application submission
+      timeout: 60000, // Increased to 60 seconds for application submission
     })
     return response.data
   },
