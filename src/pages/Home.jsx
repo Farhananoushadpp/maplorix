@@ -1,6 +1,7 @@
 // Home Page - Maplorix Recruitment Agency Landing Page
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import Hero from '../components/Hero'
 import About from '../components/About'
 import Contact from '../components/Contact'
@@ -18,21 +19,18 @@ const Home = () => {
   const [successMessage, setSuccessMessage] = useState('')
 
   const { user, isAuthenticated } = useAuth()
-  const { fetchJobs, fetchApplications } = useData()
+  const { fetchJobsForFeed } = useData()
   const navigate = useNavigate()
 
   // Fetch available jobs for display (only admin posts should show here)
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        // Use getJobsForFeed to only get admin posts (active status)
-        const response = await jobsAPI.getJobsForFeed()
-        const allJobs = response.data || []
+        // Use fetchJobsForFeed to get all jobs (same as PostsFeed)
+        const allJobs = await fetchJobsForFeed()
 
         // Additional client-side filter to ensure only admin posts
-        const adminJobs = allJobs.filter(
-          (job) => job.postedBy === 'admin' && job.status === 'active'
-        )
+        const adminJobs = allJobs.filter((job) => job.postedBy === 'admin')
 
         console.log('🏠 Home: Total jobs fetched:', allJobs.length)
         console.log('🏠 Home: Admin jobs filtered:', adminJobs.length)
@@ -44,7 +42,7 @@ const Home = () => {
     }
 
     fetchJobs()
-  }, [])
+  }, [fetchJobsForFeed])
 
   // Handle successful job posting
   const handlePostJobSuccess = (jobData) => {
@@ -99,7 +97,26 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <>
+      <SEO 
+        title="Leading Recruitment Agency | Find Jobs & Hire Talent"
+        description="Maplorix is a premier recruitment agency connecting talented professionals with top employers. Search jobs, upload resume, get career counseling, and hire the best talent."
+        keywords="recruitment agency, job search, career counseling, resume building, interview preparation, talent acquisition, staffing solutions, executive search"
+        canonicalUrl="https://www.maplorix.com/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Maplorix - Leading Recruitment Agency",
+          "description": "Premier recruitment agency connecting talented professionals with top employers",
+          "url": "https://www.maplorix.com/",
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "Maplorix Recruitment Agency",
+            "url": "https://www.maplorix.com"
+          }
+        }}
+      />
+      <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Only render main content when no modals are open */}
       {!showPostJobModal && !showApplyJobModal && !showResumeModal && (
         <main className="w-full max-w-full">
@@ -114,116 +131,6 @@ const Home = () => {
           <section aria-labelledby="about-section">
             <About />
           </section>
-
-          {/* Available Jobs Section */}
-          {availableJobs.length > 0 && (
-            <section
-              className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-primary/5 to-secondary/5"
-              aria-labelledby="available-jobs-heading"
-            >
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-                  <h2
-                    id="available-jobs-heading"
-                    className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mb-3 sm:mb-4"
-                  >
-                    Available Opportunities
-                  </h2>
-                  <p className="text-base sm:text-lg lg:text-xl text-text-light max-w-3xl mx-auto px-4">
-                    Explore our latest job openings from top employers
-                  </p>
-                </div>
-
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
-                  role="list"
-                >
-                  {availableJobs.map((job) => (
-                    <article
-                      key={job._id}
-                      className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 sm:p-6 border border-gray-100 hover:scale-105"
-                      role="listitem"
-                    >
-                      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4">
-                        <h3 className="text-lg sm:text-xl font-bold text-primary mb-2 sm:mb-0 line-clamp-2">
-                          {job.title}
-                        </h3>
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 bg-accent/20 text-accent text-xs sm:text-sm font-medium rounded-full whitespace-nowrap">
-                          {job.type || 'Full-time'}
-                        </span>
-                      </header>
-
-                      <div className="space-y-2 sm:space-y-3 mb-4">
-                        <div className="flex items-center text-sm sm:text-base text-text-light">
-                          <i
-                            className="fas fa-building mr-2 sm:mr-3 text-secondary flex-shrink-0"
-                            aria-hidden="true"
-                          ></i>
-                          <span className="truncate">
-                            {job.company || 'Not specified'}
-                          </span>
-                        </div>
-                        <div className="flex items-center text-sm sm:text-base text-text-light">
-                          <i
-                            className="fas fa-map-marker-alt mr-2 sm:mr-3 text-secondary flex-shrink-0"
-                            aria-hidden="true"
-                          ></i>
-                          <span className="truncate">
-                            {job.location || 'Not specified'}
-                          </span>
-                        </div>
-                        <div className="flex items-center text-sm sm:text-base text-text-light">
-                          <i
-                            className="fas fa-chart-line mr-2 sm:mr-3 text-secondary flex-shrink-0"
-                            aria-hidden="true"
-                          ></i>
-                          <span className="truncate">
-                            {job.experience || 'Entry Level'}
-                          </span>
-                        </div>
-                        {job.salary && (
-                          <div className="flex items-center text-sm sm:text-base text-text-light">
-                            <i
-                              className="fas fa-money-bill mr-2 sm:mr-3 text-secondary flex-shrink-0"
-                              aria-hidden="true"
-                            ></i>
-                            <span className="truncate">
-                              {job.salary.min && job.salary.max
-                                ? `${job.salary.currency || 'USD'} ${job.salary.min} - ${job.salary.max}`
-                                : job.salary.amount || 'Competitive'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <footer>
-                        <button
-                          onClick={() => {
-                            setSelectedJob(job)
-                            setShowApplyJobModal(true)
-                          }}
-                          className="w-full bg-gradient-to-r from-primary to-secondary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
-                          aria-label={`Apply for ${job.title} position at ${job.company || 'company'}`}
-                        >
-                          Apply Now
-                        </button>
-                      </footer>
-                    </article>
-                  ))}
-                </div>
-
-                <div className="text-center mt-8 sm:mt-12">
-                  <button
-                    onClick={() => navigate('/feed')}
-                    className="bg-white text-primary border-2 border-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-primary hover:text-white transition-all duration-300 text-sm sm:text-base"
-                    aria-label="View all job opportunities"
-                  >
-                    View All Opportunities
-                  </button>
-                </div>
-              </div>
-            </section>
-          )}
 
           {/* Career Transformation Section */}
           <section
@@ -713,6 +620,7 @@ const Home = () => {
         onSuccess={handleApplyJobSuccess}
       />
     </div>
+    </>
   )
 }
 

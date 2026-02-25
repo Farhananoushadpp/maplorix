@@ -68,6 +68,30 @@ updateApiBaseUrl()
     console.error('🔧 API Service: Initialization failed:', error)
   })
 
+// Mock data for development when backend is not available
+const mockData = {
+  jobs: [],
+  applications: [],
+  stats: {
+    totalJobs: 0,
+    recentJobs: 0,
+    totalApplications: 0,
+    recentApplications: 0,
+  },
+}
+
+// Add response interceptor to handle backend not available
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+      console.warn('⚠️ Backend not available, using mock data')
+      return Promise.resolve({ data: { success: true, data: mockData } })
+    }
+    return Promise.reject(error)
+  }
+)
+
 // Request interceptor to add auth token
 
 api.interceptors.request.use(

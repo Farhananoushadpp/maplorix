@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import DashboardJobApplyModal from '../components/DashboardJobApplyModal'
 import { jobsAPI } from '../services/api'
 
@@ -18,19 +19,19 @@ const PostsFeed = () => {
   } = useData()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
-  // Filter jobs to only show admin posts (client-side backup filter)
+  const [jobsData, setJobsData] = useState([])
+  
+  // Filter jobs to show only admin-posted jobs
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      return (
-        job.postedBy === 'admin' &&
-        (job.status === 'active' || job.isActive === true)
-      )
-    })
-  }, [jobs])
+    return jobsData.filter((job) => {
+      // Show only admin-posted jobs
+      return job.postedBy === 'admin';
+    });
+  }, [jobsData])
 
-  console.log('📋 PostsFeed: Filtered jobs (admin only):', filteredJobs.length)
-  console.log('📋 PostsFeed: Original jobs:', jobs.length)
-  console.log('📋 PostsFeed: Filtered out:', jobs.length - filteredJobs.length)
+  console.log('📋 PostsFeed: Filtered admin jobs:', filteredJobs.length)
+  console.log('📋 PostsFeed: Original jobs:', jobsData.length)
+  console.log('📋 PostsFeed: Filtered out (non-admin):', jobsData.length - filteredJobs.length)
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [sortBy, setSortBy] = useState('recent')
   const [showApplyModal, setShowApplyModal] = useState(false)
@@ -83,54 +84,46 @@ const PostsFeed = () => {
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        // Fetch directly from API to ensure we get latest data
-        const response = await jobsAPI.getJobsForFeed()
+        // Use fetchJobsForFeed to get jobs (same as Home.jsx)
+        const fetchedJobs = await fetchJobsForFeed()
+        setJobsData(fetchedJobs)
+        
         console.log('📋 PostsFeed: Loaded jobs from backend')
-
-        // Update the DataContext to sync with latest data
-        await fetchJobsForFeed()
-
-        // Debug: Check what jobs we actually have
-        console.log('📋 PostsFeed: Jobs data:', jobs)
-        console.log('📋 PostsFeed: Job count:', jobs.length)
+        console.log('📋 PostsFeed: Jobs data:', fetchedJobs)
+        console.log('📋 PostsFeed: Job count:', fetchedJobs.length)
 
         // Log each job to see their status and postedBy
-        jobs.forEach((job, index) => {
+        fetchedJobs.forEach((job, index) => {
           console.log(`📋 Job ${index + 1}:`, {
             title: job.title,
             status: job.status,
             postedBy: job.postedBy,
             isActive: job.isActive,
-            isAdminPost:
-              job.postedBy === 'admin' &&
-              (job.status === 'active' || job.isActive === true),
+            isAdminPost: job.postedBy === 'admin', // Simple and correct admin detection
             // Show all fields to debug
             allFields: job,
           })
         })
 
         // Show sample job structure for debugging
-        if (jobs.length > 0) {
-          console.log('📋 Sample job structure:', jobs[0])
+        if (fetchedJobs.length > 0) {
+          console.log('📋 Sample job structure:', fetchedJobs[0])
         }
       } catch (error) {
-        console.error('Error fetching posts:', error)
+        console.error('📋 PostsFeed: Error loading jobs:', error)
       }
     }
+
     loadJobs()
-  }, []) // Run only on mount
+  }, [fetchJobsForFeed]) // Run only on mount
 
   // Refresh feed when jobs data changes (to catch admin posts created elsewhere)
   useEffect(() => {
     if (jobs.length > 0) {
       console.log('📋 PostsFeed: Jobs updated, checking for admin posts...')
 
-      // Count admin posts
-      const adminPosts = jobs.filter(
-        (job) =>
-          job.postedBy === 'admin' &&
-          (job.status === 'active' || job.isActive === true)
-      )
+      // Count admin posts - Simple and correct admin detection
+      const adminPosts = jobs.filter((job) => job.postedBy === 'admin')
       console.log(
         `📋 PostsFeed: Found ${adminPosts.length} admin posts out of ${jobs.length} total jobs`
       )
@@ -150,11 +143,9 @@ const PostsFeed = () => {
       console.log('📋 PostsFeed: Auto-refreshing feed...')
 
       try {
-        // Fetch directly from API to get latest data
-        await jobsAPI.getJobsForFeed()
-
-        // Update DataContext
-        await fetchJobsForFeed()
+        // Use fetchJobsForFeed to get latest data and update local state
+        const fetchedJobs = await fetchJobsForFeed()
+        setJobsData(fetchedJobs)
 
         setLastUpdated(new Date())
         console.log('📋 PostsFeed: Auto-refresh completed')
@@ -171,11 +162,9 @@ const PostsFeed = () => {
     console.log('📋 PostsFeed: Manual refresh triggered...')
 
     try {
-      // Fetch directly from API to get latest data
-      await jobsAPI.getJobsForFeed()
-
-      // Update DataContext
-      await fetchJobsForFeed()
+      // Use fetchJobsForFeed to get latest data and update local state
+      const fetchedJobs = await fetchJobsForFeed()
+      setJobsData(fetchedJobs)
 
       setLastUpdated(new Date())
       console.log('📋 PostsFeed: Manual refresh completed')
@@ -264,7 +253,44 @@ const PostsFeed = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 pt-20">
+    <>
+      <SEO 
+        title="Job Feed - Latest Job Opportunities | Maplorix"
+        description="Browse the latest job opportunities from top employers. Find your dream job with Maplorix - admin-posted vacancies, career opportunities, and professional positions."
+        keywords="job feed, job opportunities, job vacancies, career opportunities, admin jobs, job search, employment, job postings"
+        canonicalUrl="https://www.maplorix.com/feed"
+        ogUrl="https://www.maplorix.com/feed"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Job Feed - Latest Opportunities",
+          "description": "Browse the latest job opportunities from top employers",
+          "url": "https://www.maplorix.com/feed",
+          "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": filteredJobs.length,
+            "itemListElement": filteredJobs.map((job, index) => ({
+              "@type": "JobPosting",
+              "position": index + 1,
+              "title": job.title,
+              "description": job.description,
+              "datePosted": job.createdAt || job.postedDate,
+              "hiringOrganization": {
+                "@type": "Organization",
+                "name": job.company
+              },
+              "jobLocation": {
+                "@type": "Place",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": job.location
+                }
+              }
+            }))
+          }
+        }}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 pt-20">
       {/* Success/Error Messages */}
       {successMessage && (
         <div className="fixed top-4 right-4 z-50 bg-secondary text-white px-6 py-3 rounded-lg shadow-custom animate-fade-in">
@@ -290,25 +316,25 @@ const PostsFeed = () => {
         </div>
       )}
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Search and Filters */}
         <div className="card bg-white shadow-custom mb-8">
           <div className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
+            <div className="flex flex-col lg:flex-row gap-4 items-stretch">
+              <div className="flex-1 w-full lg:w-auto">
                 <input
                   type="text"
                   placeholder="Search job titles, requirements, or descriptions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-base"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <select
                   value={selectedFilter}
                   onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="px-4 py-2 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  className="px-4 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-base min-w-[140px]"
                 >
                   <option value="all">All Posts</option>
                   <option value="recent">Recent (Last 7 Days)</option>
@@ -316,7 +342,7 @@ const PostsFeed = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  className="px-4 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-base min-w-[140px]"
                 >
                   <option value="recent">Most Recent</option>
                   <option value="oldest">Oldest First</option>
@@ -380,48 +406,50 @@ const PostsFeed = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {displayedPosts.map((post) => (
               <article
                 key={post._id}
-                className="card bg-white shadow-custom hover:shadow-custom-hover transition-all duration-300 transform hover:-translate-y-1"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 overflow-hidden"
               >
-                <div className="p-6">
+                <div className="p-5">
                   {/* Header */}
-                  <div className="flex items-start space-x-4 mb-4">
-                    <div className="flex-1">
-                      <h2 className="text-xl font-bold text-primary mb-2">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0 pr-3">
+                      <h2 className="text-xl font-bold text-primary mb-2 leading-tight group-hover:text-secondary transition-colors duration-300">
                         {post.title || post.jobTitle}
                       </h2>
-                      <div className="flex flex-wrap gap-2 text-sm text-text-light">
-                        <span className="flex items-center">
-                          <i className="fas fa-briefcase mr-1 text-secondary"></i>
-                          {post.experience}
-                        </span>
-                        <span className="flex items-center">
-                          <i className="fas fa-map-marker-alt mr-1 text-secondary"></i>
-                          {post.location}
-                        </span>
-                        <span className="flex items-center">
-                          <i className="fas fa-building mr-1 text-secondary"></i>
-                          {post.company}
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-briefcase mr-2 text-secondary flex-shrink-0 w-4"></i>
+                          <span className="font-medium">{post.experience || 'Not specified'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-map-marker-alt mr-2 text-secondary flex-shrink-0 w-4"></i>
+                          <span className="font-medium">{post.location || 'Not specified'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-building mr-2 text-secondary flex-shrink-0 w-4"></i>
+                          <span className="font-medium">{post.company || 'Not specified'}</span>
+                        </div>
                         {post.salary && (
-                          <span className="flex items-center">
-                            <i className="fas fa-dollar-sign mr-1 text-secondary"></i>
-                            {post.salary.min && post.salary.max
-                              ? `${post.salary.min} - ${post.salary.max} ${post.salary.currency || 'USD'}`
-                              : typeof post.salary === 'object'
-                                ? post.salary.min ||
-                                  post.salary.max ||
-                                  'Salary not specified'
-                                : post.salary}
-                          </span>
+                          <div className="flex items-center text-sm text-green-700">
+                            <i className="fas fa-dollar-sign mr-2 text-green-600 flex-shrink-0 w-4"></i>
+                            <span className="font-medium">
+                              {post.salary.min && post.salary.max
+                                ? `${post.salary.currency || 'USD'} ${post.salary.min} - ${post.salary.max}`
+                                : typeof post.salary === 'object'
+                                  ? post.salary.min ||
+                                    post.salary.max ||
+                                    'Competitive'
+                                  : post.salary}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
                     {post.featured && (
-                      <span className="px-3 py-1 bg-accent text-white text-xs font-semibold rounded-full">
+                      <span className="px-3 py-1 bg-gradient-to-r from-accent to-secondary text-white text-xs font-bold rounded-full shadow-lg flex-shrink-0">
                         Featured
                       </span>
                     )}
@@ -429,37 +457,36 @@ const PostsFeed = () => {
 
                   {/* Description */}
                   <div className="mb-4">
-                    <p className="text-text-dark line-clamp-3">
-                      {post.description}
+                    <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
+                      {post.description || 'No description provided'}
                     </p>
                   </div>
 
                   {/* Requirements */}
                   {post.requirements && (
                     <div className="mb-4">
-                      <h4 className="font-semibold text-primary mb-2">
-                        Requirements:
-                      </h4>
-                      <p className="text-text-dark text-sm">
+                      <p className="text-gray-700 text-sm leading-relaxed line-clamp-2">
                         {post.requirements}
                       </p>
                     </div>
                   )}
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border-color">
-                    <div className="text-sm text-text-light">
-                      Posted{' '}
-                      {new Date(
-                        post.createdAt || post.postedDate
-                      ).toLocaleDateString()}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-500 order-2 sm:order-1">
+                      <i className="fas fa-calendar-alt mr-1 text-secondary"></i>
+                      {new Date(post.createdAt || post.postedDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
                     </div>
                     <button
                       onClick={() => handleApplyNow(post)}
-                      className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-300 font-semibold"
+                      className="px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:from-secondary hover:to-primary transition-all duration-300 font-bold text-sm whitespace-nowrap order-1 sm:order-2 w-full sm:w-auto shadow-md hover:shadow-lg flex items-center justify-center"
                     >
-                      <i className="fas fa-paper-plane"></i>
-                      <span>Apply Now</span>
+                      <i className="fas fa-rocket mr-2"></i>
+                      Apply Now
                     </button>
                   </div>
                 </div>
@@ -468,14 +495,14 @@ const PostsFeed = () => {
 
             {/* See More / Show Less Button */}
             {filteredAndSortedPosts.length > 5 && (
-              <div className="text-center mt-8">
+              <div className="lg:col-span-2 text-center mt-8">
                 <button
                   onClick={() =>
                     setPostsToShow(
                       postsToShow === 5 ? filteredAndSortedPosts.length : 5
                     )
                   }
-                  className="px-6 py-3 bg-white text-primary border border-border-color rounded-lg hover:bg-secondary/10 transition-all duration-300 font-medium shadow-custom hover:shadow-custom-hover"
+                  className="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:from-secondary hover:to-primary transition-all duration-300 font-bold text-base shadow-md hover:shadow-lg flex items-center justify-center mx-auto group"
                 >
                   {postsToShow === 5 ? (
                     <>
@@ -517,6 +544,7 @@ const PostsFeed = () => {
         </div>
       )}
     </div>
+    </>
   )
 }
 

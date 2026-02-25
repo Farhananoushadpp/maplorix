@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { sendEmailViaMailto, logEmailData } from '../services/emailService'
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +22,7 @@ const ContactPage = () => {
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'hr@maplorix.ae',
+      text: 'maplorixae@gmail.com',
       description: 'We respond within 24 hours',
     },
     {
@@ -89,25 +90,34 @@ const ContactPage = () => {
     setSubmitMessage('')
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Log the email data for debugging
+      logEmailData(formData)
+
+      // Open email client with pre-filled message to maplorixae@gmail.com
+      const result = sendEmailViaMailto(formData)
 
       setSubmitMessage(
-        'Thank you for your message! We will get back to you soon.'
+        '📧 Your email client has been opened with your message pre-filled. Please send the email to maplorixae@gmail.com to complete your submission.'
       )
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: '',
-      })
-      setErrors({})
+      
+      // Reset form after successful opening
+      setTimeout(() => {
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+        })
+        setErrors({})
+      }, 2000)
 
       setTimeout(() => {
         setSubmitMessage('')
-      }, 5000)
+      }, 10000)
     } catch (error) {
+      console.error('Contact form error:', error)
       setSubmitMessage(
-        'Sorry, there was an error sending your message. Please try again.'
+        `❌ ${error.message}`
       )
     } finally {
       setIsSubmitting(false)
@@ -188,13 +198,21 @@ const ContactPage = () => {
             {submitMessage && (
               <div
                 className={`mb-6 p-4 rounded-xl text-center ${
-                  submitMessage.includes('Thank you')
+                  submitMessage.includes('📧')
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : submitMessage.includes('✅')
                     ? 'bg-secondary/10 text-secondary border border-secondary/20'
                     : 'bg-red-50 text-red-600 border border-red-200'
                 }`}
               >
                 <i
-                  className={`fas ${submitMessage.includes('Thank you') ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2`}
+                  className={`fas ${
+                    submitMessage.includes('📧') 
+                      ? 'fa-envelope-open-text' 
+                      : submitMessage.includes('✅')
+                      ? 'fa-check-circle'
+                      : 'fa-exclamation-circle'
+                  } mr-2`}
                 ></i>
                 {submitMessage}
               </div>

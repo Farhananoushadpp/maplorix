@@ -69,9 +69,22 @@
     <meta name="apple-mobile-web-app-title" content="Maplorix" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <!-- Geographic and Business Meta Tags -->
+    <meta name="geo.region" content="US" />
+    <meta name="geo.placename" content="United States" />
+    <meta name="ICBM" content="40.7128, -74.0060" />
+    <meta name="category" content="Business, Employment, Recruitment" />
+    <meta name="coverage" content="Worldwide" />
+    <meta name="distribution" content="Global" />
+    <meta name="rating" content="General" />
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://www.maplorix.com/" />
+    
+    <!-- Hreflang for international SEO -->
+    <link rel="alternate" hreflang="en" href="https://www.maplorix.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://www.maplorix.com/" />
 
     <!-- Structured Data - Organization -->
     <script type="application/ld+json">
@@ -115,6 +128,84 @@
       }
     </script>
 
+    <!-- Structured Data - Recruitment Services -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Job Recruitment Services",
+        "description": "Professional recruitment services including job search assistance, resume building, interview preparation, and career counseling",
+        "provider": {
+          "@type": "Organization",
+          "name": "Maplorix Recruitment Agency",
+          "url": "https://www.maplorix.com"
+        },
+        "serviceType": "Recruitment Services",
+        "areaServed": "Worldwide",
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Recruitment Services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Job Search Assistance"
+              }
+            },
+            {
+              "@type": "Offer", 
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Resume Building"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service", 
+                "name": "Interview Preparation"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Career Counseling"
+              }
+            }
+          ]
+        }
+      }
+    </script>
+
+    <!-- Structured Data - Local Business -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Maplorix Recruitment Agency",
+        "description": "Leading recruitment agency connecting talented professionals with top employers",
+        "url": "https://www.maplorix.com",
+        "telephone": "+1-555-0123",
+        "email": "info@maplorix.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "US",
+          "addressRegion": "NY",
+          "addressLocality": "New York",
+          "streetAddress": "123 Business Ave"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 40.7128,
+          "longitude": -74.0060
+        },
+        "openingHours": "Mo-Fr 09:00-18:00",
+        "priceRange": "$$"
+      }
+    </script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -127,20 +218,9 @@
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-
-    <!-- Preload Critical Resources -->
-    <link
-      rel="preload"
-      href="/maplorixlogo.svg"
-      as="image"
-      type="image/svg+xml"
-    />
-    <link
-      rel="preload"
-      href="/images/jobsearch.webp"
-      as="image"
-      type="image/webp"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
     />
   </head>
   <body>

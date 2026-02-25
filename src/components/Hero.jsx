@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jobsAPI } from '../services/api'
 
@@ -10,7 +10,11 @@ const Hero = ({ onPostJob, onFindJob }) => {
   const [loading, setLoading] = useState(true)
   const videoRef = useRef(null)
 
-  const videos = ['/job1.webm', '/job2.webm', '/job3.webm']
+  const videos = useMemo(() => [
+    { src: '/job1.webm', type: 'video/webm' },
+    { src: '/job2.webm', type: 'video/webm' },
+    { src: '/job3.webm', type: 'video/webm' }
+  ], [])
 
   const handleHireTalentClick = () => {
     console.log('Hero handleHireTalentClick called')
@@ -76,26 +80,50 @@ const Hero = ({ onPostJob, onFindJob }) => {
     const videoElement = videoRef.current
 
     const handleVideoEnd = () => {
+      console.log('Video ended, moving to next video')
       setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
     }
 
     const handleVideoLoad = () => {
+      console.log('Video loaded, attempting to play')
       if (videoElement) {
         videoElement.play().catch((error) => {
           console.log('Auto-play was prevented:', error)
+          // If autoplay fails, try to advance to next video after a delay
+          setTimeout(() => {
+            setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+          }, 3000) // Wait 3 seconds then advance
         })
       }
     }
 
     const handleVideoError = (e) => {
       console.error('Video loading error:', e)
-      setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+      // Advance to next video on error
+      setTimeout(() => {
+        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+      }, 1000)
+    }
+
+    const handleVideoStalled = () => {
+      console.log('Video stalled, advancing to next')
+      setTimeout(() => {
+        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+      }, 2000)
     }
 
     if (videoElement) {
+      // Remove existing listeners
+      videoElement.removeEventListener('ended', handleVideoEnd)
+      videoElement.removeEventListener('loadeddata', handleVideoLoad)
+      videoElement.removeEventListener('error', handleVideoError)
+      videoElement.removeEventListener('stalled', handleVideoStalled)
+      
+      // Add new listeners
       videoElement.addEventListener('ended', handleVideoEnd)
       videoElement.addEventListener('loadeddata', handleVideoLoad)
       videoElement.addEventListener('error', handleVideoError)
+      videoElement.addEventListener('stalled', handleVideoStalled)
 
       videoElement.playsInline = true
       videoElement.muted = true
@@ -107,23 +135,52 @@ const Hero = ({ onPostJob, onFindJob }) => {
         videoElement.removeEventListener('ended', handleVideoEnd)
         videoElement.removeEventListener('loadeddata', handleVideoLoad)
         videoElement.removeEventListener('error', handleVideoError)
+        videoElement.removeEventListener('stalled', handleVideoStalled)
       }
     }
-  }, [currentVideoIndex])
+  }, [currentVideoIndex, videos.length])
 
   useEffect(() => {
     if (videoRef.current) {
       const videoElement = videoRef.current
+      console.log(`Loading video ${currentVideoIndex}: ${videos[currentVideoIndex].src}`)
+      
+      // Reset and load new video
       videoElement.pause()
+      videoElement.currentTime = 0
       videoElement.load()
 
-      setTimeout(() => {
-        videoElement.play().catch((error) => {
-          console.log('Auto-play was prevented:', error)
+      // Set a timeout to advance if video gets stuck
+      const timeoutId = setTimeout(() => {
+        console.log('Video timeout - advancing to next video')
+        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+      }, 10000) // 10 seconds timeout
+
+      // Try to play with fallback
+      const attemptPlay = () => {
+        videoElement.play().then(() => {
+          // Clear timeout if play succeeds
+          clearTimeout(timeoutId)
+        }).catch((error) => {
+          console.log('Play failed:', error)
+          // If play fails, advance to next video after delay
+          setTimeout(() => {
+            console.log('Advancing to next video due to play failure')
+            setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+          }, 2000)
         })
-      }, 100)
+      }
+
+      // Immediate play attempt
+      attemptPlay()
+      
+      // Fallback play attempt
+      setTimeout(attemptPlay, 500)
+
+      // Cleanup timeout on unmount
+      return () => clearTimeout(timeoutId)
     }
-  }, [currentVideoIndex])
+  }, [currentVideoIndex, videos])
 
   return (
     <section
@@ -149,7 +206,7 @@ const Hero = ({ onPostJob, onFindJob }) => {
             transition: 'opacity 0.8s ease-in-out',
           }}
         >
-          <source src={videos[currentVideoIndex]} type="video/mp4" />
+          <source src={videos[currentVideoIndex].src} type={videos[currentVideoIndex].type} />
           Your browser does not support the video tag.
         </video>
 

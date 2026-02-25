@@ -47,8 +47,8 @@ const Header = () => {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-lg bg-primary">
-      <nav className="py-3 sm:py-4">
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-lg bg-primary" role="banner">
+      <nav className="py-3 sm:py-4" role="navigation" aria-label="Main navigation">
         <div className="container px-4">
           <div className="flex justify-between items-center">
             {/* Logos - Left Side */}
@@ -58,41 +58,46 @@ const Header = () => {
                 to="/"
                 className="flex items-center no-underline"
                 onClick={handleNavClick}
+                aria-label="Maplorix Home - Leading Recruitment Agency"
               >
                 <img
                   src="/maplorixlogo.svg"
-                  alt="Maplorix"
+                  alt="Maplorix Logo"
                   className="h-8 sm:h-9 md:h-10 w-auto"
                 />
               </Link>
 
               <img
                 src="/logo.svg"
-                alt="Maplorix"
+                alt="Maplorix Recruitment Agency"
                 className="h-8 sm:h-9 md:h-10 w-auto"
               />
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <ul className="flex items-center space-x-8 list-none m-0 p-0">
+              <ul className="flex items-center space-x-8 list-none m-0 p-0" role="menubar">
                 {NAVIGATION_ITEMS.slice(0, 3).map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} role="none">
                     <Link
                       to={item.path}
                       onClick={handleNavClick}
                       className={`nav-link ${isActiveRoute(item.path) ? 'active' : ''}`}
+                      role="menuitem"
+                      aria-current={isActiveRoute(item.path) ? 'page' : undefined}
                     >
                       {item.label}
                     </Link>
                   </li>
                 ))}
                 {isAuthenticated && user?.role === 'admin' && (
-                  <li>
+                  <li role="none">
                     <Link
                       to="/dashboard"
                       onClick={handleNavClick}
                       className={`nav-link ${isActiveRoute('/dashboard') ? 'active' : ''}`}
+                      role="menuitem"
+                      aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
                     >
                       Dashboard
                     </Link>
