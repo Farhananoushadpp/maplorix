@@ -772,7 +772,7 @@ const Dashboard = () => {
                   }
                   className="px-3 py-2 bg-secondary text-white rounded-lg text-sm hover:bg-secondary/90 transition-colors"
                 >
-                  Clear
+                  Clear Filters
                 </button>
               </div>
             </div>
@@ -916,229 +916,254 @@ const Dashboard = () => {
                   {filterApplications(applications).length} applications
                 </div>
               </div>
-            </div>
 
-            {/* Applications Filters */}
-            <div className="px-6 py-4 border-b border-border-color bg-primary/5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Search name..."
-                  value={applicationFilters.fullName}
-                  onChange={(e) =>
-                    setApplicationFilters((prev) => ({
-                      ...prev,
-                      fullName: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                />
-                <input
-                  type="text"
-                  placeholder="Search email..."
-                  value={applicationFilters.email}
-                  onChange={(e) =>
-                    setApplicationFilters((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                />
-                <select
-                  value={applicationFilters.experience}
-                  onChange={(e) =>
-                    setApplicationFilters((prev) => ({
-                      ...prev,
-                      experience: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="">All Experience</option>
-                  <option value="Entry Level">Entry Level</option>
-                  <option value="Mid Level">Mid Level</option>
-                  <option value="Senior Level">Senior Level</option>
-                  <option value="Executive">Executive</option>
-                </select>
-                <select
-                  value={applicationFilters.expectedSalary}
-                  onChange={(e) =>
-                    setApplicationFilters((prev) => ({
-                      ...prev,
-                      expectedSalary: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                >
-                  <option value="">All Salaries</option>
-                  <option value="3000">3000+</option>
-                  <option value="5000">5000+</option>
-                  <option value="7000">7000+</option>
-                  <option value="10000">10000+</option>
-                  <option value="15000">15000+</option>
-                  <option value="20000">20000+</option>
-                </select>
-                <button
-                  onClick={() =>
-                    setApplicationFilters({
-                      fullName: '',
-                      email: '',
-                      jobRole: '',
-                      experience: '',
-                      expectedSalary: '',
-                      sortBy: 'createdAt',
-                      sortOrder: 'desc',
-                    })
-                  }
-                  className="px-3 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent/90 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {filterApplications(applications).length === 0 ? (
-                <p className="text-text-light text-center py-8">
-                  No applications yet
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {filterApplications(applications)
-                    .slice(
-                      0,
-                      showAllApplications ? undefined : applicationsToShow
-                    )
-                    .map((application) => (
-                      <div
-                        key={application._id}
-                        className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-primary">
-                            {application.fullName || 'N/A'}
-                          </h4>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              application.status === 'approved'
-                                ? 'bg-secondary/20 text-secondary'
-                                : application.status === 'rejected'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-accent/20 text-accent'
-                            }`}
-                          >
-                            {application.status || 'pending'}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-sm text-text-light">
-                          <p>
-                            <i className="fas fa-envelope mr-2"></i>
-                            {application.email || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-phone mr-2"></i>
-                            {application.phone || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-briefcase mr-2"></i>
-                            {application.jobRole || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-chart-line mr-2"></i>
-                            {application.experience || 'Entry Level'}
-                          </p>
-                          <p>
-                            <i className="fas fa-money-bill mr-2"></i>
-                            {application.expectedSalary
-                              ? typeof application.expectedSalary === 'object'
-                                ? application.expectedSalary.amount ||
-                                  application.expectedSalary.min
-                                  ? `${application.expectedSalary.currency || 'AED'} ${application.expectedSalary.amount || application.expectedSalary.min}`
-                                  : `${application.expectedSalary.currency || 'AED'} (Not specified)`
-                                : `${application.currency || 'AED'} ${application.expectedSalary}`
-                              : 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-file-alt mr-2"></i>
-                            {application.coverLetter &&
-                            application.coverLetter.trim().length > 0
-                              ? application.coverLetter.length > 50
-                                ? `${application.coverLetter.substring(0, 50)}...`
-                                : application.coverLetter
-                              : 'Not specified'}
-                          </p>
-                        </div>
-                        <div className="mt-3 flex space-x-2">
-                          <button
-                            onClick={() => {
-                              console.log(
-                                '🔍 Opening application details:',
-                                application
-                              )
-                              console.log('🔍 Application ID:', application._id)
-                              console.log(
-                                '🔍 Application fullName:',
-                                application.fullName
-                              )
-                              console.log(
-                                '🔍 Application email:',
-                                application.email
-                              )
-                              setSelectedApplication(application)
-                              setShowApplicationModal(true)
-                            }}
-                            className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => handleDeleteApplication(application)}
-                            disabled={deletingApplicationId === application._id}
-                            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                          >
-                            {deletingApplicationId === application._id ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                Deleting...
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-trash"></i>
-                                Delete
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {/* See More/Less Button */}
-              {filterApplications(applications).length > applicationsToShow && (
-                <div className="p-4 border-t border-border-color">
-                  <button
-                    onClick={() => setShowAllApplications(!showAllApplications)}
-                    className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
+              {/* Applications Filters */}
+              <div className="px-6 py-4 border-b border-border-color bg-primary/5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search name..."
+                    value={applicationFilters.fullName}
+                    onChange={(e) =>
+                      setApplicationFilters((prev) => ({
+                        ...prev,
+                        fullName: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search email..."
+                    value={applicationFilters.email}
+                    onChange={(e) =>
+                      setApplicationFilters((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  />
+                  <select
+                    value={applicationFilters.experience}
+                    onChange={(e) =>
+                      setApplicationFilters((prev) => ({
+                        ...prev,
+                        experience: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
                   >
-                    {showAllApplications ? (
-                      <>
-                        <i className="fas fa-chevron-up"></i>
-                        See Less
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-chevron-down"></i>
-                        See More (
-                        {filterApplications(applications).length -
-                          applicationsToShow}{' '}
-                        more)
-                      </>
-                    )}
+                    <option value="">All Experience</option>
+                    <option value="Entry Level">Entry Level</option>
+                    <option value="Mid Level">Mid Level</option>
+                    <option value="Senior Level">Senior Level</option>
+                    <option value="Executive">Executive</option>
+                  </select>
+                  <select
+                    value={applicationFilters.expectedSalary}
+                    onChange={(e) =>
+                      setApplicationFilters((prev) => ({
+                        ...prev,
+                        expectedSalary: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <option value="">All Salaries</option>
+                    <option value="3000">3000+</option>
+                    <option value="5000">5000+</option>
+                    <option value="7000">7000+</option>
+                    <option value="10000">10000+</option>
+                    <option value="15000">15000+</option>
+                    <option value="20000">20000+</option>
+                  </select>
+                  <select
+                    value={applicationFilters.jobRole}
+                    onChange={(e) =>
+                      setApplicationFilters((prev) => ({
+                        ...prev,
+                        jobRole: e.target.value,
+                      }))
+                    }
+                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+                    <option value="">All Job Roles</option>
+                    <option value="developer">Developer</option>
+                    <option value="designer">Designer</option>
+                    <option value="manager">Manager</option>
+                    <option value="analyst">Analyst</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      setApplicationFilters({
+                        fullName: '',
+                        email: '',
+                        jobRole: '',
+                        experience: '',
+                        expectedSalary: '',
+                      })
+                    }
+                    className="px-3 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent/90 transition-colors"
+                  >
+                    Clear Filters
                   </button>
                 </div>
-              )}
+              </div>
+
+              <div className="p-6">
+                {filterApplications(applications).length === 0 ? (
+                  <p className="text-text-light text-center py-8">
+                    No applications yet
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {filterApplications(applications)
+                      .slice(
+                        0,
+                        showAllApplications ? undefined : applicationsToShow
+                      )
+                      .map((application) => (
+                        <div
+                          key={application._id}
+                          className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-primary">
+                              {application.fullName || 'N/A'}
+                            </h4>
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                application.status === 'approved'
+                                  ? 'bg-secondary/20 text-secondary'
+                                  : application.status === 'rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-accent/20 text-accent'
+                              }`}
+                            >
+                              {application.status || 'pending'}
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-sm text-text-light">
+                            <p>
+                              <i className="fas fa-envelope mr-2"></i>
+                              {application.email || 'Not specified'}
+                            </p>
+                            <p>
+                              <i className="fas fa-phone mr-2"></i>
+                              {application.phone || 'Not specified'}
+                            </p>
+                            <p>
+                              <i className="fas fa-briefcase mr-2"></i>
+                              {application.jobRole || 'Not specified'}
+                            </p>
+                            <p>
+                              <i className="fas fa-chart-line mr-2"></i>
+                              {application.experience || 'Entry Level'}
+                            </p>
+                            <p>
+                              <i className="fas fa-money-bill mr-2"></i>
+                              {application.expectedSalary
+                                ? typeof application.expectedSalary === 'object'
+                                  ? application.expectedSalary.amount ||
+                                    application.expectedSalary.min
+                                    ? `${application.expectedSalary.currency || 'AED'} ${application.expectedSalary.amount || application.expectedSalary.min}`
+                                    : `${application.expectedSalary.currency || 'AED'} (Not specified)`
+                                  : `${application.currency || 'AED'} ${application.expectedSalary}`
+                                : 'Not specified'}
+                            </p>
+                            <p>
+                              <i className="fas fa-file-alt mr-2"></i>
+                              {application.coverLetter &&
+                              application.coverLetter.trim().length > 0
+                                ? application.coverLetter.length > 50
+                                  ? `${application.coverLetter.substring(0, 50)}...`
+                                  : application.coverLetter
+                                : 'Not specified'}
+                            </p>
+                          </div>
+                          <div className="mt-3 flex space-x-2">
+                            <button
+                              onClick={() => {
+                                console.log(
+                                  '🔍 Opening application details:',
+                                  application
+                                )
+                                console.log(
+                                  '🔍 Application ID:',
+                                  application._id
+                                )
+                                console.log(
+                                  '🔍 Application fullName:',
+                                  application.fullName
+                                )
+                                console.log(
+                                  '🔍 Application email:',
+                                  application.email
+                                )
+                                setSelectedApplication(application)
+                                setShowApplicationModal(true)
+                              }}
+                              className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteApplication(application)
+                              }
+                              disabled={
+                                deletingApplicationId === application._id
+                              }
+                              className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                            >
+                              {deletingApplicationId === application._id ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-trash"></i>
+                                  Delete
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {/* See More/Less Button */}
+                {filterApplications(applications).length >
+                  applicationsToShow && (
+                  <div className="p-4 border-t border-border-color">
+                    <button
+                      onClick={() =>
+                        setShowAllApplications(!showAllApplications)
+                      }
+                      className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {showAllApplications ? (
+                        <>
+                          <i className="fas fa-chevron-up"></i>
+                          See Less
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-chevron-down"></i>
+                          See More (
+                          {filterApplications(applications).length -
+                            applicationsToShow}{' '}
+                          more)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

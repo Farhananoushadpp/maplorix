@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { useNavigate } from 'react-router-dom'
 import DashboardJobApplyModal from '../components/DashboardJobApplyModal'
+import { jobsAPI } from '../services/api'
 
 const PostsFeed = () => {
   const { user } = useAuth()
@@ -17,25 +18,171 @@ const PostsFeed = () => {
   } = useData()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  // Filter jobs to only show admin posts (client-side backup filter)
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      return (
+        job.postedBy === 'admin' &&
+        (job.status === 'active' || job.isActive === true)
+      )
+    })
+  }, [jobs])
+
+  console.log('📋 PostsFeed: Filtered jobs (admin only):', filteredJobs.length)
+  console.log('📋 PostsFeed: Original jobs:', jobs.length)
+  console.log('📋 PostsFeed: Filtered out:', jobs.length - filteredJobs.length)
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [sortBy, setSortBy] = useState('recent')
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [selectedPost, setSelectedPost] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [postsToShow, setPostsToShow] = useState(5)
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+
+  // Create sample admin post for testing
+  const createSampleAdminPost = async () => {
+    try {
+      const sampleAdminJob = {
+        title: 'Senior React Developer - Admin Post',
+        company: 'Maplorix Tech',
+        location: 'Dubai, UAE',
+        type: 'Full-time',
+        category: 'Technology',
+        experience: 'Senior Level',
+        description:
+          'We are looking for a Senior React Developer to join our team. This is an admin post for testing purposes.',
+        requirements:
+          '5+ years of React experience, TypeScript knowledge, and strong problem-solving skills.',
+        salary: {
+          min: 15000,
+          max: 25000,
+          currency: 'AED',
+        },
+        postedBy: 'admin', // Admin-posted job
+        status: 'active', // Show in feed
+        featured: true,
+      }
+
+      console.log('📝 Creating sample admin post:', sampleAdminJob)
+
+      // Create the job directly via API
+      await jobsAPI.createJob(sampleAdminJob)
+
+      // Refresh the jobs list
+      await fetchJobsForFeed()
+
+      setSuccessMessage('Sample admin post created successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } catch (error) {
+      console.error('Error creating sample admin post:', error)
+      alert('Failed to create sample admin post. Backend may be down.')
+    }
+  }
 
   // Fetch jobs from backend - only run once on mount
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        await fetchJobsForFeed()
+        // Fetch directly from API to ensure we get latest data
+        const response = await jobsAPI.getJobsForFeed()
         console.log('📋 PostsFeed: Loaded jobs from backend')
+
+        // Update the DataContext to sync with latest data
+        await fetchJobsForFeed()
+
+        // Debug: Check what jobs we actually have
+        console.log('📋 PostsFeed: Jobs data:', jobs)
+        console.log('📋 PostsFeed: Job count:', jobs.length)
+
+        // Log each job to see their status and postedBy
+        jobs.forEach((job, index) => {
+          console.log(`📋 Job ${index + 1}:`, {
+            title: job.title,
+            status: job.status,
+            postedBy: job.postedBy,
+            isActive: job.isActive,
+            isAdminPost:
+              job.postedBy === 'admin' &&
+              (job.status === 'active' || job.isActive === true),
+            // Show all fields to debug
+            allFields: job,
+          })
+        })
+
+        // Show sample job structure for debugging
+        if (jobs.length > 0) {
+          console.log('📋 Sample job structure:', jobs[0])
+        }
       } catch (error) {
         console.error('Error fetching posts:', error)
       }
     }
     loadJobs()
-  }, [fetchJobsForFeed]) // Add dependency now that it's memoized
+  }, []) // Run only on mount
+
+  // Refresh feed when jobs data changes (to catch admin posts created elsewhere)
+  useEffect(() => {
+    if (jobs.length > 0) {
+      console.log('📋 PostsFeed: Jobs updated, checking for admin posts...')
+
+      // Count admin posts
+      const adminPosts = jobs.filter(
+        (job) =>
+          job.postedBy === 'admin' &&
+          (job.status === 'active' || job.isActive === true)
+      )
+      console.log(
+        `📋 PostsFeed: Found ${adminPosts.length} admin posts out of ${jobs.length} total jobs`
+      )
+
+      if (adminPosts.length > 0) {
+        console.log(
+          '📋 PostsFeed: Admin posts found:',
+          adminPosts.map((job) => job.title)
+        )
+      }
+    }
+  }, [jobs])
+
+  // Auto-refresh every 10 seconds to catch admin posts created elsewhere
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      console.log('📋 PostsFeed: Auto-refreshing feed...')
+
+      try {
+        // Fetch directly from API to get latest data
+        await jobsAPI.getJobsForFeed()
+
+        // Update DataContext
+        await fetchJobsForFeed()
+
+        setLastUpdated(new Date())
+        console.log('📋 PostsFeed: Auto-refresh completed')
+      } catch (error) {
+        console.error('📋 PostsFeed: Auto-refresh failed:', error)
+      }
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [fetchJobsForFeed])
+
+  // Manual refresh function
+  const handleRefresh = async () => {
+    console.log('📋 PostsFeed: Manual refresh triggered...')
+
+    try {
+      // Fetch directly from API to get latest data
+      await jobsAPI.getJobsForFeed()
+
+      // Update DataContext
+      await fetchJobsForFeed()
+
+      setLastUpdated(new Date())
+      console.log('📋 PostsFeed: Manual refresh completed')
+    } catch (error) {
+      console.error('📋 PostsFeed: Manual refresh failed:', error)
+    }
+  }
 
   // Handle Apply Now button click
   const handleApplyNow = (post) => {
@@ -61,8 +208,45 @@ const PostsFeed = () => {
     setTimeout(() => setSuccessMessage(''), 3000)
   }
 
-  // Filter and sort posts - TEMPORARILY SIMPLIFIED TO STOP INFINITE LOOP
-  const filteredAndSortedPosts = Array.isArray(jobs) ? jobs : []
+  // Filter and sort posts - use filteredJobs (admin only) and apply additional filters
+  const filteredAndSortedPosts = useMemo(() => {
+    let posts = Array.isArray(filteredJobs) ? filteredJobs : []
+
+    // Apply search filter
+    if (searchTerm) {
+      posts = posts.filter(
+        (post) =>
+          post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.requirements?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.company?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Apply date filter
+    if (selectedFilter === 'recent') {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      posts = posts.filter((post) => {
+        const postDate = new Date(post.createdAt || post.postedDate)
+        return postDate >= sevenDaysAgo
+      })
+    }
+
+    // Apply sorting
+    posts.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.postedDate || 0)
+      const dateB = new Date(b.createdAt || b.postedDate || 0)
+
+      if (sortBy === 'recent') {
+        return dateB - dateA // Most recent first
+      } else {
+        return dateA - dateB // Oldest first
+      }
+    })
+
+    return posts
+  }, [filteredJobs, searchTerm, selectedFilter, sortBy])
 
   // Paginate posts
   const displayedPosts = filteredAndSortedPosts.slice(0, postsToShow)
@@ -80,7 +264,7 @@ const PostsFeed = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 pt-20">
       {/* Success/Error Messages */}
       {successMessage && (
         <div className="fixed top-4 right-4 z-50 bg-secondary text-white px-6 py-3 rounded-lg shadow-custom animate-fade-in">
@@ -105,38 +289,6 @@ const PostsFeed = () => {
           </div>
         </div>
       )}
-
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-border-color">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-primary">Job Feed</h1>
-              <span className="text-sm text-text-light">
-                Browse available opportunities
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user?.role === 'admin' && (
-                <button
-                  onClick={() => navigate('/admin-posts')}
-                  className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all duration-300 font-semibold shadow-custom hover:shadow-custom-hover"
-                >
-                  <i className="fas fa-cog mr-2"></i>
-                  Manage Posts
-                </button>
-              )}
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-white text-primary rounded-lg hover:bg-secondary/10 transition-all duration-300 font-semibold border border-border-color"
-              >
-                <i className="fas fa-tachometer-alt mr-2"></i>
-                Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <main className="container mx-auto px-4 py-8">
         {/* Search and Filters */}
@@ -182,15 +334,49 @@ const PostsFeed = () => {
                 <i className="fas fa-briefcase text-secondary text-3xl"></i>
               </div>
               <h3 className="text-xl font-semibold text-primary mb-2">
-                {Array.isArray(jobs) && jobs.length === 0
-                  ? 'No job vacancies available'
-                  : 'No jobs match your search'}
+                {Array.isArray(filteredJobs) && filteredJobs.length === 0
+                  ? 'No admin job vacancies available'
+                  : searchTerm || selectedFilter !== 'all'
+                    ? 'No jobs match your search criteria'
+                    : 'No jobs match your filters'}
               </h3>
-              <p className="text-text-light">
-                {Array.isArray(jobs) && jobs.length === 0
-                  ? 'Check back later for new opportunities'
-                  : 'Try adjusting your search terms or filters'}
+              <p className="text-text-light mb-4">
+                {Array.isArray(filteredJobs) && filteredJobs.length === 0
+                  ? 'Admin posts will appear here once created'
+                  : searchTerm || selectedFilter !== 'all'
+                    ? 'Try adjusting your search terms or filters'
+                    : 'Try adjusting your search terms or filters'}
               </p>
+              {(searchTerm || selectedFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setSelectedFilter('all')
+                  }}
+                  className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-300 font-semibold"
+                >
+                  <i className="fas fa-times mr-2"></i>
+                  Clear Filters
+                </button>
+              )}
+              {Array.isArray(jobs) &&
+                jobs.length > 0 &&
+                filteredJobs.length === 0 && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800 mb-2">
+                      <i className="fas fa-info-circle mr-2"></i>
+                      There are {jobs.length} total jobs, but none are admin
+                      posts. Only admin posts are shown in the feed.
+                    </p>
+                    {user?.role === 'admin' && (
+                      <p className="text-sm text-yellow-700">
+                        <i className="fas fa-lightbulb mr-2"></i>
+                        Create admin posts through the AdminPosts page to see
+                        them here.
+                      </p>
+                    )}
+                  </div>
+                )}
             </div>
           </div>
         ) : (
@@ -213,59 +399,64 @@ const PostsFeed = () => {
                           {post.experience}
                         </span>
                         <span className="flex items-center">
-                          <i className="fas fa-money-bill mr-1 text-accent"></i>
-                          {post.salary 
-                            ? typeof post.salary === 'object' 
-                              ? `${post.salary.currency || ''} ${post.salary.min || ''}${post.salary.max ? ` - ${post.salary.max}` : ''}`
-                              : post.salary
-                            : 'Not specified'
-                          }
+                          <i className="fas fa-map-marker-alt mr-1 text-secondary"></i>
+                          {post.location}
                         </span>
                         <span className="flex items-center">
-                          <i className="fas fa-calendar mr-1 text-secondary"></i>
-                          {post.postedDate
-                            ? new Date(post.postedDate).toLocaleDateString()
-                            : post.createdAt
-                              ? new Date(post.createdAt).toLocaleDateString()
-                              : 'Date not specified'}
+                          <i className="fas fa-building mr-1 text-secondary"></i>
+                          {post.company}
                         </span>
+                        {post.salary && (
+                          <span className="flex items-center">
+                            <i className="fas fa-dollar-sign mr-1 text-secondary"></i>
+                            {post.salary.min && post.salary.max
+                              ? `${post.salary.min} - ${post.salary.max} ${post.salary.currency || 'USD'}`
+                              : typeof post.salary === 'object'
+                                ? post.salary.min ||
+                                  post.salary.max ||
+                                  'Salary not specified'
+                                : post.salary}
+                          </span>
+                        )}
                       </div>
                     </div>
+                    {post.featured && (
+                      <span className="px-3 py-1 bg-accent text-white text-xs font-semibold rounded-full">
+                        Featured
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-4">
+                    <p className="text-text-dark line-clamp-3">
+                      {post.description}
+                    </p>
                   </div>
 
                   {/* Requirements */}
-                  <div className="mb-4">
-                    <h3 className="font-semibold text-primary mb-2">
-                      Requirements
-                    </h3>
-                    <div className="text-text-light whitespace-pre-wrap">
-                      {post.requirements}
+                  {post.requirements && (
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-primary mb-2">
+                        Requirements:
+                      </h4>
+                      <p className="text-text-dark text-sm">
+                        {post.requirements}
+                      </p>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Job Description */}
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-primary mb-2">
-                      Job Description
-                    </h3>
-                    <div className="text-text-light whitespace-pre-wrap">
-                      {post.description || post.jobDescription}
-                    </div>
-                  </div>
-
-                  {/* Apply Button */}
-                  <div className="flex justify-between items-center">
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border-color">
                     <div className="text-sm text-text-light">
                       Posted{' '}
-                      {post.postedDate
-                        ? new Date(post.postedDate).toLocaleDateString()
-                        : post.createdAt
-                          ? new Date(post.createdAt).toLocaleDateString()
-                          : 'Date not specified'}
+                      {new Date(
+                        post.createdAt || post.postedDate
+                      ).toLocaleDateString()}
                     </div>
                     <button
                       onClick={() => handleApplyNow(post)}
-                      className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-300 flex items-center space-x-2 font-medium shadow-custom hover:shadow-custom-hover transform hover:-translate-y-0.5"
+                      className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-300 font-semibold"
                     >
                       <i className="fas fa-paper-plane"></i>
                       <span>Apply Now</span>

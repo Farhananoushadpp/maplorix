@@ -425,7 +425,10 @@ const JobPost = () => {
   }
 
   return (
-    <section id="resume-upload" className="py-16 sm:py-20 bg-gradient-to-br from-primary/5 to-secondary/10 pt-20">
+    <section
+      id="resume-upload"
+      className="py-16 sm:py-20 bg-gradient-to-br from-primary/5 to-secondary/10 pt-20"
+    >
       <div className="container px-4">
         <div className="section-header">
           <h2 className="section-title">Post a Job Opportunity</h2>
@@ -490,16 +493,16 @@ const JobPost = () => {
                         value={formData.contactName}
                         onChange={handleInputChange}
                         placeholder="Enter your full name"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.contactName
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.contactName && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactName}
                       </p>
@@ -524,16 +527,16 @@ const JobPost = () => {
                         value={formData.contactEmail}
                         onChange={handleInputChange}
                         placeholder="your.email@example.com"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.contactEmail
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.contactEmail && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactEmail}
                       </p>
@@ -558,16 +561,16 @@ const JobPost = () => {
                         value={formData.contactPhone}
                         onChange={handleInputChange}
                         placeholder="+1 (555) 123-4567"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.contactPhone
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.contactPhone && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactPhone}
                       </p>
@@ -592,16 +595,16 @@ const JobPost = () => {
                         value={formData.location}
                         onChange={handleInputChange}
                         placeholder="City, State/Country"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.location
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.location && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.location}
                       </p>
@@ -638,14 +641,14 @@ const JobPost = () => {
                         value={formData.title}
                         onChange={handleInputChange}
                         placeholder="e.g., Software Developer"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                          errors.title ? 'border-red-500' : 'border-border-color'
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                          errors.title ? 'border-error' : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.title && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.title}
                       </p>
@@ -670,16 +673,16 @@ const JobPost = () => {
                         value={formData.company}
                         onChange={handleInputChange}
                         placeholder="e.g., Tech Corp"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.company
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.company && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.company}
                       </p>
@@ -702,8 +705,8 @@ const JobPost = () => {
                         name="type"
                         value={formData.type}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
-                          errors.type ? 'border-red-500' : 'border-border-color'
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors ${
+                          errors.type ? 'border-error' : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       >
@@ -715,7 +718,7 @@ const JobPost = () => {
                       </select>
                     </div>
                     {errors.type && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.type}
                       </p>
@@ -738,9 +741,9 @@ const JobPost = () => {
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors ${
                           errors.category
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
@@ -753,7 +756,7 @@ const JobPost = () => {
                       </select>
                     </div>
                     {errors.category && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.category}
                       </p>
@@ -780,16 +783,16 @@ const JobPost = () => {
                           value={formData.customCategory}
                           onChange={handleInputChange}
                           placeholder="e.g., Hospitality, Retail, Construction"
-                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                             errors.customCategory
-                              ? 'border-red-500'
+                              ? 'border-error'
                               : 'border-border-color'
                           }`}
                           disabled={isSubmitting}
                         />
                       </div>
                       {errors.customCategory && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <p className="text-error text-sm mt-1 flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.customCategory}
                         </p>
@@ -815,16 +818,16 @@ const JobPost = () => {
                         value={formData.department}
                         onChange={handleInputChange}
                         placeholder="e.g., Engineering, Marketing, Sales"
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                           errors.department
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.department && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.department}
                       </p>
@@ -847,9 +850,9 @@ const JobPost = () => {
                         name="experience"
                         value={formData.experience}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors ${
                           errors.experience
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
@@ -862,7 +865,7 @@ const JobPost = () => {
                       </select>
                     </div>
                     {errors.experience && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.experience}
                       </p>
@@ -888,16 +891,16 @@ const JobPost = () => {
                           value={formData.salaryMin}
                           onChange={handleInputChange}
                           placeholder="e.g., 80000"
-                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                             errors.salaryMin
-                              ? 'border-red-500'
+                              ? 'border-error'
                               : 'border-border-color'
                           }`}
                           disabled={isSubmitting}
                         />
                       </div>
                       {errors.salaryMin && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <p className="text-error text-sm mt-1 flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryMin}
                         </p>
@@ -922,16 +925,16 @@ const JobPost = () => {
                           value={formData.salaryMax}
                           onChange={handleInputChange}
                           placeholder="e.g., 120000"
-                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
                             errors.salaryMax
-                              ? 'border-red-500'
+                              ? 'border-error'
                               : 'border-border-color'
                           }`}
                           disabled={isSubmitting}
                         />
                       </div>
                       {errors.salaryMax && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <p className="text-error text-sm mt-1 flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryMax}
                         </p>
@@ -954,9 +957,9 @@ const JobPost = () => {
                           name="salaryType"
                           value={formData.salaryType}
                           onChange={handleInputChange}
-                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors ${
                             errors.salaryType
-                              ? 'border-red-500'
+                              ? 'border-error'
                               : 'border-border-color'
                           }`}
                           disabled={isSubmitting}
@@ -969,14 +972,14 @@ const JobPost = () => {
                         </select>
                       </div>
                       {errors.salaryType && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <p className="text-error text-sm mt-1 flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryType}
                         </p>
                       )}
                     </div>
                   </div>
-                      <div className="md:col-span-2">
+                  <div className="md:col-span-2">
                     <label
                       htmlFor="description"
                       className="block text-sm font-semibold text-text-dark mb-2"
@@ -994,16 +997,16 @@ const JobPost = () => {
                         onChange={handleInputChange}
                         placeholder="Provide a detailed description of the role, responsibilities, and what the candidate will be doing..."
                         rows={4}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-vertical text-primary placeholder-text-light transition-colors ${
                           errors.description
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.description && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.description}
                       </p>
@@ -1028,16 +1031,16 @@ const JobPost = () => {
                         onChange={handleInputChange}
                         placeholder="List the required qualifications, skills, and experience..."
                         rows={3}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-vertical text-primary placeholder-text-light transition-colors ${
                           errors.requirements
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.requirements && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.requirements}
                       </p>
@@ -1061,16 +1064,16 @@ const JobPost = () => {
                         name="applicationDeadline"
                         value={formData.applicationDeadline}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary transition-colors ${
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-primary transition-colors ${
                           errors.applicationDeadline
-                            ? 'border-red-500'
+                            ? 'border-error'
                             : 'border-border-color'
                         }`}
                         disabled={isSubmitting}
                       />
                     </div>
                     {errors.applicationDeadline && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <p className="text-error text-sm mt-1 flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.applicationDeadline}
                       </p>
@@ -1106,14 +1109,14 @@ const JobPost = () => {
                       onChange={handleInputChange}
                       placeholder="List required skills separated by commas (e.g., JavaScript, React, Node.js, MongoDB)"
                       rows={3}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
-                        errors.skills ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-vertical text-primary placeholder-text-light transition-colors ${
+                        errors.skills ? 'border-error' : 'border-border-color'
                       }`}
                       disabled={isSubmitting}
                     />
                   </div>
                   {errors.skills && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <p className="text-error text-sm mt-1 flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.skills}
                     </p>
@@ -1132,9 +1135,11 @@ const JobPost = () => {
                       Privacy Note
                     </h5>
                     <p className="text-sm text-text-light leading-relaxed">
-                      By posting this job, you confirm that you have the authority to recruit for this
-                      position. Maplorix will use this information to connect you with qualified candidates 
-                      and will not share your data with third parties without your consent.
+                      By posting this job, you confirm that you have the
+                      authority to recruit for this position. Maplorix will use
+                      this information to connect you with qualified candidates
+                      and will not share your data with third parties without
+                      your consent.
                     </p>
                   </div>
                 </div>

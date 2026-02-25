@@ -87,7 +87,7 @@ const Header = () => {
                     </Link>
                   </li>
                 ))}
-                {isAuthenticated && (
+                {isAuthenticated && user?.role === 'admin' && (
                   <li>
                     <Link
                       to="/dashboard"
@@ -125,54 +125,71 @@ const Header = () => {
               <div className="relative">
                 <button
                   onClick={toggleProfileDropdown}
-                  className="flex items-center space-x-2 text-white hover:text-white/80 transition-colors"
+                  className="flex items-center space-x-3 text-white hover:text-white/90 transition-all duration-300 group"
                 >
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-user text-sm"></i>
+                  <div className="w-10 h-10 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                    <i className="fas fa-user text-white text-sm"></i>
                   </div>
-                  <span className="text-sm font-medium">
-                    {user?.firstName || 'User'}
-                  </span>
-                  <i className="fas fa-chevron-down text-xs"></i>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-semibold">
+                      {user?.firstName || 'User'}
+                    </span>
+                    <span className="text-xs text-white/80">
+                      {user?.role === 'admin' ? 'Admin' : 'User'}
+                    </span>
+                  </div>
+                  <i className="fas fa-chevron-down text-xs transition-transform duration-300 group-hover:translate-y-0.5"></i>
                 </button>
 
                 {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                  <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl py-4 z-50 border border-gray-100">
                     {isAuthenticated ? (
                       // Logged in user options
                       <>
-                        <div className="px-4 py-2 border-b border-gray-200">
-                          <p className="text-sm font-medium text-gray-900">
-                            {user?.firstName} {user?.lastName}
-                          </p>
-                          <p className="text-xs text-gray-500">{user?.email}</p>
-                          {user?.role === 'admin' && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 mt-1">
-                              Admin
-                            </span>
-                          )}
+                        <div className="px-6 py-4 bg-gradient-to-br from-primary/5 to-secondary/10 border-b border-gray-100">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg">
+                              <i className="fas fa-user text-white text-lg"></i>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-base font-bold text-primary">
+                                {user?.firstName} {user?.lastName}
+                              </p>
+                              <p className="text-sm text-text-light truncate">
+                                {user?.email}
+                              </p>
+                              {user?.role === 'admin' && (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/20 text-secondary mt-2">
+                                  <i className="fas fa-crown mr-1"></i>
+                                  Admin
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="border-t border-gray-200 my-1"></div>
-
-                        <button
-                          onClick={() => {
-                            logout()
-                            handleNavClick()
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <i className="fas fa-sign-out-alt mr-2"></i>
-                          Logout
-                        </button>
+                        <div className="py-2">
+                          <button
+                            onClick={() => {
+                              logout()
+                              handleNavClick()
+                            }}
+                            className="w-full flex items-center px-6 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors group"
+                          >
+                            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 group-hover:bg-red-200 transition-colors">
+                              <i className="fas fa-sign-out-alt text-red-600 text-sm"></i>
+                            </div>
+                            <span>Logout</span>
+                          </button>
+                        </div>
                       </>
                     ) : (
                       // Not logged in options
-                      <div className="py-1">
+                      <div className="py-1 space-y-2 px-2">
                         <Link
                           to={ROUTES.LOGIN}
                           onClick={handleNavClick}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                         >
                           <i className="fas fa-sign-in-alt mr-2"></i>
                           Login
@@ -181,7 +198,7 @@ const Header = () => {
                         <Link
                           to={ROUTES.REGISTER}
                           onClick={handleNavClick}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
                         >
                           <i className="fas fa-user-plus mr-2"></i>
                           Sign Up
@@ -243,7 +260,7 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
-              {isAuthenticated && (
+              {isAuthenticated && user?.role === 'admin' && (
                 <li>
                   <Link
                     to="/dashboard"
@@ -282,6 +299,29 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
+              {!isAuthenticated && (
+                <li className="pt-4 border-t border-white/20">
+                  <div className="space-y-3 px-4">
+                    <Link
+                      to={ROUTES.LOGIN}
+                      onClick={handleNavClick}
+                      className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                    >
+                      <i className="fas fa-sign-in-alt mr-2"></i>
+                      Login
+                    </Link>
+
+                    <Link
+                      to={ROUTES.REGISTER}
+                      onClick={handleNavClick}
+                      className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
+                    >
+                      <i className="fas fa-user-plus mr-2"></i>
+                      Sign Up
+                    </Link>
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
         </div>

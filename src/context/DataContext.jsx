@@ -301,7 +301,9 @@ export const DataProvider = ({ children }) => {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
-    const recentJobs = state.jobs.filter(
+    // Filter jobs by postedBy for Dashboard stats (only user posts)
+    const userJobs = state.jobs.filter((job) => job.postedBy === 'user')
+    const recentUserJobs = userJobs.filter(
       (job) => new Date(job.createdAt || job.postedDate) > sevenDaysAgo
     )
     const recentApplications = state.applications.filter(
@@ -309,8 +311,8 @@ export const DataProvider = ({ children }) => {
     )
 
     const newStats = {
-      totalJobs: state.jobs.length,
-      recentJobs: recentJobs.length,
+      totalJobs: userJobs.length,
+      recentJobs: recentUserJobs.length,
       totalApplications: state.applications.length,
       recentApplications: recentApplications.length,
     }

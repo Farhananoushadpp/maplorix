@@ -35,6 +35,7 @@ import ScrollToTop from './components/ScrollToTop'
 
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
+import { RouteAccess } from './components/RouteAccess'
 
 // Pages
 
@@ -88,49 +89,55 @@ const AnimatedRoutes = () => {
         <Route
           path={ROUTES.HOME}
           element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <Home />
-            </motion.div>
+            <RouteAccess path="/home">
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <Home />
+              </motion.div>
+            </RouteAccess>
           }
         />
 
         <Route
           path={ROUTES.ABOUT}
           element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <AboutPage />
-            </motion.div>
+            <RouteAccess path="/about">
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <AboutPage />
+              </motion.div>
+            </RouteAccess>
           }
         />
 
         <Route
           path={ROUTES.CONTACT}
           element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <ContactPage />
-            </motion.div>
+            <RouteAccess path="/contact">
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <ContactPage />
+              </motion.div>
+            </RouteAccess>
           }
         />
 
         <Route
           path={ROUTES.POSTS_FEED}
           element={
-            <ProtectedRoute>
+            <RouteAccess path="/feed">
               <motion.div
                 variants={ANIMATION_VARIANTS.pageTransition}
                 initial="initial"
@@ -139,7 +146,7 @@ const AnimatedRoutes = () => {
               >
                 <PostsFeed />
               </motion.div>
-            </ProtectedRoute>
+            </RouteAccess>
           }
         />
 
@@ -166,16 +173,16 @@ const AnimatedRoutes = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <RouteAccess path="/dashboard">
               <Dashboard />
-            </ProtectedRoute>
+            </RouteAccess>
           }
         />
 
         <Route
           path={ROUTES.ADMIN_POSTS}
           element={
-            <ProtectedRoute requiredRole="admin">
+            <RouteAccess path="/admin-posts">
               <motion.div
                 variants={ANIMATION_VARIANTS.pageTransition}
                 initial="initial"
@@ -184,7 +191,7 @@ const AnimatedRoutes = () => {
               >
                 <AdminPosts />
               </motion.div>
-            </ProtectedRoute>
+            </RouteAccess>
           }
         />
 
@@ -207,7 +214,10 @@ const AnimatedRoutes = () => {
 
         <Route path="/apply" element={<ApplyJob />} />
         <Route path="/all-applications" element={<AllApplications />} />
-        <Route path="/all-applications-enhanced" element={<AllApplicationsEnhanced />} />
+        <Route
+          path="/all-applications-enhanced"
+          element={<AllApplicationsEnhanced />}
+        />
         <Route path="/all-jobs" element={<AllJobs />} />
         <Route path="/applications" element={<ApplicationsPage />} />
 

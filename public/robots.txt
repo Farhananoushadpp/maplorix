@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.maplorix.com/sitemap.xml
+
+# Block common bot paths
+Disallow: /api/
+Disallow: /admin/
+Disallow: /*.json$
+Disallow: /*?*$
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /dist/
+
+# Allow important pages
+Allow: /
+Allow: /feed
+Allow: /dashboard
+Allow: /login
+Allow: /register
+Allow: /admin-posts
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

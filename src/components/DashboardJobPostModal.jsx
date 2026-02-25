@@ -29,28 +29,57 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault()
     setIsSubmitting(true)
 
+    // Validate required fields
+    const requiredFields = [
+      'title',
+      'company',
+      'location',
+      'description',
+      'requirements',
+    ]
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field]?.trim()
+    )
+
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`)
+      setIsSubmitting(false)
+      return
+    }
+
+    // Validate salary
+    if (!formData.salaryMin || !formData.salaryMax) {
+      alert('Please provide both minimum and maximum salary')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       // Submit job through API
       const jobData = {
-        title: formData.title,
-        company: formData.company,
-        location: formData.location,
+        title: formData.title.trim(),
+        company: formData.company.trim(),
+        location: formData.location.trim(),
         type: formData.type,
+        category: formData.category,
         experience: formData.experience,
-        description: formData.description,
-        requirements: formData.requirements,
+        description: formData.description.trim(),
+        requirements: formData.requirements.trim(),
         salary: {
-          min: formData.salaryMin,
-          max: formData.salaryMax,
+          min: parseInt(formData.salaryMin) || 0,
+          max: parseInt(formData.salaryMax) || 0,
           currency: formData.currency,
         },
         postedBy: 'user', // User-posted job (different from admin posts)
         status: 'pending', // Don't show in feed - only admin posts should be active
-        source: 'dashboard-home-banner', // Track source
+        featured: false,
       }
 
+      console.log('📝 Submitting job data:', jobData)
+
       // Submit to backend API
-      await jobsAPI.createJob(jobData)
+      const response = await jobsAPI.createJob(jobData)
+      console.log('✅ Job posted successfully:', response)
 
       // Show success message
       if (onSuccess) {
@@ -74,7 +103,15 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
       onClose()
     } catch (error) {
       console.error('Error posting job:', error)
-      alert('Failed to post job. Please try again.')
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+
+      // Show detailed error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Failed to post job. Please try again.'
+      alert(`Error: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -112,7 +149,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="e.g. Senior React Developer"
               />
             </div>
@@ -127,7 +164,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.company}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="e.g. Maplorix Tech"
               />
             </div>
@@ -143,7 +180,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
               value={formData.location}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="e.g. Dubai, UAE"
             />
           </div>
@@ -157,7 +194,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="Full-time">Full-time</option>
                 <option value="Part-time">Part-time</option>
@@ -174,7 +211,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="Technology">Technology</option>
                 <option value="Marketing">Marketing</option>
@@ -193,7 +230,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="Entry Level">Entry Level</option>
                 <option value="Mid Level">Mid Level</option>
@@ -213,7 +250,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="salaryMin"
                 value={formData.salaryMin}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="e.g. 5000"
               />
             </div>
@@ -227,7 +264,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="salaryMax"
                 value={formData.salaryMax}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="e.g. 10000"
               />
             </div>
@@ -240,7 +277,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="AED">AED</option>
                 <option value="USD">USD</option>
@@ -260,7 +297,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
               onChange={handleChange}
               required
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Describe the role, responsibilities, and what you're looking for..."
             />
           </div>
@@ -274,7 +311,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
               value={formData.requirements}
               onChange={handleChange}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="List the required skills, experience, and qualifications..."
             />
           </div>
@@ -290,7 +327,7 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Posting...' : 'Post Job'}
             </button>

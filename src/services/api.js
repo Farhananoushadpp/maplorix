@@ -2,12 +2,30 @@
 
 import axios from 'axios'
 
+// Request debouncing cache
+const requestCache = new Map()
+const CACHE_TTL = 1000 // 1 second cache for identical requests
+
+// Debounce function for API requests
+const debounceRequest = (key, fn) => {
+  if (requestCache.has(key)) {
+    return requestCache.get(key)
+  }
+
+  const promise = fn().finally(() => {
+    setTimeout(() => requestCache.delete(key), CACHE_TTL)
+  })
+
+  requestCache.set(key, promise)
+  return promise
+}
+
 // Try to connect to available backend ports (prioritize 4000 since backend is running there)
 const API_PORTS = [4000, 4001, 4002, 4003]
 
 // Create axios instance with default configuration
 const api = axios.create({
-  baseURL: 'http://localhost:4001/api', // Use port 4001 (backend is running on 4001)
+  baseURL: 'http://localhost:4000/api', // Use port 4000 (backend is running on 4000)
   timeout: 15000, // Reduced from 10000 to 15000 to give more time but still reasonable
   headers: {
     'Content-Type': 'application/json',
@@ -29,28 +47,12 @@ api.interceptors.request.use(
   }
 )
 
-// Function to update baseURL if needed
+// Function to update baseURL if needed - DISABLED to force port 4000
 const updateApiBaseUrl = async () => {
-  if (import.meta.env.VITE_API_URL) {
-    return
-  }
-
-  // Try each port to see which one is available
-  for (const port of API_PORTS) {
-    try {
-      const response = await fetch(`http://localhost:${port}/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(1000),
-      })
-      if (response.ok) {
-        console.log(`Connected to backend on port ${port}`)
-        api.defaults.baseURL = `http://localhost:${port}/api`
-        return
-      }
-    } catch (error) {
-      // Port not available, try next
-    }
-  }
+  // Force use port 4000 since backend is running there
+  console.log('🔧 Forcing backend port 4000')
+  api.defaults.baseURL = 'http://localhost:4000/api'
+  return
 }
 
 // Try to update the base URL on initialization
@@ -84,8 +86,7 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle errors and retry with different ports
-
+// Response interceptor to handle errors - DISABLED PORT SWITCHING
 api.interceptors.response.use(
   (response) => {
     return response
@@ -94,30 +95,22 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // If it's a network error or connection refused, try other ports
-    if (!error.response && originalRequest && !originalRequest._retry) {
+    // DISABLED: Don't try to switch ports on network errors
+    // Force use of port 4000 only
+
+    // Handle 429 Too Many Requests with retry
+    if (error.response?.status === 429 && !originalRequest._retry) {
       originalRequest._retry = true
 
-      // Try other ports
-      const currentPort = api.defaults.baseURL.match(/:(\d+)\//)?.[1]
-      const otherPorts = API_PORTS.filter((p) => p !== currentPort)
+      console.log('⚠️ Rate limited (429), retrying in 2 seconds...')
 
-      for (const port of otherPorts) {
-        try {
-          const testResponse = await fetch(`http://localhost:${port}/health`, {
-            signal: AbortSignal.timeout(1000),
-          })
-          if (testResponse.ok) {
-            console.log(`Switching to backend on port ${port}`)
-            api.defaults.baseURL = `http://localhost:${port}/api`
-            originalRequest.baseURL = `http://localhost:${port}/api`
-            // Remove the /api prefix if it's already in the URL
-            originalRequest.url = originalRequest.url.replace(/^\/api/, '')
-            return api(originalRequest)
-          }
-        } catch (e) {
-          // Port not available, try next
-        }
+      // Wait 2 seconds and retry once
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      try {
+        return await api(originalRequest)
+      } catch (retryError) {
+        console.error('❌ Retry failed for 429 error')
       }
     }
 
@@ -221,20 +214,23 @@ export const jobsAPI = {
         sortOrder: 'desc',
       },
     })
-    return response.data
+    return response.data.data || response.data // Handle both old and new response structures
   },
 
   getJobsForFeed: async (filters = {}) => {
-    const response = await api.get('/jobs', {
-      params: {
-        ...filters,
-        status: 'active', // Only show admin posts (active status)
-        limit: 100,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-      },
+    const cacheKey = `jobs-feed-${JSON.stringify(filters)}`
+    return debounceRequest(cacheKey, async () => {
+      const response = await api.get('/jobs', {
+        params: {
+          ...filters,
+          status: 'active', // Only show admin posts (active status)
+          limit: 100,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        },
+      })
+      return response.data.data || response.data // Handle both old and new response structures
     })
-    return response.data
   },
 }
 

@@ -39,11 +39,11 @@
   }
 
   .btn-primary {
-    @apply bg-secondary text-white hover:bg-teal-600 transform hover:-translate-y-0.5 shadow-custom hover:shadow-custom-hover;
+    @apply bg-secondary text-white hover:bg-opacity-90 transform hover:-translate-y-0.5 shadow-custom hover:shadow-custom-hover;
   }
 
   .btn-secondary {
-    @apply bg-accent text-white hover:bg-blue-700 transform hover:-translate-y-0.5 shadow-custom hover:shadow-custom-hover;
+    @apply bg-accent text-white hover:bg-opacity-90 transform hover:-translate-y-0.5 shadow-custom hover:shadow-custom-hover;
   }
 
   .btn-outline {

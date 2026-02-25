@@ -1,135 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
-  });
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
+    message: '',
+  })
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState('')
 
   const contactInfo = [
     {
       icon: 'fa-phone',
       title: 'Call Us',
-      text: '+1 (555) 123-4567',
-      description: 'Mon-Fri: 9AM-6PM EST'
+      text: '044538999, +971581929900',
+      description: 'Mon-Fri: 9AM-6PM GST',
     },
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'info@maplorix.com',
-      description: 'We respond within 24 hours'
+      text: 'hr@maplorix.ae',
+      description: 'We respond within 24 hours',
     },
     {
       icon: 'fa-map-marker-alt',
       title: 'Visit Us',
-      text: '123 Business Ave, Suite 100',
-      description: 'New York, NY 10001'
+      text: 'A5 Block, Office No:45, Xavier Business Center',
+      description: 'Burj Nahar Mall, Al Muteena, Dubai',
     },
     {
       icon: 'fa-clock',
       title: 'Business Hours',
       text: 'Mon-Fri: 9:00 AM - 6:00 PM',
-      description: 'Saturday: 10:00 AM - 2:00 PM'
-    }
-  ];
+      description: 'Saturday: 10:00 AM - 2:00 PM',
+    },
+  ]
 
   const validateForm = () => {
-    const newErrors = {};
-    
+    const newErrors = {}
+
     if (!formData.name.trim() || formData.name.trim().length < 2) {
-      newErrors.name = 'Please enter a valid name (at least 2 characters)';
+      newErrors.name = 'Please enter a valid name (at least 2 characters)'
     }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!formData.email.trim() || !emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Please enter a valid email address'
     }
-    
+
     if (!formData.subject.trim() || formData.subject.trim().length < 3) {
-      newErrors.subject = 'Please enter a subject (at least 3 characters)';
+      newErrors.subject = 'Please enter a subject (at least 3 characters)'
     }
-    
+
     if (!formData.message.trim() || formData.message.trim().length < 10) {
-      newErrors.message = 'Please enter a message (at least 10 characters)';
+      newErrors.message = 'Please enter a message (at least 10 characters)'
     }
-    
-    return newErrors;
-  };
+
+    return newErrors
+  }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+    const { name, value } = e.target
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }));
-    
+      [name]: value,
+    }))
+
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
-      }));
+        [name]: '',
+      }))
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const newErrors = validateForm();
+    e.preventDefault()
+
+    const newErrors = validateForm()
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+      setErrors(newErrors)
+      return
     }
-    
-    setIsSubmitting(true);
-    setSubmitMessage('');
-    
+
+    setIsSubmitting(true)
+    setSubmitMessage('')
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setSubmitMessage('Thank you for your message! We will get back to you soon.');
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      setSubmitMessage(
+        'Thank you for your message! We will get back to you soon.'
+      )
       setFormData({
         name: '',
         email: '',
         subject: '',
-        message: ''
-      });
-      setErrors({});
-      
+        message: '',
+      })
+      setErrors({})
+
       setTimeout(() => {
-        setSubmitMessage('');
-      }, 5000);
-      
+        setSubmitMessage('')
+      }, 5000)
     } catch (error) {
-      setSubmitMessage('Sorry, there was an error sending your message. Please try again.');
+      setSubmitMessage(
+        'Sorry, there was an error sending your message. Please try again.'
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-20">
       <div className="container px-4">
         {/* Page Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-black text-primary mb-4">Contact Us</h1>
+          <h1 className="text-4xl sm:text-5xl font-black text-primary mb-4">
+            Contact Us
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-            Have questions? Ready to get started? We're here to help you succeed.
+            Have questions? Ready to get started? We're here to help you
+            succeed.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Information */}
           <div>
-            <h3 className="text-2xl font-bold text-primary mb-8">Get in Touch</h3>
-            
+            <h3 className="text-2xl font-bold text-primary mb-8">
+              Get in Touch
+            </h3>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {contactInfo.map((info, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div
+                  key={index}
+                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300"
+                >
                   <div className="flex items-center mb-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-accent/20 to-secondary/20 rounded-xl flex items-center justify-center mr-4">
                       <i className={`fas ${info.icon} text-accent text-xl`}></i>
@@ -144,7 +155,9 @@ const ContactPage = () => {
 
             {/* Additional Info */}
             <div className="mt-8 bg-gradient-to-r from-secondary/10 to-accent/10 rounded-xl p-6 border border-secondary/20">
-              <h4 className="text-lg font-bold text-primary mb-4">Why Choose Maplorix?</h4>
+              <h4 className="text-lg font-bold text-primary mb-4">
+                Why Choose Maplorix?
+              </h4>
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-start">
                   <i className="fas fa-check-circle text-secondary mr-2 mt-1"></i>
@@ -168,19 +181,25 @@ const ContactPage = () => {
 
           {/* Contact Form */}
           <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <h3 className="text-2xl font-bold text-primary mb-6">Send Us a Message</h3>
-            
+            <h3 className="text-2xl font-bold text-primary mb-6">
+              Send Us a Message
+            </h3>
+
             {submitMessage && (
-              <div className={`mb-6 p-4 rounded-xl text-center ${
-                submitMessage.includes('Thank you') 
-                  ? 'bg-secondary/10 text-secondary border border-secondary/20' 
-                  : 'bg-red-50 text-red-600 border border-red-200'
-              }`}>
-                <i className={`fas ${submitMessage.includes('Thank you') ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2`}></i>
+              <div
+                className={`mb-6 p-4 rounded-xl text-center ${
+                  submitMessage.includes('Thank you')
+                    ? 'bg-secondary/10 text-secondary border border-secondary/20'
+                    : 'bg-red-50 text-red-600 border border-red-200'
+                }`}
+              >
+                <i
+                  className={`fas ${submitMessage.includes('Thank you') ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2`}
+                ></i>
                 {submitMessage}
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <input
@@ -191,7 +210,9 @@ const ContactPage = () => {
                   onChange={handleInputChange}
                   placeholder="Your Name"
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                    errors.name ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    errors.name
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -212,7 +233,9 @@ const ContactPage = () => {
                   onChange={handleInputChange}
                   placeholder="Your Email"
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                    errors.email ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    errors.email
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -233,7 +256,9 @@ const ContactPage = () => {
                   onChange={handleInputChange}
                   placeholder="Subject"
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent ${
-                    errors.subject ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    errors.subject
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -254,7 +279,9 @@ const ContactPage = () => {
                   placeholder="Your Message"
                   rows={5}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-vertical ${
-                    errors.message ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    errors.message
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -288,7 +315,7 @@ const ContactPage = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ContactPage;
+export default ContactPage

@@ -167,7 +167,7 @@ const Register = () => {
 
       console.log('Registration response:', response)
 
-      setSuccessMessage('Registration successful! Redirecting to login...')
+      setSuccessMessage('Registration successful! Redirecting to home page...')
 
       // Clear form
       setFormData({
@@ -181,9 +181,9 @@ const Register = () => {
         role: 'user',
       })
 
-      // Redirect to login after 2 seconds
+      // Redirect to home page after 2 seconds
       setTimeout(() => {
-        navigate(ROUTES.LOGIN)
+        navigate(ROUTES.HOME)
       }, 2000)
     } catch (error) {
       console.error('Registration error:', error)

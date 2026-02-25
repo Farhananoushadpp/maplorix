@@ -439,14 +439,16 @@ const ApplyJob = () => {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.firstName ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors bg-white ${
+                        errors.firstName
+                          ? 'border-error'
+                          : 'border-border-color'
                       }`}
                       placeholder="John"
                     />
                   </div>
                   {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.firstName}
                     </p>
@@ -466,14 +468,14 @@ const ApplyJob = () => {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.lastName ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                        errors.lastName ? 'border-error' : 'border-border-color'
                       }`}
                       placeholder="Doe"
                     />
                   </div>
                   {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.lastName}
                     </p>
@@ -493,14 +495,14 @@ const ApplyJob = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.email ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                        errors.email ? 'border-error' : 'border-border-color'
                       }`}
                       placeholder="john.doe@example.com"
                     />
                   </div>
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.email}
                     </p>
@@ -520,14 +522,14 @@ const ApplyJob = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.phone ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                        errors.phone ? 'border-error' : 'border-border-color'
                       }`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.phone}
                     </p>
@@ -547,14 +549,14 @@ const ApplyJob = () => {
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.location ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                        errors.location ? 'border-error' : 'border-border-color'
                       }`}
                       placeholder="New York, NY"
                     />
                   </div>
                   {errors.location && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.location}
                     </p>
@@ -585,14 +587,14 @@ const ApplyJob = () => {
                       name="jobRole"
                       value={formData.jobRole}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
-                        errors.jobRole ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors ${
+                        errors.jobRole ? 'border-error' : 'border-border-color'
                       }`}
                       placeholder="e.g., Senior Frontend Developer"
                     />
                   </div>
                   {errors.jobRole && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.jobRole}
                     </p>
@@ -611,8 +613,10 @@ const ApplyJob = () => {
                       name="experience"
                       value={formData.experience}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
-                        errors.experience ? 'border-red-500' : 'border-border-color'
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors ${
+                        errors.experience
+                          ? 'border-error'
+                          : 'border-border-color'
                       }`}
                     >
                       <option value="">Select experience level</option>
@@ -624,7 +628,7 @@ const ApplyJob = () => {
                     </select>
                   </div>
                   {errors.experience && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <p className="mt-1 text-sm text-error flex items-center">
                       <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.experience}
                     </p>
@@ -644,7 +648,7 @@ const ApplyJob = () => {
                       name="expectedSalary"
                       value={formData.expectedSalary}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
                       placeholder="$80,000 - $100,000"
                     />
                   </div>
@@ -674,7 +678,7 @@ const ApplyJob = () => {
                       name="resume"
                       onChange={handleChange}
                       accept=".pdf,.doc,.docx"
-                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark transition-colors"
+                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark transition-colors"
                     />
                   </div>
                   <p className="mt-2 text-sm text-text-light flex items-center">
@@ -697,7 +701,7 @@ const ApplyJob = () => {
                         name="linkedinProfile"
                         value={formData.linkedinProfile}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
                         placeholder="https://linkedin.com/in/johndoe"
                       />
                     </div>
@@ -716,7 +720,7 @@ const ApplyJob = () => {
                         name="portfolio"
                         value={formData.portfolio}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
                         placeholder="https://johndoe.com"
                       />
                     </div>
@@ -744,7 +748,7 @@ const ApplyJob = () => {
                   }}
                 />
                 {errors.captcha && (
-                  <p className="mt-2 text-sm text-red-600 text-center flex items-center">
+                  <p className="mt-2 text-sm text-error text-center flex items-center">
                     <i className="fas fa-exclamation-circle mr-1"></i>
                     {errors.captcha}
                   </p>
@@ -759,7 +763,7 @@ const ApplyJob = () => {
             {/* Error Display */}
             {errors.submit && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 flex items-center">
+                <p className="text-error flex items-center">
                   <i className="fas fa-exclamation-triangle mr-2"></i>
                   {errors.submit}
                 </p>
