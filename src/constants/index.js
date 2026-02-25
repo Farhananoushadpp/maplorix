@@ -22,6 +22,12 @@ export const ROUTES = {
   ADMIN_POSTS: '/admin/posts',
 
   POSTS_FEED: '/posts',
+
+  REGISTER: '/register',
+
+  LOGIN: '/login',
+
+  DASHBOARD: '/dashboard',
 }
 
 // Navigation Items Configuration

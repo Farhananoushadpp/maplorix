@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext'
 
 import { Link, useNavigate } from 'react-router-dom'
 
+import { ROUTES } from '../constants'
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -75,7 +77,7 @@ const Login = () => {
     try {
       await login(formData.email, formData.password)
 
-      navigate('/dashboard')
+      navigate(ROUTES.DASHBOARD)
     } catch (error) {
       // Error is handled by the auth context
     }
@@ -228,7 +230,7 @@ const Login = () => {
           <p className="text-sm text-text-light">
             Don't have an account?{' '}
             <Link
-              to="/register"
+              to={ROUTES.REGISTER}
               className="font-medium text-accent hover:text-accent/80 transition-colors"
             >
               Sign up now

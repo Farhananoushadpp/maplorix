@@ -33,6 +33,9 @@ import Footer from './components/Footer'
 
 import ScrollToTop from './components/ScrollToTop'
 
+import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
+
 // Pages
 
 import Home from './pages/Home'
@@ -46,6 +49,8 @@ import ApplicationsPage from './pages/Applications'
 import ContactPage from './pages/ContactPage'
 
 import Login from './pages/Login'
+
+import Register from './pages/Register'
 
 import Dashboard from './pages/Dashboard'
 
@@ -79,6 +84,7 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Public Routes - Accessible to everyone */}
         <Route
           path={ROUTES.HOME}
           element={
@@ -108,20 +114,6 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path={ROUTES.POST_JOB}
-          element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <JobPostPage />
-            </motion.div>
-          }
-        />
-
-        <Route
           path={ROUTES.CONTACT}
           element={
             <motion.div
@@ -135,51 +127,91 @@ const AnimatedRoutes = () => {
           }
         />
 
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/apply" element={<ApplyJob />} />
-
-        <Route path="/all-applications" element={<AllApplications />} />
-
         <Route
-          path="/all-applications-enhanced"
-          element={<AllApplicationsEnhanced />}
+          path={ROUTES.POSTS_FEED}
+          element={
+            <ProtectedRoute>
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <PostsFeed />
+              </motion.div>
+            </ProtectedRoute>
+          }
         />
 
-        <Route path="/all-jobs" element={<AllJobs />} />
+        {/* Auth Routes - Redirect authenticated users */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
 
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
 
-        <Route path="/applications" element={<ApplicationsPage />} />
+        {/* Protected Routes - Require authentication */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path={ROUTES.ADMIN_POSTS}
           element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <AdminPosts />
-            </motion.div>
+            <ProtectedRoute requiredRole="admin">
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <AdminPosts />
+              </motion.div>
+            </ProtectedRoute>
           }
         />
 
+        {/* Additional Routes */}
         <Route
-          path={ROUTES.POSTS_FEED}
+          path={ROUTES.POST_JOB}
           element={
-            <motion.div
-              variants={ANIMATION_VARIANTS.pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <PostsFeed />
-            </motion.div>
+            <ProtectedRoute>
+              <motion.div
+                variants={ANIMATION_VARIANTS.pageTransition}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <JobPostPage />
+              </motion.div>
+            </ProtectedRoute>
           }
         />
 
+        <Route path="/apply" element={<ApplyJob />} />
+        <Route path="/all-applications" element={<AllApplications />} />
+        <Route path="/all-applications-enhanced" element={<AllApplicationsEnhanced />} />
+        <Route path="/all-jobs" element={<AllJobs />} />
+        <Route path="/applications" element={<ApplicationsPage />} />
+
+        {/* Catch all route */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </AnimatePresence>

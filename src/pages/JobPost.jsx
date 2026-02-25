@@ -425,17 +425,20 @@ const JobPost = () => {
   }
 
   return (
-    <section id="resume-upload" className="py-16 sm:py-20 bg-gray-50 pt-20">
+    <section id="resume-upload" className="py-16 sm:py-20 bg-gradient-to-br from-primary/5 to-secondary/10 pt-20">
       <div className="container px-4">
         <div className="section-header">
-          <h2 className="section-title">Upload Your Resume</h2>
+          <h2 className="section-title">Post a Job Opportunity</h2>
           <div className="divider"></div>
         </div>
 
         <div className="max-w-4xl mx-auto">
           {/* Page Title & Description */}
           <div className="text-center mb-12">
-            <h3 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-primary shadow-custom mb-4">
+              <i className="fas fa-briefcase text-accent text-2xl"></i>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold text-primary mb-4 font-heading">
               Post a Job Opportunity
             </h3>
             <p className="text-text-light max-w-2xl mx-auto text-base sm:text-lg">
@@ -445,50 +448,59 @@ const JobPost = () => {
             </p>
           </div>
 
-          <div className="card p-6 sm:p-8">
+          <div className="bg-white rounded-2xl shadow-custom p-6 sm:p-8">
             {submitMessage && (
               <div
                 className={`mb-6 p-4 rounded-lg text-center ${
-                  submitMessage.includes('Thank you')
-                    ? 'bg-secondary/10 text-secondary'
-                    : 'bg-red-50 text-red-600'
+                  submitMessage.includes('🎉')
+                    ? 'bg-secondary/10 border border-secondary/20 text-secondary'
+                    : 'bg-red-50 border border-red-200 text-red-600'
                 }`}
               >
                 {submitMessage}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* Contact Information Section */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-primary border-b pb-2">
-                  Contact Information
-                </h4>
+              <div className="space-y-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-1 bg-secondary rounded-full mr-3"></div>
+                  <h4 className="text-xl font-bold text-primary">
+                    Contact Information
+                  </h4>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
                       htmlFor="contactName"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Your Name *
                     </label>
-                    <input
-                      type="text"
-                      id="contactName"
-                      name="contactName"
-                      value={formData.contactName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your full name"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.contactName
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-user text-text-light"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="contactName"
+                        name="contactName"
+                        value={formData.contactName}
+                        onChange={handleInputChange}
+                        placeholder="Enter your full name"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.contactName
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.contactName && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactName}
                       </p>
                     )}
@@ -497,26 +509,32 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="contactEmail"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Email Address *
                     </label>
-                    <input
-                      type="email"
-                      id="contactEmail"
-                      name="contactEmail"
-                      value={formData.contactEmail}
-                      onChange={handleInputChange}
-                      placeholder="your.email@example.com"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.contactEmail
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-envelope text-text-light"></i>
+                      </div>
+                      <input
+                        type="email"
+                        id="contactEmail"
+                        name="contactEmail"
+                        value={formData.contactEmail}
+                        onChange={handleInputChange}
+                        placeholder="your.email@example.com"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.contactEmail
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.contactEmail && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactEmail}
                       </p>
                     )}
@@ -525,26 +543,32 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="contactPhone"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Phone Number *
                     </label>
-                    <input
-                      type="tel"
-                      id="contactPhone"
-                      name="contactPhone"
-                      value={formData.contactPhone}
-                      onChange={handleInputChange}
-                      placeholder="+1 (555) 123-4567"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.contactPhone
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-phone text-text-light"></i>
+                      </div>
+                      <input
+                        type="tel"
+                        id="contactPhone"
+                        name="contactPhone"
+                        value={formData.contactPhone}
+                        onChange={handleInputChange}
+                        placeholder="+1 (555) 123-4567"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.contactPhone
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.contactPhone && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.contactPhone}
                       </p>
                     )}
@@ -553,26 +577,32 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="location"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Location *
                     </label>
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      placeholder="City, State/Country"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.location
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-map-marker-alt text-text-light"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="location"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        placeholder="City, State/Country"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.location
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.location && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.location}
                       </p>
                     )}
@@ -581,33 +611,42 @@ const JobPost = () => {
               </div>
 
               {/* Job Details Section */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-primary border-b pb-2">
-                  Job Details
-                </h4>
+              <div className="space-y-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-1 bg-accent rounded-full mr-3"></div>
+                  <h4 className="text-xl font-bold text-primary">
+                    Job Details
+                  </h4>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
                       htmlFor="jobTitle"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Job Title *
                     </label>
-                    <input
-                      type="text"
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Software Developer"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.title ? 'border-red-500' : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-briefcase text-text-light"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Software Developer"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.title ? 'border-red-500' : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.title && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.title}
                       </p>
                     )}
@@ -616,26 +655,32 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="company"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Company Name *
                     </label>
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Tech Corp"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.company
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-building text-text-light"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="company"
+                        name="company"
+                        value={formData.company}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Tech Corp"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.company
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.company && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.company}
                       </p>
                     )}
@@ -644,58 +689,72 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="jobType"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Job Type *
                     </label>
-                    <select
-                      id="type"
-                      name="type"
-                      value={formData.type}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.type ? 'border-red-500' : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    >
-                      {jobTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-clock text-text-light"></i>
+                      </div>
+                      <select
+                        id="type"
+                        name="type"
+                        value={formData.type}
+                        onChange={handleInputChange}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                          errors.type ? 'border-red-500' : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      >
+                        {jobTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     {errors.type && (
-                      <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
+                        {errors.type}
+                      </p>
                     )}
                   </div>
 
                   <div>
                     <label
                       htmlFor="category"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Category *
                     </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.category
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    >
-                      {categoryOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-tags text-text-light"></i>
+                      </div>
+                      <select
+                        id="category"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                          errors.category
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      >
+                        {categoryOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     {errors.category && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.category}
                       </p>
                     )}
@@ -706,26 +765,32 @@ const JobPost = () => {
                     <div>
                       <label
                         htmlFor="customCategory"
-                        className="block text-sm font-medium text-text-dark mb-2"
+                        className="block text-sm font-semibold text-text-dark mb-2"
                       >
                         Specify Category *
                       </label>
-                      <input
-                        type="text"
-                        id="customCategory"
-                        name="customCategory"
-                        value={formData.customCategory}
-                        onChange={handleInputChange}
-                        placeholder="e.g., Hospitality, Retail, Construction"
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.customCategory
-                            ? 'border-red-500'
-                            : 'border-border-color'
-                        }`}
-                        disabled={isSubmitting}
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-tag text-text-light"></i>
+                        </div>
+                        <input
+                          type="text"
+                          id="customCategory"
+                          name="customCategory"
+                          value={formData.customCategory}
+                          onChange={handleInputChange}
+                          placeholder="e.g., Hospitality, Retail, Construction"
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                            errors.customCategory
+                              ? 'border-red-500'
+                              : 'border-border-color'
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
                       {errors.customCategory && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                          <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.customCategory}
                         </p>
                       )}
@@ -735,26 +800,32 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="department"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Department
                     </label>
-                    <input
-                      type="text"
-                      id="department"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Engineering, Marketing, Sales"
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.department
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-sitemap text-text-light"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="department"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Engineering, Marketing, Sales"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                          errors.department
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     {errors.department && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.department}
                       </p>
                     )}
@@ -763,59 +834,71 @@ const JobPost = () => {
                   <div>
                     <label
                       htmlFor="experience"
-                      className="block text-sm font-medium text-text-dark mb-2"
+                      className="block text-sm font-semibold text-text-dark mb-2"
                     >
                       Experience Level *
                     </label>
-                    <select
-                      id="experience"
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                        errors.experience
-                          ? 'border-red-500'
-                          : 'border-border-color'
-                      }`}
-                      disabled={isSubmitting}
-                    >
-                      {experienceOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-chart-line text-text-light"></i>
+                      </div>
+                      <select
+                        id="experience"
+                        name="experience"
+                        value={formData.experience}
+                        onChange={handleInputChange}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                          errors.experience
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      >
+                        {experienceOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     {errors.experience && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
                         {errors.experience}
                       </p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label
                         htmlFor="salaryMin"
-                        className="block text-sm font-medium text-text-dark mb-2"
+                        className="block text-sm font-semibold text-text-dark mb-2"
                       >
                         Minimum Salary (Optional)
                       </label>
-                      <input
-                        type="number"
-                        id="salaryMin"
-                        name="salaryMin"
-                        value={formData.salaryMin}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 80000"
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.salaryMin
-                            ? 'border-red-500'
-                            : 'border-border-color'
-                        }`}
-                        disabled={isSubmitting}
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-dollar-sign text-text-light"></i>
+                        </div>
+                        <input
+                          type="number"
+                          id="salaryMin"
+                          name="salaryMin"
+                          value={formData.salaryMin}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 80000"
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                            errors.salaryMin
+                              ? 'border-red-500'
+                              : 'border-border-color'
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
                       {errors.salaryMin && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                          <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryMin}
                         </p>
                       )}
@@ -824,26 +907,32 @@ const JobPost = () => {
                     <div>
                       <label
                         htmlFor="salaryMax"
-                        className="block text-sm font-medium text-text-dark mb-2"
+                        className="block text-sm font-semibold text-text-dark mb-2"
                       >
                         Maximum Salary (Optional)
                       </label>
-                      <input
-                        type="number"
-                        id="salaryMax"
-                        name="salaryMax"
-                        value={formData.salaryMax}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 120000"
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.salaryMax
-                            ? 'border-red-500'
-                            : 'border-border-color'
-                        }`}
-                        disabled={isSubmitting}
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-dollar-sign text-text-light"></i>
+                        </div>
+                        <input
+                          type="number"
+                          id="salaryMax"
+                          name="salaryMax"
+                          value={formData.salaryMax}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 120000"
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                            errors.salaryMax
+                              ? 'border-red-500'
+                              : 'border-border-color'
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
                       {errors.salaryMax && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                          <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryMax}
                         </p>
                       )}
@@ -852,206 +941,216 @@ const JobPost = () => {
                     <div>
                       <label
                         htmlFor="salaryType"
-                        className="block text-sm font-medium text-text-dark mb-2"
+                        className="block text-sm font-semibold text-text-dark mb-2"
                       >
                         Salary Type
                       </label>
-                      <select
-                        id="salaryType"
-                        name="salaryType"
-                        value={formData.salaryType}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.salaryType
-                            ? 'border-red-500'
-                            : 'border-border-color'
-                        }`}
-                        disabled={isSubmitting}
-                      >
-                        {salaryTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-money-bill text-text-light"></i>
+                        </div>
+                        <select
+                          id="salaryType"
+                          name="salaryType"
+                          value={formData.salaryType}
+                          onChange={handleInputChange}
+                          className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                            errors.salaryType
+                              ? 'border-red-500'
+                              : 'border-border-color'
+                          }`}
+                          disabled={isSubmitting}
+                        >
+                          {salaryTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       {errors.salaryType && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <p className="text-red-500 text-sm mt-1 flex items-center">
+                          <i className="fas fa-exclamation-circle mr-1"></i>
                           {errors.salaryType}
                         </p>
                       )}
                     </div>
-
-                    <div>
-                      <label
-                        htmlFor="currency"
-                        className="block text-sm font-medium text-text-dark mb-2"
-                      >
-                        Currency
-                      </label>
-                      <select
-                        id="currency"
-                        name="currency"
-                        value={formData.currency}
+                  </div>
+                      <div className="md:col-span-2">
+                    <label
+                      htmlFor="description"
+                      className="block text-sm font-semibold text-text-dark mb-2"
+                    >
+                      Job Description *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute top-3 left-3 pointer-events-none">
+                        <i className="fas fa-file-alt text-text-light"></i>
+                      </div>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                          errors.currency
+                        placeholder="Provide a detailed description of the role, responsibilities, and what the candidate will be doing..."
+                        rows={4}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
+                          errors.description
                             ? 'border-red-500'
                             : 'border-border-color'
                         }`}
-                        disabled={isSubmitting || true} // Always disabled to maintain AED default
-                      >
-                        {currencyOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.currency && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.currency}
-                        </p>
-                      )}
+                        disabled={isSubmitting}
+                      />
                     </div>
+                    {errors.description && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
+                        {errors.description}
+                      </p>
+                    )}
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="block text-sm font-medium text-text-dark mb-2"
-                  >
-                    Job Description *
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Provide a detailed description of the role, responsibilities, and what the candidate will be doing..."
-                    rows={4}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-vertical text-base ${
-                      errors.description
-                        ? 'border-red-500'
-                        : 'border-border-color'
-                    }`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.description && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.description}
-                    </p>
-                  )}
-                </div>
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="requirements"
+                      className="block text-sm font-semibold text-text-dark mb-2"
+                    >
+                      Requirements *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute top-3 left-3 pointer-events-none">
+                        <i className="fas fa-clipboard-check text-text-light"></i>
+                      </div>
+                      <textarea
+                        id="requirements"
+                        name="requirements"
+                        value={formData.requirements}
+                        onChange={handleInputChange}
+                        placeholder="List the required qualifications, skills, and experience..."
+                        rows={3}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
+                          errors.requirements
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    {errors.requirements && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
+                        {errors.requirements}
+                      </p>
+                    )}
+                  </div>
 
-                <div>
-                  <label
-                    htmlFor="requirements"
-                    className="block text-sm font-medium text-text-dark mb-2"
-                  >
-                    Requirements *
-                  </label>
-                  <textarea
-                    id="requirements"
-                    name="requirements"
-                    value={formData.requirements}
-                    onChange={handleInputChange}
-                    placeholder="List the required qualifications, skills, and experience..."
-                    rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-vertical text-base ${
-                      errors.requirements
-                        ? 'border-red-500'
-                        : 'border-border-color'
-                    }`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.requirements && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.requirements}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="applicationDeadline"
-                    className="block text-sm font-medium text-text-dark mb-2"
-                  >
-                    Application Deadline (Optional)
-                  </label>
-                  <input
-                    type="date"
-                    id="applicationDeadline"
-                    name="applicationDeadline"
-                    value={formData.applicationDeadline}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-base ${
-                      errors.applicationDeadline
-                        ? 'border-red-500'
-                        : 'border-border-color'
-                    }`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.applicationDeadline && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.applicationDeadline}
-                    </p>
-                  )}
+                  <div>
+                    <label
+                      htmlFor="applicationDeadline"
+                      className="block text-sm font-semibold text-text-dark mb-2"
+                    >
+                      Application Deadline (Optional)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-calendar-alt text-text-light"></i>
+                      </div>
+                      <input
+                        type="date"
+                        id="applicationDeadline"
+                        name="applicationDeadline"
+                        value={formData.applicationDeadline}
+                        onChange={handleInputChange}
+                        className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-primary transition-colors ${
+                          errors.applicationDeadline
+                            ? 'border-red-500'
+                            : 'border-border-color'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    {errors.applicationDeadline && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
+                        {errors.applicationDeadline}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Additional Information Section */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-bold text-primary border-b pb-2">
-                  Additional Information
-                </h4>
+              <div className="space-y-6">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-1 bg-accent rounded-full mr-3"></div>
+                  <h4 className="text-xl font-bold text-primary">
+                    Additional Information
+                  </h4>
+                </div>
 
                 <div>
                   <label
                     htmlFor="skills"
-                    className="block text-sm font-medium text-text-dark mb-2"
+                    className="block text-sm font-semibold text-text-dark mb-2"
                   >
                     Required Skills (Optional)
                   </label>
-                  <textarea
-                    id="skills"
-                    name="skills"
-                    value={formData.skills}
-                    onChange={handleInputChange}
-                    placeholder="List required skills separated by commas (e.g., JavaScript, React, Node.js, MongoDB)"
-                    rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-vertical text-base ${
-                      errors.skills ? 'border-red-500' : 'border-border-color'
-                    }`}
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <div className="absolute top-3 left-3 pointer-events-none">
+                      <i className="fas fa-tools text-text-light"></i>
+                    </div>
+                    <textarea
+                      id="skills"
+                      name="skills"
+                      value={formData.skills}
+                      onChange={handleInputChange}
+                      placeholder="List required skills separated by commas (e.g., JavaScript, React, Node.js, MongoDB)"
+                      rows={3}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-vertical text-primary placeholder-text-light transition-colors ${
+                        errors.skills ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      disabled={isSubmitting}
+                    />
+                  </div>
                   {errors.skills && (
-                    <p className="text-red-500 text-sm mt-1">{errors.skills}</p>
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
+                      {errors.skills}
+                    </p>
                   )}
                 </div>
               </div>
 
               {/* Privacy Note / Consent */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-text-light">
-                  <strong>Privacy Note:</strong> By posting this job, you
-                  confirm that you have the authority to recruit for this
-                  position. Maplorix will use this information to connect you
-                  with qualified candidates and will not share your data with
-                  third parties without your consent.
-                </p>
+              <div className="bg-gradient-to-r from-primary/5 to-secondary/10 p-6 rounded-xl border border-primary/20">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <i className="fas fa-shield-alt text-primary text-xl mt-1"></i>
+                  </div>
+                  <div className="ml-4">
+                    <h5 className="text-lg font-semibold text-primary mb-2">
+                      Privacy Note
+                    </h5>
+                    <p className="text-sm text-text-light leading-relaxed">
+                      By posting this job, you confirm that you have the authority to recruit for this
+                      position. Maplorix will use this information to connect you with qualified candidates 
+                      and will not share your data with third parties without your consent.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4">
+              <div className="pt-6">
                 <button
                   type="submit"
-                  className="btn btn-primary w-full text-lg sm:text-xl py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg sm:text-xl"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center">
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        className="animate-spin -ml-1 mr-3 h-6 w-6 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -1075,7 +1174,10 @@ const JobPost = () => {
                         : 'Posting...'}
                     </span>
                   ) : (
-                    'Post Job'
+                    <span className="flex items-center justify-center">
+                      <i className="fas fa-paper-plane mr-2"></i>
+                      Post Job
+                    </span>
                   )}
                 </button>
               </div>

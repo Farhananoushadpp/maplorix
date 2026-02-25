@@ -10,4 +10,24 @@ export default defineConfig({
     strictPort: true,
     open: true,
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          motion: ['framer-motion'],
+          api: ['axios'],
+        },
+      },
+    },
+  },
+  base: '/', // Use root path for hosting
+  preview: {
+    port: 4173,
+    host: true,
+  },
 })

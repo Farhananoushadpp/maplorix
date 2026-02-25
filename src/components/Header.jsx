@@ -170,7 +170,7 @@ const Header = () => {
                       // Not logged in options
                       <div className="py-1">
                         <Link
-                          to="/login"
+                          to={ROUTES.LOGIN}
                           onClick={handleNavClick}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                         >
@@ -179,7 +179,7 @@ const Header = () => {
                         </Link>
 
                         <Link
-                          to="/register"
+                          to={ROUTES.REGISTER}
                           onClick={handleNavClick}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                         >

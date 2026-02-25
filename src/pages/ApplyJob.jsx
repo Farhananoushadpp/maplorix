@@ -377,12 +377,15 @@ const ApplyJob = () => {
         <div className="text-center mb-12">
           <button
             onClick={handleBackToHome}
-            className="inline-flex items-center text-text-light hover:text-primary mb-6 transition-colors"
+            className="inline-flex items-center text-text-light hover:text-primary mb-6 transition-colors group"
           >
-            <i className="fas fa-arrow-left mr-2"></i>
+            <i className="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>
             Back to Home
           </button>
-          <h1 className="text-3xl font-bold text-primary mb-4">
+          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-primary shadow-custom mb-4">
+            <i className="fas fa-file-contract text-accent text-2xl"></i>
+          </div>
+          <h1 className="text-3xl font-bold text-primary mb-4 font-heading">
             Job Application
           </h1>
           <p className="text-text-light max-w-2xl mx-auto">
@@ -393,14 +396,16 @@ const ApplyJob = () => {
 
         {/* Success Message */}
         {submitSuccess && (
-          <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-8 p-6 bg-gradient-to-r from-secondary/10 to-accent/10 border border-secondary/30 rounded-xl">
             <div className="flex items-center">
-              <i className="fas fa-check-circle text-green-500 text-2xl mr-4"></i>
+              <div className="flex-shrink-0">
+                <i className="fas fa-check-circle text-secondary text-3xl mr-4"></i>
+              </div>
               <div>
-                <h3 className="text-lg font-semibold text-green-800">
+                <h3 className="text-lg font-semibold text-secondary mb-1">
                   Application Submitted Successfully!
                 </h3>
-                <p className="text-green-600">
+                <p className="text-text-light">
                   Thank you for your application. We'll review it and get back
                   to you soon.
                 </p>
@@ -411,109 +416,146 @@ const ApplyJob = () => {
 
         {/* Application Form */}
         <div className="bg-white rounded-2xl shadow-custom p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Personal Information */}
             <div>
-              <h2 className="text-xl font-semibold text-primary mb-4">
-                Personal Information
-              </h2>
+              <div className="flex items-center mb-6">
+                <div className="h-8 w-1 bg-secondary rounded-full mr-3"></div>
+                <h2 className="text-xl font-bold text-primary">
+                  Personal Information
+                </h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     First Name *
                   </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.firstName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="John"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-user text-text-light"></i>
+                    </div>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.firstName ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="John"
+                    />
+                  </div>
                   {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.firstName}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Last Name *
                   </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Doe"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-user text-text-light"></i>
+                    </div>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.lastName ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="Doe"
+                    />
+                  </div>
                   {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.lastName}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Email Address *
                   </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="john.doe@example.com"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-envelope text-text-light"></i>
+                    </div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.email ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="john.doe@example.com"
+                    />
+                  </div>
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
+                      {errors.email}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="+1 (555) 123-4567"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-phone text-text-light"></i>
+                    </div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.phone ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
+                      {errors.phone}
+                    </p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Location *
                   </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.location ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="New York, NY"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-map-marker-alt text-text-light"></i>
+                    </div>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.location ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="New York, NY"
+                    />
+                  </div>
                   {errors.location && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.location}
                     </p>
                   )}
@@ -523,133 +565,175 @@ const ApplyJob = () => {
 
             {/* Job Information */}
             <div>
-              <h2 className="text-xl font-semibold text-primary mb-4">
-                Job Information
-              </h2>
+              <div className="flex items-center mb-6">
+                <div className="h-8 w-1 bg-accent rounded-full mr-3"></div>
+                <h2 className="text-xl font-bold text-primary">
+                  Job Information
+                </h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Job Role *
                   </label>
-                  <input
-                    type="text"
-                    name="jobRole"
-                    value={formData.jobRole}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.jobRole ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., Senior Frontend Developer"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-briefcase text-text-light"></i>
+                    </div>
+                    <input
+                      type="text"
+                      name="jobRole"
+                      value={formData.jobRole}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors ${
+                        errors.jobRole ? 'border-red-500' : 'border-border-color'
+                      }`}
+                      placeholder="e.g., Senior Frontend Developer"
+                    />
+                  </div>
                   {errors.jobRole && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.jobRole}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Experience Level *
                   </label>
-                  <select
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent ${
-                      errors.experience ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select experience level</option>
-                    {experienceLevels.map((level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-chart-line text-text-light"></i>
+                    </div>
+                    <select
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary appearance-none bg-white transition-colors ${
+                        errors.experience ? 'border-red-500' : 'border-border-color'
+                      }`}
+                    >
+                      <option value="">Select experience level</option>
+                      {experienceLevels.map((level) => (
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {errors.experience && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <i className="fas fa-exclamation-circle mr-1"></i>
                       {errors.experience}
                     </p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Expected Salary
                   </label>
-                  <input
-                    type="text"
-                    name="expectedSalary"
-                    value={formData.expectedSalary}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-                    placeholder="$80,000 - $100,000"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-money-bill text-text-light"></i>
+                    </div>
+                    <input
+                      type="text"
+                      name="expectedSalary"
+                      value={formData.expectedSalary}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                      placeholder="$80,000 - $100,000"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Additional Information */}
             <div>
-              <h2 className="text-xl font-semibold text-primary mb-4">
-                Additional Information
-              </h2>
+              <div className="flex items-center mb-6">
+                <div className="h-8 w-1 bg-accent rounded-full mr-3"></div>
+                <h2 className="text-xl font-bold text-primary">
+                  Additional Information
+                </h2>
+              </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
                     Resume/CV
                   </label>
-                  <input
-                    type="file"
-                    name="resume"
-                    onChange={handleChange}
-                    accept=".pdf,.doc,.docx"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-                  />
-                  <p className="mt-1 text-sm text-text-light">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i className="fas fa-file-upload text-text-light"></i>
+                    </div>
+                    <input
+                      type="file"
+                      name="resume"
+                      onChange={handleChange}
+                      accept=".pdf,.doc,.docx"
+                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark transition-colors"
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-text-light flex items-center">
+                    <i className="fas fa-info-circle mr-1"></i>
                     Accepted formats: PDF, DOC, DOCX (Max 5MB)
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">
+                    <label className="block text-sm font-semibold text-text-dark mb-2">
                       LinkedIn Profile
                     </label>
-                    <input
-                      type="url"
-                      name="linkedinProfile"
-                      value={formData.linkedinProfile}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-                      placeholder="https://linkedin.com/in/johndoe"
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fab fa-linkedin text-text-light"></i>
+                      </div>
+                      <input
+                        type="url"
+                        name="linkedinProfile"
+                        value={formData.linkedinProfile}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                        placeholder="https://linkedin.com/in/johndoe"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">
+                    <label className="block text-sm font-semibold text-text-dark mb-2">
                       Portfolio Website
                     </label>
-                    <input
-                      type="url"
-                      name="portfolio"
-                      value={formData.portfolio}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-                      placeholder="https://johndoe.com"
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i className="fas fa-globe text-text-light"></i>
+                      </div>
+                      <input
+                        type="url"
+                        name="portfolio"
+                        value={formData.portfolio}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-primary placeholder-text-light transition-colors"
+                        placeholder="https://johndoe.com"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* CAPTCHA Verification */}
-            <div className="py-4">
-              <label className="block text-sm font-medium text-primary mb-4">
-                Security Verification *
-              </label>
-              <div className="flex flex-col items-center">
+            <div className="py-6">
+              <div className="flex items-center mb-4">
+                <div className="h-8 w-1 bg-secondary rounded-full mr-3"></div>
+                <label className="text-sm font-semibold text-primary">
+                  Security Verification *
+                </label>
+              </div>
+              <div className="flex flex-col items-center bg-gradient-to-r from-primary/5 to-secondary/10 p-6 rounded-xl border border-primary/20">
                 <ReCAPTCHA
                   sitekey={RECAPTCHA_SITE_KEY}
                   onChange={handleCaptchaChange}
@@ -660,38 +744,72 @@ const ApplyJob = () => {
                   }}
                 />
                 {errors.captcha && (
-                  <p className="mt-2 text-sm text-red-600 text-center">
+                  <p className="mt-2 text-sm text-red-600 text-center flex items-center">
+                    <i className="fas fa-exclamation-circle mr-1"></i>
                     {errors.captcha}
                   </p>
                 )}
+                <p className="mt-3 text-sm text-text-light text-center flex items-center">
+                  <i className="fas fa-shield-alt mr-1"></i>
+                  Please complete the CAPTCHA to verify you are human.
+                </p>
               </div>
-              <p className="mt-2 text-sm text-text-light text-center">
-                Please complete the CAPTCHA to verify you are human.
-              </p>
             </div>
 
             {/* Error Display */}
             {errors.submit && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600">{errors.submit}</p>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 flex items-center">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  {errors.submit}
+                </p>
               </div>
             )}
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
+            <div className="flex justify-end space-x-4 pt-6 border-t border-border-color">
               <button
                 type="button"
                 onClick={handleBackToHome}
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border border-border-color rounded-lg text-text-dark hover:bg-gray-50 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <i className="fas fa-paper-plane mr-2"></i>
+                    Submit Application
+                  </span>
+                )}
               </button>
             </div>
           </form>

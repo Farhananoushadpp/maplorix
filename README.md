@@ -1,6 +1,35 @@
 # Maplorix - Job Consultancy Website (React + Vite + Tailwind CSS)
 
-A modern, professional job consultancy website for Maplorix built with React, Vite, and Tailwind CSS. The website follows strict brand guidelines and provides a seamless user experience for both job seekers and employers.
+A modern, professional job consultancy website for Maplorix built with React, Vite, and Tailwind CSS. The website features complete authentication system, role-based access control, and provides a seamless user experience for both job seekers and employers.
+
+## 🔐 Authentication & Access Control
+
+### User Roles & Permissions
+
+**Regular Users can access:**
+
+- Home
+- About Us
+- Feed (job listings) - **Requires Login**
+- Contact Us
+
+**Admin Users can access:**
+
+- Home
+- About Us
+- Feed (job listings) - **Requires Login**
+- Dashboard - **Requires Login**
+- Admin Posts - **Requires Admin Role**
+- Contact Us
+
+### Authentication Features
+
+- ✅ User Registration & Login
+- ✅ JWT Token Authentication
+- ✅ Role-based Access Control
+- ✅ Protected Routes
+- ✅ Auto-redirect for authenticated users
+- ✅ Session management
 
 ## 🎨 Brand Guidelines
 
@@ -24,6 +53,8 @@ A modern, professional job consultancy website for Maplorix built with React, Vi
 - **React Router** - Client-side routing with animations
 - **Framer Motion** - Smooth page transitions
 - **PropTypes** - Runtime type checking
+- **Axios** - HTTP client for API calls
+- **JWT** - Authentication tokens
 
 ## 📁 Project Structure
 
@@ -32,39 +63,32 @@ maplorix/
 ├── public/                 # Static assets
 ├── src/
 │   ├── components/         # React components
-│   │   ├── ui/            # Reusable UI components
-│   │   │   ├── Button.jsx
-│   │   │   ├── Card.jsx
-│   │   │   └── Section.jsx
+│   │   ├── ProtectedRoute.jsx  # Route protection wrapper
+│   │   ├── PublicRoute.jsx      # Public route wrapper
 │   │   ├── Header.jsx
-│   │   ├── Hero.jsx
-│   │   ├── About.jsx
-│   │   ├── Services.jsx
-│   │   ├── Jobs.jsx
-│   │   ├── Employers.jsx
-│   │   ├── Candidates.jsx
-│   │   ├── CTA.jsx
-│   │   ├── Contact.jsx
 │   │   ├── Footer.jsx
-│   │   └── ScrollToTop.jsx
+│   │   └── ...
+│   ├── context/           # React Context
+│   │   ├── AuthContext.jsx     # Authentication context
+│   │   ├── DataContext.jsx     # Data management context
+│   │   └── ApplicationContext.jsx
 │   ├── pages/             # Page components
 │   │   ├── Home.jsx
-│   │   ├── About.jsx
-│   │   ├── Services.jsx
-│   │   ├── Jobs.jsx
-│   │   ├── Employers.jsx
-│   │   ├── Candidates.jsx
-│   │   └── Contact.jsx
-│   ├── hooks/             # Custom React hooks
-│   │   ├── useNavigation.js
-│   │   ├── useFormValidation.js
-│   │   └── useScrollToTop.js
+│   │   ├── Login.jsx          # Login page
+│   │   ├── Register.jsx       # Registration page
+│   │   ├── Dashboard.jsx      # User dashboard
+│   │   ├── AdminPosts.jsx     # Admin job management
+│   │   ├── PostsFeed.jsx      # Job listings feed
+│   │   └── ...
+│   ├── services/          # API services
+│   │   └── api.js             # API configuration and methods
 │   ├── constants/         # Application constants
 │   │   └── index.js
 │   ├── App.jsx            # Main App component
 │   ├── main.jsx           # Entry point
 │   └── index.css          # Tailwind CSS + custom styles
-├── index.html              # HTML template
+├── deploy.sh              # Deployment script
+├── DEPLOYMENT.md          # Deployment guide
 ├── package.json            # Dependencies and scripts
 ├── tailwind.config.js      # Tailwind configuration
 ├── vite.config.js          # Vite configuration
@@ -75,23 +99,27 @@ maplorix/
 
 ### Core Sections
 
-1. **Header/Navbar** - Fixed navigation with mobile menu
-2. **Hero Section** - Eye-catching introduction with CTAs
-3. **About Us** - Company description and values
-4. **Services** - Service offerings with icons
-5. **Jobs** - Featured job listings with application functionality
-6. **Employers** - Information for hiring companies
-7. **Candidates** - Step-by-step application process
-8. **Call to Action** - Conversion-focused section
+1. **Authentication System** - Complete user auth with role management
+2. **Header/Navbar** - Fixed navigation with user profile dropdown
+3. **Hero Section** - Eye-catching introduction with CTAs
+4. **About Us** - Company description and values
+5. **Services** - Service offerings with icons
+6. **Jobs Feed** - Job listings with application functionality
+7. **Dashboard** - User dashboard for job management
+8. **Admin Posts** - Admin panel for job management
 9. **Contact** - Contact form with validation
 10. **Footer** - Quick links and company details
 
 ### Interactive Features
 
+- ✅ User authentication and authorization
+- ✅ Role-based access control
+- ✅ Protected routes with redirects
 - ✅ Smooth scrolling navigation with active state
 - ✅ Mobile-responsive hamburger menu
 - ✅ Contact form with real-time validation
-- ✅ Job application pre-filling
+- ✅ Job application system
+- ✅ Admin job management
 - ✅ Scroll-to-top functionality
 - ✅ Page transitions with animations
 - ✅ Component-based architecture
@@ -109,25 +137,24 @@ maplorix/
 
 ## 🔧 Architecture & Reusability
 
-### Custom Hooks
+### Authentication Flow
 
-- **useNavigation** - Mobile menu state and navigation logic
-- **useFormValidation** - Form validation and state management
-- **useScrollToTop** - Scroll to top functionality
+1. **Registration**: User creates account → Redirect to login
+2. **Login**: User authenticates → Redirect to dashboard/feed
+3. **Protected Routes**: Check authentication → Redirect if needed
+4. **Role-based Access**: Verify user role → Grant/deny access
 
-### Reusable Components
+### Context Management
 
-- **Button** - Consistent button styling with variants
-- **Card** - Flexible card component with hover effects
-- **Section** - Standardized section layout
+- **AuthContext**: User authentication state and methods
+- **DataContext**: Job and application data management
+- **ApplicationContext**: Application-specific state
 
-### Constants & Configuration
+### Route Protection
 
-- **ROUTES** - Centralized route definitions
-- **NAVIGATION_ITEMS** - Navigation configuration
-- **SERVICES_DATA** - Services content
-- **JOBS_DATA** - Job listings
-- **VALIDATION_RULES** - Form validation rules
+- **ProtectedRoute**: Wrapper for authenticated routes
+- **PublicRoute**: Wrapper for public routes (login/register)
+- **Role-based Protection**: Admin-only routes
 
 ## 🚀 Getting Started
 
@@ -135,6 +162,7 @@ maplorix/
 
 - Node.js 14+
 - npm or yarn
+- Backend API running on port 4000 (or configured port)
 
 ### Installation
 
@@ -151,13 +179,23 @@ maplorix/
    npm install
    ```
 
-3. **Start development server**
+3. **Set up environment variables**
+
+   Create `.env.production`:
+
+   ```env
+   VITE_API_BASE_URL=http://localhost:4000/api
+   VITE_APP_NAME=Maplorix
+   VITE_APP_DESCRIPTION=Professional Job Consultancy Services
+   ```
+
+4. **Start development server**
 
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to `http://localhost:3000`
 
 ## 📝 Available Scripts
@@ -166,6 +204,26 @@ maplorix/
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Run ESLint
+- `./deploy.sh` - Automated deployment script
+
+## 🚀 Deployment
+
+### Quick Deployment
+
+```bash
+# Run the deployment script
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### Manual Deployment
+
+1. Build the project: `npm run build`
+2. Upload the `dist` folder to your hosting provider
+3. Configure environment variables
+4. Ensure backend API is accessible
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🎯 Customization
 
@@ -186,6 +244,13 @@ theme: {
 }
 ```
 
+### User Roles
+
+Default roles are configured in the registration form:
+
+- `user` - Regular user access
+- `admin` - Administrative access
+
 ### Content
 
 Update content in `src/constants/index.js`:
@@ -195,11 +260,24 @@ Update content in `src/constants/index.js`:
 - Job listings
 - Contact information
 
-### Adding New Sections
+## 🔐 Authentication Configuration
 
-1. Create page component in `src/pages/`
-2. Add route configuration in `src/constants/index.js`
-3. Update navigation items if needed
+### Backend Requirements
+
+Your backend API should provide:
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile
+- JWT token authentication
+- User role management
+
+### Frontend Configuration
+
+- API base URL configured in environment variables
+- Automatic token handling in API requests
+- Protected route components
+- Role-based access control
 
 ## 📱 Responsive Design
 
@@ -228,6 +306,7 @@ Custom configuration includes:
 - Custom hooks for reusable logic
 - PropTypes for type safety
 - Comprehensive documentation
+- Context-based state management
 
 ### Styling Approach
 
@@ -243,25 +322,28 @@ Custom configuration includes:
 - 🖼️ Optimized assets
 - 📦 Minimal bundle size
 - 🚀 Fast loading times
+- 🔐 Secure authentication flow
 
 ## 🔒 Security Considerations
 
+- JWT token authentication
+- Protected routes and API endpoints
 - Form validation on client-side
 - XSS protection in form handling
 - HTTPS ready
-- No external dependencies except CDN assets
+- Role-based access control
+- Secure token storage
 
 ## 🚀 Future Enhancements
 
-- [ ] Backend integration for contact form
-- [ ] Dynamic job listings from API
-- [ ] User authentication system
-- [ ] Job application tracking
-- [ ] Employer dashboard
-- [ ] Advanced search functionality
-- [ ] Blog/news section
-- [ ] Testimonials carousel
-- [ ] Social media integration
+- [ ] Social login integration
+- [ ] Email verification
+- [ ] Password reset functionality
+- [ ] Advanced search and filtering
+- [ ] Real-time notifications
+- [ ] File upload for resumes
+- [ ] Advanced admin analytics
+- [ ] Multi-language support
 
 ## 📞 Support
 

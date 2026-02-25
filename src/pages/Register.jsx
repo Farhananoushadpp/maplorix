@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
+import { ROUTES } from '../constants'
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -182,7 +183,7 @@ const Register = () => {
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate('/login')
+        navigate(ROUTES.LOGIN)
       }, 2000)
     } catch (error) {
       console.error('Registration error:', error)
@@ -591,7 +592,7 @@ const Register = () => {
             <p className="text-sm text-text-light">
               Already have an account?{' '}
               <Link
-                to="/login"
+                to={ROUTES.LOGIN}
                 className="font-medium text-accent hover:text-accent/80 transition-colors"
               >
                 Sign in here
