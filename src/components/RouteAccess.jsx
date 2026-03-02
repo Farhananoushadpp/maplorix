@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 // Public pages that all users can access
-const PUBLIC_PAGES = ['/home', '/about', '/feed', '/contact']
+const PUBLIC_PAGES = ['/home', '/about', '/contact']
 
 // Admin-only pages
 const ADMIN_PAGES = ['/dashboard', '/admin-posts', '/applications']
@@ -82,16 +82,16 @@ export const usePageAccess = (path) => {
   // Admin pages - only admin can access
   if (ADMIN_PAGES.includes(path)) {
     const canAccess = isAuthenticated && user?.role === 'admin'
-    return { 
-      canAccess, 
-      reason: canAccess ? 'admin' : 'admin_required' 
+    return {
+      canAccess,
+      reason: canAccess ? 'admin' : 'admin_required',
     }
   }
 
   // Other pages - require authentication
   const canAccess = isAuthenticated
-  return { 
-    canAccess, 
-    reason: canAccess ? 'authenticated' : 'login_required' 
+  return {
+    canAccess,
+    reason: canAccess ? 'authenticated' : 'login_required',
   }
 }

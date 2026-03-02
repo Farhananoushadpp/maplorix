@@ -11,7 +11,9 @@ export const ApplicationProvider = ({ children }) => {
   // Listen for application submission events
   useEffect(() => {
     const handleApplicationSubmitted = (event) => {
-      console.log('Application submitted event received:', event.detail)
+      if (import.meta.env.DEV) {
+        console.log('Application submitted event received:', event.detail)
+      }
 
       // Add the new application to the state
       const newApplication = event.detail.application

@@ -50,19 +50,25 @@ api.interceptors.request.use(
 // Function to update baseURL if needed - DISABLED to force port 4000
 const updateApiBaseUrl = async () => {
   // Force use port 4000 since backend is running there
-  console.log('🔧 Forcing backend port 4000')
+  if (import.meta.env.DEV) {
+    console.log('🔧 Forcing backend port 4000')
+  }
   api.defaults.baseURL = 'http://localhost:4000/api'
   return
 }
 
 // Try to update the base URL on initialization
-console.log('🔧 API Service: Initializing port detection...')
+if (import.meta.env.DEV) {
+  console.log('🔧 API Service: Initializing port detection...')
+}
 updateApiBaseUrl()
   .then(() => {
-    console.log(
-      '🔧 API Service: Initialization complete, baseURL:',
-      api.defaults.baseURL
-    )
+    if (import.meta.env.DEV) {
+      console.log(
+        '🔧 API Service: Initialization complete, baseURL:',
+        api.defaults.baseURL
+      )
+    }
   })
   .catch((error) => {
     console.error('🔧 API Service: Initialization failed:', error)

@@ -1,24 +1,29 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 
-const SEO = ({ 
-  title, 
-  description, 
-  keywords, 
-  ogImage, 
-  ogUrl, 
+const SEO = ({
+  title,
+  description,
+  keywords,
+  ogImage,
+  ogUrl,
   canonicalUrl,
   type = 'website',
-  structuredData = null
+  structuredData = null,
 }) => {
-  const defaultTitle = 'Maplorix - Leading Recruitment Agency | Find Jobs & Hire Talent'
-  const defaultDescription = 'Maplorix is a leading job recruitment agency connecting talented professionals with top employers. Search jobs, upload resume, get career counseling, and hire the best talent.'
-  const defaultKeywords = 'recruitment agency, job search, career counseling, resume building, interview preparation, talent acquisition, staffing solutions'
+  const defaultTitle =
+    'Maplorix - Leading Recruitment Company | Find Jobs & Hire Talent'
+  const defaultDescription =
+    'Maplorix is a leading job recruitment Company connecting talented professionals with top employers. Search jobs, upload resume, get career counseling, and hire the best talent.'
+  const defaultKeywords =
+    'recruitment Company, job search, career counseling, resume building, interview preparation, talent acquisition, staffing solutions'
   const siteUrl = 'https://www.maplorix.com'
-  
+
   const pageTitle = title ? `${title} | Maplorix` : defaultTitle
   const pageDescription = description || defaultDescription
-  const pageKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords
+  const pageKeywords = keywords
+    ? `${keywords}, ${defaultKeywords}`
+    : defaultKeywords
   const pageImage = ogImage || `${siteUrl}/maplorix.svg`
   const pageUrl = ogUrl || siteUrl
   const pageCanonical = canonicalUrl || siteUrl
@@ -29,7 +34,7 @@ const SEO = ({
       <title>{pageTitle}</title>
       <meta name="description" content={pageDescription} />
       <meta name="keywords" content={pageKeywords} />
-      <meta name="author" content="Maplorix Recruitment Agency" />
+      <meta name="author" content="Maplorix Recruitment Company" />
       <meta name="robots" content="index, follow" />
       <link rel="canonical" href={pageCanonical} />
 
@@ -39,7 +44,7 @@ const SEO = ({
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
       <meta property="og:image" content={pageImage} />
-      <meta property="og:image:alt" content="Maplorix Recruitment Agency" />
+      <meta property="og:image:alt" content="Maplorix Recruitment Company" />
       <meta property="og:site_name" content="Maplorix" />
       <meta property="og:locale" content="en_US" />
 
@@ -49,7 +54,10 @@ const SEO = ({
       <meta property="twitter:title" content={pageTitle} />
       <meta property="twitter:description" content={pageDescription} />
       <meta property="twitter:image" content={pageImage} />
-      <meta property="twitter:image:alt" content="Maplorix Recruitment Agency" />
+      <meta
+        property="twitter:image:alt"
+        content="Maplorix Recruitment Company"
+      />
 
       {/* Additional SEO */}
       <meta name="language" content="English" />

@@ -47,8 +47,15 @@ const Header = () => {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-lg bg-primary" role="banner">
-      <nav className="py-3 sm:py-4" role="navigation" aria-label="Main navigation">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-lg bg-primary"
+      role="banner"
+    >
+      <nav
+        className="py-3 sm:py-4"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <div className="container px-4">
           <div className="flex justify-between items-center">
             {/* Logos - Left Side */}
@@ -76,7 +83,10 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <ul className="flex items-center space-x-8 list-none m-0 p-0" role="menubar">
+              <ul
+                className="flex items-center space-x-8 list-none m-0 p-0"
+                role="menubar"
+              >
                 {NAVIGATION_ITEMS.slice(0, 3).map((item) => (
                   <li key={item.id} role="none">
                     <Link
@@ -84,7 +94,9 @@ const Header = () => {
                       onClick={handleNavClick}
                       className={`nav-link ${isActiveRoute(item.path) ? 'active' : ''}`}
                       role="menuitem"
-                      aria-current={isActiveRoute(item.path) ? 'page' : undefined}
+                      aria-current={
+                        isActiveRoute(item.path) ? 'page' : undefined
+                      }
                     >
                       {item.label}
                     </Link>
@@ -97,7 +109,9 @@ const Header = () => {
                       onClick={handleNavClick}
                       className={`nav-link ${isActiveRoute('/dashboard') ? 'active' : ''}`}
                       role="menuitem"
-                      aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
+                      aria-current={
+                        isActiveRoute('/dashboard') ? 'page' : undefined
+                      }
                     >
                       Dashboard
                     </Link>
@@ -126,93 +140,116 @@ const Header = () => {
                   </li>
                 ))}
               </ul>
-              {/* Profile Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={toggleProfileDropdown}
-                  className="flex items-center space-x-3 text-white hover:text-white/90 transition-all duration-300 group"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <i className="fas fa-user text-white text-sm"></i>
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-semibold">
-                      {user?.firstName || 'User'}
-                    </span>
-                    <span className="text-xs text-white/80">
-                      {user?.role === 'admin' ? 'Admin' : 'User'}
-                    </span>
-                  </div>
-                  <i className="fas fa-chevron-down text-xs transition-transform duration-300 group-hover:translate-y-0.5"></i>
-                </button>
+              {/* Auth Section - Login/Signup or Profile */}
+              {!isAuthenticated ? (
+                // Not logged in - Show Login/Signup buttons
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to={ROUTES.LOGIN}
+                    onClick={handleNavClick}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    <i className="fas fa-sign-in-alt mr-2"></i>
+                    LOGIN
+                  </Link>
+                  <Link
+                    to={ROUTES.REGISTER}
+                    onClick={handleNavClick}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
+                  >
+                    <i className="fas fa-user-plus mr-2"></i>
+                    SIGNUP
+                  </Link>
+                </div>
+              ) : (
+                // Logged in - Show Profile Dropdown
+                <div className="relative">
+                  <button
+                    onClick={toggleProfileDropdown}
+                    className="flex items-center space-x-3 text-white hover:text-white/90 transition-all duration-300 group"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                      <i className="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-semibold">
+                        {user?.firstName || 'User'}
+                      </span>
+                      <span className="text-xs text-white/80">
+                        {user?.role === 'admin' ? 'Admin' : 'User'}
+                      </span>
+                    </div>
+                    <i className="fas fa-chevron-down text-xs transition-transform duration-300 group-hover:translate-y-0.5"></i>
+                  </button>
 
-                {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl py-4 z-50 border border-gray-100">
-                    {isAuthenticated ? (
-                      // Logged in user options
-                      <>
-                        <div className="px-6 py-4 bg-gradient-to-br from-primary/5 to-secondary/10 border-b border-gray-100">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg">
-                              <i className="fas fa-user text-white text-lg"></i>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-base font-bold text-primary">
-                                {user?.firstName} {user?.lastName}
-                              </p>
-                              <p className="text-sm text-text-light truncate">
-                                {user?.email}
-                              </p>
-                              {user?.role === 'admin' && (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/20 text-secondary mt-2">
-                                  <i className="fas fa-crown mr-1"></i>
-                                  Admin
-                                </span>
-                              )}
+                  {isProfileDropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl py-4 z-50 border border-gray-100">
+                      {isAuthenticated ? (
+                        // Logged in user options
+                        <>
+                          <div className="px-6 py-4 bg-gradient-to-br from-primary/5 to-secondary/10 border-b border-gray-100">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center shadow-lg">
+                                <i className="fas fa-user text-white text-lg"></i>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-base font-bold text-primary">
+                                  {user?.firstName} {user?.lastName}
+                                </p>
+                                <p className="text-sm text-text-light truncate">
+                                  {user?.email}
+                                </p>
+                                {user?.role === 'admin' && (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/20 text-secondary mt-2">
+                                    <i className="fas fa-crown mr-1"></i>
+                                    Admin
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="py-2">
-                          <button
-                            onClick={() => {
-                              logout()
-                              handleNavClick()
-                            }}
-                            className="w-full flex items-center px-6 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors group"
+                          <div className="py-2">
+                            <button
+                              onClick={() => {
+                                logout()
+                                handleNavClick()
+                              }}
+                              className="w-full flex items-center px-6 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors group"
+                            >
+                              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 group-hover:bg-red-200 transition-colors">
+                                <i className="fas fa-sign-out-alt text-red-600 text-sm"></i>
+                              </div>
+                              <span>Logout</span>
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        // Not logged in options
+                        <div className="py-1 space-y-2 px-2">
+                          <Link
+                            to={ROUTES.LOGIN}
+                            onClick={handleNavClick}
+                            className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                           >
-                            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 group-hover:bg-red-200 transition-colors">
-                              <i className="fas fa-sign-out-alt text-red-600 text-sm"></i>
-                            </div>
-                            <span>Logout</span>
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      // Not logged in options
-                      <div className="py-1 space-y-2 px-2">
-                        <Link
-                          to={ROUTES.LOGIN}
-                          onClick={handleNavClick}
-                          className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                        >
-                          <i className="fas fa-sign-in-alt mr-2"></i>
-                          Login
-                        </Link>
+                            <i className="fas fa-sign-in-alt mr-2"></i>
+                            Login
+                          </Link>
 
-                        <Link
-                          to={ROUTES.REGISTER}
-                          onClick={handleNavClick}
-                          className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
-                        >
-                          <i className="fas fa-user-plus mr-2"></i>
-                          Sign Up
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                          <Link
+                            to={ROUTES.REGISTER}
+                            onClick={handleNavClick}
+                            className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
+                          >
+                            <i className="fas fa-user-plus mr-2"></i>
+                            Sign Up
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Mobile Menu Button */}

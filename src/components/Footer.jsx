@@ -136,7 +136,7 @@ const Footer = () => {
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-check-circle text-secondary mr-2 mt-0.5 sm:mt-0 flex-shrink-0"></i>
                 <span className="text-center sm:text-left">
-                  5000+ Successful Placements
+                  15000+ Successful Placements
                 </span>
               </li>
               <li className="flex items-start sm:items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
@@ -219,16 +219,15 @@ const Footer = () => {
         <div className="border-t border-white/20 pt-4 sm:pt-6">
           <div className="flex justify-center items-center">
             <div className="text-white/60 text-xs sm:text-sm text-center">
-              &copy; 2024{' '}
+              Copyright &copy; maplorix | Designed by{' '}
               <a
                 href="https://tarah.ae/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/60 hover:text-secondary transition-colors"
               >
-                Tarah advertising
+                tarah.ae
               </a>
-              . All rights reserved.
             </div>
           </div>
         </div>

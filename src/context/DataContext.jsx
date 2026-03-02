@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useMemo,
   useCallback,
+  useRef,
 } from 'react'
 import { jobsAPI, applicationsAPI } from '../services/api'
 
@@ -276,12 +277,27 @@ const dataReducer = (state, action) => {
 export const DataProvider = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState)
 
+  // Track previous data to prevent unnecessary recalculations
+  const prevDataRef = useRef({
+    jobsLength: 0,
+    applicationsLength: 0,
+    jobsHash: '',
+    applicationsHash: '',
+    lastStats: {
+      totalJobs: 0,
+      recentJobs: 0,
+      totalApplications: 0,
+      recentApplications: 0,
+    },
+  })
+
   // Stats calculation - safely memoized to prevent infinite loops
   // Calculate stats using useMemo to avoid infinite loops
   const stats = useMemo(() => {
     // Only calculate if we have valid data
     if (!Array.isArray(state.jobs) || !Array.isArray(state.applications)) {
-      console.log('⚠️ Stats: Invalid data arrays, returning default stats')
+      if (import.meta.env.DEV)
+        console.log('⚠️ Stats: Invalid data arrays, returning default stats')
       return {
         totalJobs: 0,
         recentJobs: 0,
@@ -290,13 +306,22 @@ export const DataProvider = ({ children }) => {
       }
     }
 
-    console.log(
-      '🧮 Stats: Calculating stats for',
-      state.jobs.length,
-      'jobs and',
-      state.applications.length,
-      'applications'
-    )
+    // Check if data actually changed to prevent unnecessary recalculations
+    const currentJobsHash = state.jobs.map((j) => j._id).join(',')
+    const currentApplicationsHash = state.applications
+      .map((a) => a._id)
+      .join(',')
+
+    const prevData = prevDataRef.current
+    if (
+      prevData.jobsLength === state.jobs.length &&
+      prevData.applicationsLength === state.applications.length &&
+      prevData.jobsHash === currentJobsHash &&
+      prevData.applicationsHash === currentApplicationsHash
+    ) {
+      // Data hasn't actually changed, return previous calculation
+      return prevData.lastStats
+    }
 
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -317,7 +342,36 @@ export const DataProvider = ({ children }) => {
       recentApplications: recentApplications.length,
     }
 
-    console.log('📊 Stats: New stats calculated:', newStats)
+    // Update ref with current data and store calculated stats
+    prevDataRef.current = {
+      jobsLength: state.jobs.length,
+      applicationsLength: state.applications.length,
+      jobsHash: currentJobsHash,
+      applicationsHash: currentApplicationsHash,
+      lastStats: newStats,
+    }
+
+    // Only log in development mode and only if data actually changed
+    if (
+      import.meta.env.DEV &&
+      state.jobs.length + state.applications.length > 0
+    ) {
+      console.log(
+        '🧮 Stats: Calculating stats for',
+        state.jobs.length,
+        'jobs and',
+        state.applications.length,
+        'applications'
+      )
+    }
+
+    // Only log in development mode and only if stats are meaningful
+    if (
+      import.meta.env.DEV &&
+      (newStats.totalJobs > 0 || newStats.totalApplications > 0)
+    ) {
+      console.log('📊 Stats: New stats calculated:', newStats)
+    }
     return newStats
   }, [state.jobs, state.applications]) // Only depend on jobs and applications arrays
 

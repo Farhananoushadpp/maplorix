@@ -1,30 +1,129 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { jobsAPI } from '../services/api'
+
+// Global video controller singleton
+class GlobalVideoController {
+  constructor() {
+    this.currentController = null
+    this.videoElement = null
+    this.currentVideoIndex = 0
+    this.isInitialized = false
+  }
+
+  setController(id, videoRef, videos) {
+    if (this.currentController && this.currentController !== id) {
+      return false // Another controller is already active
+    }
+
+    if (!this.currentController) {
+      this.currentController = id
+      this.videoElement = videoRef.current
+      this.isInitialized = true
+
+      if (import.meta.env.DEV) {
+        console.log(`🎬 GlobalVideoController: Controller ${id} established`)
+      }
+      return true
+    }
+
+    return this.currentController === id
+  }
+
+  releaseController(id) {
+    if (this.currentController === id) {
+      this.currentController = null
+      this.videoElement = null
+      this.isInitialized = false
+
+      if (import.meta.env.DEV) {
+        console.log(`🎬 GlobalVideoController: Controller ${id} released`)
+      }
+    }
+  }
+
+  isActiveController(id) {
+    return this.currentController === id && this.isInitialized
+  }
+}
+
+// Global instance
+const globalVideoController = new GlobalVideoController()
+
+// Video definitions - moved outside component to prevent initialization errors - v2
+const VIDEOS = [
+  { src: '/job1.webm', type: 'video/webm' },
+  { src: '/job2.webm', type: 'video/webm' },
+  { src: '/job3.webm', type: 'video/webm' },
+]
 
 const Hero = ({ onPostJob, onFindJob }) => {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [featuredJobs, setFeaturedJobs] = useState([])
   const [jobStats, setJobStats] = useState({ total: 0, featured: 0 })
   const [loading, setLoading] = useState(true)
+  const [showPlayOverlay, setShowPlayOverlay] = useState(false)
+  const [loadingVideoIndex, setLoadingVideoIndex] = useState(-1)
+  const [heroInstanceId] = useState(() => `hero-${Date.now()}-${Math.random()}`)
   const videoRef = useRef(null)
+  const isControllerActive = useRef(false)
 
-  const videos = useMemo(() => [
-    { src: '/job1.webm', type: 'video/webm' },
-    { src: '/job2.webm', type: 'video/webm' },
-    { src: '/job3.webm', type: 'video/webm' }
-  ], [])
+  // Global controller management
+  useEffect(() => {
+    // Try to establish this instance as the controller
+    const success = globalVideoController.setController(
+      heroInstanceId,
+      videoRef,
+      VIDEOS
+    )
+    isControllerActive.current = success
+
+    if (!success) {
+      if (import.meta.env.DEV) {
+        console.log(
+          `🎬 Hero ${heroInstanceId}: Another controller is active, deferring`
+        )
+      }
+      return
+    }
+
+    // Cleanup when unmounted
+    return () => {
+      globalVideoController.releaseController(heroInstanceId)
+      isControllerActive.current = false
+    }
+  }, [heroInstanceId])
+
+  const showPlayButtonOverlay = () => {
+    setShowPlayOverlay(true)
+    // Hide overlay after 3 seconds
+    setTimeout(() => setShowPlayOverlay(false), 3000)
+  }
 
   const handleHireTalentClick = () => {
-    console.log('Hero handleHireTalentClick called')
-    console.log('onPostJob function:', onPostJob)
+    if (import.meta.env.DEV) {
+      console.log('Hero handleHireTalentClick called')
+      console.log('onPostJob function:', onPostJob)
+    }
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Redirect to login page with return URL
+      navigate('/login', {
+        state: {
+          message: 'Please login to post a job',
+          returnUrl: '/',
+        },
+      })
+      return
+    }
 
     if (onPostJob) {
-      console.log('Calling onPostJob function')
       onPostJob()
     } else {
-      console.log('No onPostJob function, scrolling to employers section')
       const element = document.getElementById('employers')
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' })
@@ -33,15 +132,27 @@ const Hero = ({ onPostJob, onFindJob }) => {
   }
 
   const handleFindJobClick = () => {
-    console.log('Hero handleFindJobClick called')
-    console.log('onFindJob function:', onFindJob)
+    if (import.meta.env.DEV) {
+      console.log('Hero handleFindJobClick called')
+      console.log('onFindJob function:', onFindJob)
+    }
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Redirect to login page with return URL
+      navigate('/login', {
+        state: {
+          message: 'Please login to find jobs',
+          returnUrl: '/posts',
+        },
+      })
+      return
+    }
 
     if (onFindJob) {
-      console.log('Calling onFindJob function')
       onFindJob()
     } else {
-      console.log('No onFindJob function, navigating to apply page')
-      navigate('/apply')
+      navigate('/posts')
     }
   }
 
@@ -77,114 +188,98 @@ const Hero = ({ onPostJob, onFindJob }) => {
   }, [])
 
   useEffect(() => {
-    const videoElement = videoRef.current
+    // Only run video logic for the active controller
+    if (!isControllerActive.current) return
 
+    const videoElement = videoRef.current
+    if (!videoElement) return
+
+    // Video event handlers
     const handleVideoEnd = () => {
-      console.log('Video ended, moving to next video')
-      setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+      if (import.meta.env.DEV) console.log('Video ended, moving to next video')
+      setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % VIDEOS.length)
     }
 
     const handleVideoLoad = () => {
-      console.log('Video loaded, attempting to play')
-      if (videoElement) {
-        videoElement.play().catch((error) => {
-          console.log('Auto-play was prevented:', error)
-          // If autoplay fails, try to advance to next video after a delay
-          setTimeout(() => {
-            setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
-          }, 3000) // Wait 3 seconds then advance
-        })
+      if (import.meta.env.DEV) console.log('Video loaded, attempting to play')
+      // Try to play with user interaction requirement
+      const playPromise = videoElement.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            if (import.meta.env.DEV) console.log('Video autoplay successful')
+          })
+          .catch((error) => {
+            if (import.meta.env.DEV)
+              console.log('Auto-play prevented, adding play button overlay')
+            showPlayButtonOverlay()
+          })
       }
     }
 
     const handleVideoError = (e) => {
-      console.error('Video loading error:', e)
+      if (import.meta.env.DEV) console.error('Video loading error:', e)
       // Advance to next video on error
       setTimeout(() => {
-        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
-      }, 1000)
-    }
-
-    const handleVideoStalled = () => {
-      console.log('Video stalled, advancing to next')
-      setTimeout(() => {
-        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % VIDEOS.length)
       }, 2000)
     }
 
-    if (videoElement) {
-      // Remove existing listeners
-      videoElement.removeEventListener('ended', handleVideoEnd)
-      videoElement.removeEventListener('loadeddata', handleVideoLoad)
-      videoElement.removeEventListener('error', handleVideoError)
-      videoElement.removeEventListener('stalled', handleVideoStalled)
-      
-      // Add new listeners
-      videoElement.addEventListener('ended', handleVideoEnd)
-      videoElement.addEventListener('loadeddata', handleVideoLoad)
-      videoElement.addEventListener('error', handleVideoError)
-      videoElement.addEventListener('stalled', handleVideoStalled)
-
-      videoElement.playsInline = true
-      videoElement.muted = true
-      videoElement.preload = 'auto'
+    const handleVideoStalled = () => {
+      if (import.meta.env.DEV) console.log('Video stalled, advancing to next')
+      setTimeout(() => {
+        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % VIDEOS.length)
+      }, 2000)
     }
 
-    return () => {
-      if (videoElement) {
-        videoElement.removeEventListener('ended', handleVideoEnd)
-        videoElement.removeEventListener('loadeddata', handleVideoLoad)
-        videoElement.removeEventListener('error', handleVideoError)
-        videoElement.removeEventListener('stalled', handleVideoStalled)
+    // Set up event listeners
+    videoElement.addEventListener('ended', handleVideoEnd)
+    videoElement.addEventListener('loadeddata', handleVideoLoad)
+    videoElement.addEventListener('error', handleVideoError)
+    videoElement.addEventListener('stalled', handleVideoStalled)
+
+    // Configure video properties
+    videoElement.playsInline = true
+    videoElement.muted = true
+    videoElement.preload = 'auto'
+
+    // Load and play new video when index changes
+    if (loadingVideoIndex !== currentVideoIndex) {
+      setLoadingVideoIndex(currentVideoIndex)
+
+      if (import.meta.env.DEV) {
+        console.log(
+          `Loading video ${currentVideoIndex}: ${VIDEOS[currentVideoIndex].src}`
+        )
       }
-    }
-  }, [currentVideoIndex, videos.length])
 
-  useEffect(() => {
-    if (videoRef.current) {
-      const videoElement = videoRef.current
-      console.log(`Loading video ${currentVideoIndex}: ${videos[currentVideoIndex].src}`)
-      
       // Reset and load new video
       videoElement.pause()
       videoElement.currentTime = 0
       videoElement.load()
-
-      // Set a timeout to advance if video gets stuck
-      const timeoutId = setTimeout(() => {
-        console.log('Video timeout - advancing to next video')
-        setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
-      }, 10000) // 10 seconds timeout
-
-      // Try to play with fallback
-      const attemptPlay = () => {
-        videoElement.play().then(() => {
-          // Clear timeout if play succeeds
-          clearTimeout(timeoutId)
-        }).catch((error) => {
-          console.log('Play failed:', error)
-          // If play fails, advance to next video after delay
-          setTimeout(() => {
-            console.log('Advancing to next video due to play failure')
-            setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
-          }, 2000)
-        })
-      }
-
-      // Immediate play attempt
-      attemptPlay()
-      
-      // Fallback play attempt
-      setTimeout(attemptPlay, 500)
-
-      // Cleanup timeout on unmount
-      return () => clearTimeout(timeoutId)
     }
-  }, [currentVideoIndex, videos])
+
+    // Set a timeout to advance if video gets stuck
+    const timeoutId = setTimeout(() => {
+      if (import.meta.env.DEV)
+        console.log('Video timeout - advancing to next video')
+      setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % VIDEOS.length)
+    }, 10000)
+
+    // Cleanup
+    return () => {
+      videoElement.removeEventListener('ended', handleVideoEnd)
+      videoElement.removeEventListener('loadeddata', handleVideoLoad)
+      videoElement.removeEventListener('error', handleVideoError)
+      videoElement.removeEventListener('stalled', handleVideoStalled)
+      clearTimeout(timeoutId)
+    }
+  }, [currentVideoIndex, VIDEOS.length])
 
   return (
     <section
       id="home"
+      data-hero-id={heroInstanceId}
       className="relative overflow-hidden min-h-screen flex items-center"
     >
       {/* Video Background */}
@@ -193,7 +288,6 @@ const Hero = ({ onPostJob, onFindJob }) => {
           ref={videoRef}
           key={currentVideoIndex}
           className="w-full h-full object-cover"
-          autoPlay
           muted
           loop={false}
           playsInline
@@ -206,9 +300,27 @@ const Hero = ({ onPostJob, onFindJob }) => {
             transition: 'opacity 0.8s ease-in-out',
           }}
         >
-          <source src={videos[currentVideoIndex].src} type={videos[currentVideoIndex].type} />
+          <source
+            src={VIDEOS[currentVideoIndex].src}
+            type={VIDEOS[currentVideoIndex].type}
+          />
           Your browser does not support the video tag.
         </video>
+
+        {/* Play Button Overlay */}
+        {showPlayOverlay && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-10">
+            <button
+              onClick={() => {
+                videoRef.current?.play()
+                setShowPlayOverlay(false)
+              }}
+              className="bg-white/90 hover:bg-white text-primary rounded-full p-4 transform hover:scale-110 transition-all"
+            >
+              <i className="fas fa-play text-2xl ml-1"></i>
+            </button>
+          </div>
+        )}
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-secondary/80"></div>

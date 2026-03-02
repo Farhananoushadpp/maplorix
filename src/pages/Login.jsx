@@ -1,14 +1,13 @@
-// Login Page Component
-
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { useAuth } from '../context/AuthContext'
 
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 import { ROUTES } from '../constants'
 
 const Login = () => {
+  const location = useLocation()
   const [formData, setFormData] = useState({
     email: '',
 
@@ -77,7 +76,9 @@ const Login = () => {
     try {
       await login(formData.email, formData.password)
 
-      navigate(ROUTES.HOME)
+      // Get return URL from location state or default to home
+      const returnURL = location.state?.returnUrl || ROUTES.HOME
+      navigate(returnURL)
     } catch (error) {
       // Error is handled by the auth context
     }
@@ -102,6 +103,12 @@ const Login = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="bg-white p-6 rounded-lg shadow-custom space-y-4">
+            {location.state?.message && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                {location.state.message}
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-lg text-sm">
                 {error}
@@ -236,37 +243,6 @@ const Login = () => {
               Sign up now
             </Link>
           </p>
-        </div>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-color"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-text-light">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-border-color rounded-lg shadow-sm bg-white text-sm font-medium text-text-dark hover:bg-gray-50 transition-colors"
-            >
-              <i className="fab fa-google text-red-500 mr-2"></i>
-              Google
-            </button>
-
-            <button
-              type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-border-color rounded-lg shadow-sm bg-white text-sm font-medium text-text-dark hover:bg-gray-50 transition-colors"
-            >
-              <i className="fab fa-linkedin text-blue-600 mr-2"></i>
-              LinkedIn
-            </button>
-          </div>
         </div>
       </div>
     </div>

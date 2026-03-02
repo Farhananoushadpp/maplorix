@@ -34,8 +34,8 @@ const ContactPage = () => {
     {
       icon: 'fa-clock',
       title: 'Business Hours',
-      text: 'Mon-Fri: 9:00 AM - 6:00 PM',
-      description: 'Saturday: 10:00 AM - 2:00 PM',
+      text: 'Mon-Fri: 9:00 AM - 7:00 PM',
+      description: 'Saturday: 9:00 AM - 4:00 PM',
     },
   ]
 
@@ -99,7 +99,7 @@ const ContactPage = () => {
       setSubmitMessage(
         '📧 Your email client has been opened with your message pre-filled. Please send the email to maplorixae@gmail.com to complete your submission.'
       )
-      
+
       // Reset form after successful opening
       setTimeout(() => {
         setFormData({
@@ -116,9 +116,7 @@ const ContactPage = () => {
       }, 10000)
     } catch (error) {
       console.error('Contact form error:', error)
-      setSubmitMessage(
-        `❌ ${error.message}`
-      )
+      setSubmitMessage(`❌ ${error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -201,17 +199,17 @@ const ContactPage = () => {
                   submitMessage.includes('📧')
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
                     : submitMessage.includes('✅')
-                    ? 'bg-secondary/10 text-secondary border border-secondary/20'
-                    : 'bg-red-50 text-red-600 border border-red-200'
+                      ? 'bg-secondary/10 text-secondary border border-secondary/20'
+                      : 'bg-red-50 text-red-600 border border-red-200'
                 }`}
               >
                 <i
                   className={`fas ${
-                    submitMessage.includes('📧') 
-                      ? 'fa-envelope-open-text' 
+                    submitMessage.includes('📧')
+                      ? 'fa-envelope-open-text'
                       : submitMessage.includes('✅')
-                      ? 'fa-check-circle'
-                      : 'fa-exclamation-circle'
+                        ? 'fa-check-circle'
+                        : 'fa-exclamation-circle'
                   } mr-2`}
                 ></i>
                 {submitMessage}

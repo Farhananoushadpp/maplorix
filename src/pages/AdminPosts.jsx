@@ -74,7 +74,14 @@ const AdminPosts = () => {
     try {
       const response = await fetchJobsForFeed()
       console.log('📋 AdminPosts: Fetched admin jobs from feed:', response)
-      setAdminJobs(response || [])
+
+      // Filter to show only admin-posted jobs (postedBy: 'admin')
+      const adminOnlyJobs = (response || []).filter(
+        (job) => job.postedBy === 'admin' || job.status === 'active'
+      )
+
+      console.log('📋 AdminPosts: Filtered admin-only jobs:', adminOnlyJobs)
+      setAdminJobs(adminOnlyJobs)
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
@@ -369,7 +376,7 @@ const AdminPosts = () => {
                   Active
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
-                  {jobs.length}
+                  {adminJobs.filter((job) => job.status === 'active').length}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Currently active</p>
               </div>
@@ -387,7 +394,7 @@ const AdminPosts = () => {
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
                   {
-                    jobs.filter((post) => {
+                    adminJobs.filter((post) => {
                       const postDate = new Date(post.createdAt)
                       const weekAgo = new Date()
                       weekAgo.setDate(weekAgo.getDate() - 7)
@@ -460,7 +467,7 @@ const AdminPosts = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {jobs.length === 0 ? (
+                {adminJobs.length === 0 ? (
                   <tr>
                     <td
                       colSpan="5"

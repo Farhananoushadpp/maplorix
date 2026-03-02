@@ -555,38 +555,6 @@ const Register = () => {
             </div>
           </form>
 
-          {/* Social Login Options */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-color"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-text-light">
-                  Or sign up with
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-border-color rounded-lg shadow-sm bg-white text-sm font-medium text-text-dark hover:bg-gray-50 transition-colors"
-              >
-                <i className="fab fa-google text-red-500 mr-2"></i>
-                Google
-              </button>
-
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-border-color rounded-lg shadow-sm bg-white text-sm font-medium text-text-dark hover:bg-gray-50 transition-colors"
-              >
-                <i className="fab fa-linkedin text-blue-600 mr-2"></i>
-                LinkedIn
-              </button>
-            </div>
-          </div>
-
           {/* Sign In Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-text-light">
@@ -595,7 +563,7 @@ const Register = () => {
                 to={ROUTES.LOGIN}
                 className="font-medium text-accent hover:text-accent/80 transition-colors"
               >
-                Sign in here
+                Sign in
               </Link>
             </p>
           </div>
