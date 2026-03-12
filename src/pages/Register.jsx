@@ -167,24 +167,60 @@ const Register = () => {
 
       console.log('Registration response:', response)
 
-      setSuccessMessage('Registration successful! Redirecting to home page...')
+      // Auto-login - save token and user data if registration successful
+      if (response.data?.token && response.data?.user) {
+        // Save authentication data
+        localStorage.setItem('authToken', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        
+        // Update success message based on user role
+        const successMsg = response.data.user?.role === 'admin' 
+          ? 'Admin registration successful! Redirecting to dashboard...'
+          : 'Registration successful! Redirecting to home page...'
+        
+        setSuccessMessage(successMsg)
 
-      // Clear form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: '',
-        agreeToTerms: false,
-        role: 'user',
-      })
+        // Clear form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          password: '',
+          confirmPassword: '',
+          agreeToTerms: false,
+          role: 'user',
+        })
 
-      // Redirect to home page after 2 seconds
-      setTimeout(() => {
-        navigate(ROUTES.HOME)
-      }, 2000)
+        // Redirect based on user role
+        setTimeout(() => {
+          if (response.data.user?.role === 'admin') {
+            navigate(ROUTES.DASHBOARD)
+          } else {
+            navigate(ROUTES.HOME)
+          }
+        }, 2000)
+      } else {
+        // Registration successful but no auto-login
+        setSuccessMessage('Registration successful! Please login to continue.')
+        
+        // Clear form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          password: '',
+          confirmPassword: '',
+          agreeToTerms: false,
+          role: 'user',
+        })
+
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate(ROUTES.LOGIN)
+        }, 2000)
+      }
     } catch (error) {
       console.error('Registration error:', error)
       console.error('Error response:', error.response)

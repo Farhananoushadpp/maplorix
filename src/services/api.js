@@ -23,10 +23,21 @@ const debounceRequest = (key, fn) => {
 // Try to connect to available backend ports (prioritize 4000 since backend is running there)
 const API_PORTS = [4000, 4001, 4002, 4003]
 
+// Get API URL - Use HTTPS// Get API URL from environment variable or use default
+const getApiBaseUrl = () => {
+  // Force HTTP backend - ignore environment variable for now
+  // if (import.meta.env.VITE_API_URL) {
+  //   return import.meta.env.VITE_API_URL
+  // }
+
+  // Use direct HTTP backend (no proxy)
+  return 'http://159.198.76.95:4000/api'
+}
+
 // Create axios instance with default configuration
 const api = axios.create({
-  baseURL: 'http://localhost:4000/api', // Use port 4000 (backend is running on 4000)
-  timeout: 15000, // Reduced from 10000 to 15000 to give more time but still reasonable
+  baseURL: getApiBaseUrl(),
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -49,11 +60,9 @@ api.interceptors.request.use(
 
 // Function to update baseURL if needed - DISABLED to force port 4000
 const updateApiBaseUrl = async () => {
-  // Force use port 4000 since backend is running there
-  if (import.meta.env.DEV) {
-    console.log('🔧 Forcing backend port 4000')
-  }
-  api.defaults.baseURL = 'http://localhost:4000/api'
+  // Always use direct HTTP backend (no proxy)
+  console.log('🔧 Using direct HTTP backend: http://159.198.76.95:4000/api')
+  api.defaults.baseURL = 'http://159.198.76.95:4000/api'
   return
 }
 
