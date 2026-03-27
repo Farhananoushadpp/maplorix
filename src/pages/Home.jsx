@@ -114,14 +114,15 @@ const Home = () => {
       navigate('/login', {
         state: {
           message: 'Please login to find jobs',
-          returnUrl: '/posts',
+          returnUrl: '/jobs',
         },
       })
       return
     }
 
-    console.log('Opening Dashboard Job Apply modal')
-    setShowApplyJobModal(true)
+    // Direct navigation to jobs page
+    console.log('Navigating to jobs page')
+    navigate('/jobs')
   }
 
   return (

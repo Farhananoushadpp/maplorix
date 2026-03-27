@@ -21,7 +21,7 @@ const Contact = () => {
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'hr@maplorix.ae',
+      text: 'info@maplorix.ae',
       description: 'We respond within 24 hours',
     },
     {

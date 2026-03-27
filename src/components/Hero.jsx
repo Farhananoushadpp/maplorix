@@ -143,7 +143,7 @@ const Hero = ({ onPostJob, onFindJob }) => {
       navigate('/login', {
         state: {
           message: 'Please login to find jobs',
-          returnUrl: '/posts',
+          returnUrl: '/jobs',
         },
       })
       return
@@ -152,7 +152,7 @@ const Hero = ({ onPostJob, onFindJob }) => {
     if (onFindJob) {
       onFindJob()
     } else {
-      navigate('/posts')
+      navigate('/jobs')
     }
   }
 
@@ -259,12 +259,12 @@ const Hero = ({ onPostJob, onFindJob }) => {
       videoElement.load()
     }
 
-    // Set a timeout to advance if video gets stuck
+    // Set a timeout to advance if video gets stuck (longer timeout for better UX)
     const timeoutId = setTimeout(() => {
       if (import.meta.env.DEV)
         console.log('Video timeout - advancing to next video')
       setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % VIDEOS.length)
-    }, 10000)
+    }, 15000) // Increased from 10s to 15s
 
     // Cleanup
     return () => {
@@ -274,7 +274,7 @@ const Hero = ({ onPostJob, onFindJob }) => {
       videoElement.removeEventListener('stalled', handleVideoStalled)
       clearTimeout(timeoutId)
     }
-  }, [currentVideoIndex, VIDEOS.length])
+  }, [currentVideoIndex, loadingVideoIndex])
 
   return (
     <section

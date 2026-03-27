@@ -26,6 +26,7 @@ const initialState = {
     deleteJob: false,
     updateApplication: false,
     deleteApplication: false,
+    backup: false,
   },
   error: null,
   stats: {
@@ -37,6 +38,13 @@ const initialState = {
   lastUpdated: {
     jobs: null,
     applications: null,
+  },
+  backups: {
+    lastBackup: null,
+    backupHistory: [],
+    autoBackupEnabled: true,
+    backupInterval: 24 * 60 * 60 * 1000, // 24 hours
+    nextBackupTime: null,
   },
 }
 
@@ -69,6 +77,14 @@ const DATA_ACTIONS = {
   DELETE_APPLICATION_START: 'DELETE_APPLICATION_START',
   DELETE_APPLICATION_SUCCESS: 'DELETE_APPLICATION_SUCCESS',
   DELETE_APPLICATION_FAILURE: 'DELETE_APPLICATION_FAILURE',
+
+  // Backup
+  BACKUP_START: 'BACKUP_START',
+  BACKUP_SUCCESS: 'BACKUP_SUCCESS',
+  BACKUP_FAILURE: 'BACKUP_FAILURE',
+  SET_AUTO_BACKUP: 'SET_AUTO_BACKUP',
+  SET_BACKUP_INTERVAL: 'SET_BACKUP_INTERVAL',
+  CLEAR_BACKUP_HISTORY: 'CLEAR_BACKUP_HISTORY',
 
   // Common
   CLEAR_ERROR: 'CLEAR_ERROR',
@@ -261,6 +277,63 @@ const dataReducer = (state, action) => {
         error: action.payload,
       }
 
+    // Backup
+    case DATA_ACTIONS.BACKUP_START:
+      return {
+        ...state,
+        loading: { ...state.loading, backup: true },
+        error: null,
+      }
+
+    case DATA_ACTIONS.BACKUP_SUCCESS:
+      return {
+        ...state,
+        loading: { ...state.loading, backup: false },
+        error: null,
+        backups: {
+          ...state.backups,
+          lastBackup: action.payload.timestamp,
+          backupHistory: [action.payload, ...state.backups.backupHistory].slice(0, 10), // Keep last 10 backups
+          nextBackupTime: new Date(Date.now() + state.backups.backupInterval),
+        },
+      }
+
+    case DATA_ACTIONS.BACKUP_FAILURE:
+      return {
+        ...state,
+        loading: { ...state.loading, backup: false },
+        error: action.payload,
+      }
+
+    case DATA_ACTIONS.SET_AUTO_BACKUP:
+      return {
+        ...state,
+        backups: {
+          ...state.backups,
+          autoBackupEnabled: action.payload,
+        },
+      }
+
+    case DATA_ACTIONS.SET_BACKUP_INTERVAL:
+      return {
+        ...state,
+        backups: {
+          ...state.backups,
+          backupInterval: action.payload,
+          nextBackupTime: new Date(Date.now() + action.payload),
+        },
+      }
+
+    case DATA_ACTIONS.CLEAR_BACKUP_HISTORY:
+      return {
+        ...state,
+        backups: {
+          ...state.backups,
+          backupHistory: [],
+          lastBackup: null,
+        },
+      }
+
     // Common
     case DATA_ACTIONS.CLEAR_ERROR:
       return {
@@ -374,6 +447,92 @@ export const DataProvider = ({ children }) => {
     }
     return newStats
   }, [state.jobs, state.applications]) // Only depend on jobs and applications arrays
+
+  // Backup actions - Define before useEffect to avoid initialization errors
+  const createBackup = useCallback(async () => {
+    try {
+      dispatch({ type: DATA_ACTIONS.BACKUP_START })
+      
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        jobs: state.jobs,
+        applications: state.applications,
+        stats: state.stats,
+        metadata: {
+          totalJobs: state.jobs.length,
+          totalApplications: state.applications.length,
+          backupVersion: '1.0',
+          source: 'Maplorix Dashboard',
+        },
+      }
+
+      // Store backup in localStorage
+      const backupKey = `maplorix_backup_${new Date().toISOString().slice(0, 10)}`
+      localStorage.setItem(backupKey, JSON.stringify(backupData))
+
+      // Also store in sessionStorage for quick access
+      sessionStorage.setItem('maplorix_latest_backup', JSON.stringify(backupData))
+
+      // Store backup history
+      const existingHistory = JSON.parse(localStorage.getItem('maplorix_backup_history') || '[]')
+      const newHistory = [backupData, ...existingHistory].slice(0, 10) // Keep last 10 backups
+      localStorage.setItem('maplorix_backup_history', JSON.stringify(newHistory))
+
+      dispatch({
+        type: DATA_ACTIONS.BACKUP_SUCCESS,
+        payload: backupData,
+      })
+
+      console.log('✅ Backup created successfully:', backupData.timestamp)
+      return backupData
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to create backup'
+      dispatch({ type: DATA_ACTIONS.BACKUP_FAILURE, payload: errorMessage })
+      console.error('❌ Backup failed:', error)
+      throw error
+    }
+  }, [state.jobs, state.applications, state.stats])
+
+  // Auto-backup effect
+  useEffect(() => {
+    if (!state.backups.autoBackupEnabled) {
+      return
+    }
+
+    const checkAndCreateBackup = async () => {
+      const now = new Date()
+      const nextBackupTime = state.backups.nextBackupTime
+
+      if (nextBackupTime && now >= nextBackupTime) {
+        console.log('🔄 Auto-backup triggered at:', now.toISOString())
+        try {
+          await createBackup()
+          console.log('✅ Auto-backup completed successfully')
+        } catch (error) {
+          console.error('❌ Auto-backup failed:', error)
+        }
+      }
+    }
+
+    // Check immediately on mount
+    checkAndCreateBackup()
+
+    // Set up interval to check for backup time
+    const interval = setInterval(checkAndCreateBackup, 60000) // Check every minute
+
+    return () => clearInterval(interval)
+  }, [state.backups.autoBackupEnabled, state.backups.nextBackupTime, createBackup])
+
+  // Initialize backup time on first load
+  useEffect(() => {
+    if (state.backups.autoBackupEnabled && !state.backups.nextBackupTime) {
+      const nextBackup = new Date(Date.now() + state.backups.backupInterval)
+      dispatch({
+        type: DATA_ACTIONS.SET_BACKUP_INTERVAL,
+        payload: state.backups.backupInterval,
+      })
+    }
+  }, [state.backups.autoBackupEnabled, state.backups.nextBackupTime, state.backups.backupInterval])
 
   // Jobs actions
   const fetchJobs = useCallback(async (filters = {}) => {
@@ -567,6 +726,90 @@ export const DataProvider = ({ children }) => {
     }
   }
 
+  const restoreBackup = useCallback(async (backupData) => {
+    try {
+      console.log('🔄 Restoring backup from:', backupData.timestamp)
+      
+      // Restore jobs
+      if (backupData.jobs && Array.isArray(backupData.jobs)) {
+        dispatch({
+          type: DATA_ACTIONS.FETCH_JOBS_SUCCESS,
+          payload: backupData.jobs,
+        })
+      }
+
+      // Restore applications
+      if (backupData.applications && Array.isArray(backupData.applications)) {
+        dispatch({
+          type: DATA_ACTIONS.FETCH_APPLICATIONS_SUCCESS,
+          payload: backupData.applications,
+        })
+      }
+
+      console.log('✅ Backup restored successfully')
+      return backupData
+    } catch (error) {
+      console.error('❌ Failed to restore backup:', error)
+      throw error
+    }
+  }, [])
+
+  const downloadBackup = useCallback(async () => {
+    try {
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        jobs: state.jobs,
+        applications: state.applications,
+        stats: state.stats,
+        metadata: {
+          totalJobs: state.jobs.length,
+          totalApplications: state.applications.length,
+          backupVersion: '1.0',
+          source: 'Maplorix Dashboard',
+          exportedAt: new Date().toISOString(),
+        },
+      }
+
+      // Create downloadable JSON file
+      const dataStr = JSON.stringify(backupData, null, 2)
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      
+      const url = window.URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Maplorix_Backup_${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      console.log('✅ Backup downloaded successfully')
+      return backupData
+    } catch (error) {
+      console.error('❌ Failed to download backup:', error)
+      throw error
+    }
+  }, [state.jobs, state.applications, state.stats])
+
+  const setAutoBackup = useCallback((enabled) => {
+    dispatch({
+      type: DATA_ACTIONS.SET_AUTO_BACKUP,
+      payload: enabled,
+    })
+  }, [])
+
+  const setBackupInterval = useCallback((interval) => {
+    dispatch({
+      type: DATA_ACTIONS.SET_BACKUP_INTERVAL,
+      payload: interval,
+    })
+  }, [])
+
+  const clearBackupHistory = useCallback(() => {
+    dispatch({ type: DATA_ACTIONS.CLEAR_BACKUP_HISTORY })
+    localStorage.removeItem('maplorix_backup_history')
+  }, [])
+
   // Common actions
   const clearError = () => {
     dispatch({ type: DATA_ACTIONS.CLEAR_ERROR })
@@ -587,6 +830,13 @@ export const DataProvider = ({ children }) => {
     createApplication,
     updateApplication,
     deleteApplication,
+    // Backup
+    createBackup,
+    restoreBackup,
+    downloadBackup,
+    setAutoBackup,
+    setBackupInterval,
+    clearBackupHistory,
     // Common
     clearError,
   }

@@ -24,8 +24,15 @@ const DashboardJobApplyModal = ({
   useEffect(() => {
     if (isOpen && Object.keys(prefillData).length > 0) {
       setFormData((prev) => ({
-        ...prev,
-        ...prefillData,
+        fullName: prefillData.fullName || '',
+        email: prefillData.email || '',
+        phone: prefillData.phone || '',
+        jobRole: prefillData.jobRole || '',
+        experience: prefillData.experience || 'Entry Level',
+        expectedSalary: prefillData.expectedSalary || '',
+        currency: prefillData.currency || 'AED',
+        coverLetter: prefillData.coverLetter || '',
+        resume: prefillData.resume || null,
       }))
     }
   }, [isOpen, prefillData])

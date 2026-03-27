@@ -15,13 +15,13 @@ export const ROUTES = {
 
   CONTACT: '/contact',
 
-  FIND_JOB: '/find-job',
+  FIND_JOB: '/jobs',
 
   POST_JOB: '/post-job',
 
   ADMIN_POSTS: '/admin/posts',
 
-  POSTS_FEED: '/posts',
+  JOBS: '/jobs',
 
   REGISTER: '/register',
 
@@ -37,7 +37,7 @@ export const NAVIGATION_ITEMS = [
 
   { id: 'about', label: 'About Us', path: ROUTES.ABOUT },
 
-  { id: 'posts', label: 'feed', path: ROUTES.POSTS_FEED },
+  { id: 'jobs', label: 'Jobs', path: ROUTES.JOBS },
 
   { id: 'contact', label: 'Contact Us', path: ROUTES.CONTACT },
 ]

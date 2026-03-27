@@ -196,7 +196,6 @@ export const AuthProvider = ({ children }) => {
   }
 
   // Register function
-
   const register = async (userData) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START })
@@ -204,18 +203,17 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData)
 
       // Store token and user in localStorage
-
-      localStorage.setItem('authToken', response.data.token)
-
-      localStorage.setItem('user', JSON.stringify(response.data.user))
+      // Fix: Access nested data structure correctly
+      localStorage.setItem('authToken', response.data.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.data.user))
 
       dispatch({
         type: AUTH_ACTIONS.REGISTER_SUCCESS,
 
-        payload: response.data,
+        payload: response.data.data,
       })
 
-      return response.data
+      return response.data.data
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || 'Registration failed'

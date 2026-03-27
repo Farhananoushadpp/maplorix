@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import api from '../services/api'
+import * as XLSX from 'xlsx'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -19,6 +20,11 @@ const Dashboard = () => {
     deleteJob,
     deleteApplication,
     clearError,
+    createBackup,
+    downloadBackup,
+    setAutoBackup,
+    clearBackupHistory,
+    backups,
   } = useData()
   const [successMessage, setSuccessMessage] = useState('')
   const [showJobModal, setShowJobModal] = useState(false)
@@ -552,6 +558,80 @@ const Dashboard = () => {
     }
   }
 
+  // Download Excel function for applications data
+  const downloadApplicationsExcel = () => {
+    try {
+      console.log('📊 Downloading applications data as Excel...')
+      
+      // Get filtered applications
+      const filteredApps = filterApplications(applications)
+      
+      if (!filteredApps || filteredApps.length === 0) {
+        setSuccessMessage('No applications data to download')
+        setTimeout(() => setSuccessMessage(''), 3000)
+        return
+      }
+
+      // Prepare data for Excel
+      const excelData = filteredApps.map((app, index) => ({
+        'S.No': index + 1,
+        'Application ID': app._id || '',
+        'Full Name': app.fullName || '',
+        'Email': app.email || '',
+        'Phone': app.phone || '',
+        'Job Role': app.jobRole || '',
+        'Experience': app.experience || '',
+        'Current Company': app.currentCompany || '',
+        'Current Position': app.currentPosition || '',
+        'Education': app.education || '',
+        'Skills': app.skills || '',
+        'Cover Letter': app.coverLetter || '',
+        'LinkedIn': app.linkedin || '',
+        'Portfolio': app.portfolio || '',
+        'Expected Salary': app.expectedSalary || '',
+        'Notice Period': app.noticePeriod || '',
+        'Work Mode': app.workMode || '',
+        'Location': app.location || '',
+        'Status': app.status || 'Pending',
+        'Applied Date': app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '',
+        'Updated Date': app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : '',
+        'Resume Available': app.resume && app.resume.data ? 'Yes' : 'No'
+      }))
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Applications')
+
+      // Auto-size columns
+      const colWidths = []
+      Object.keys(excelData[0] || {}).forEach((key) => {
+        const maxLength = Math.max(
+          key.length,
+          ...excelData.map(row => String(row[key] || '').length)
+        )
+        colWidths.push({ wch: Math.min(maxLength + 2, 50) })
+      })
+      ws['!cols'] = colWidths
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const filename = `Maplorix_Applications_${timestamp}.xlsx`
+
+      // Download the file
+      XLSX.writeFile(wb, filename)
+
+      setSuccessMessage(`Successfully downloaded ${filteredApps.length} applications as Excel!`)
+      setTimeout(() => setSuccessMessage(''), 3000)
+
+      console.log(`✅ Excel file downloaded: ${filename}`)
+    } catch (error) {
+      console.error('❌ Error downloading Excel:', error)
+      setSuccessMessage('Failed to download Excel file')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
+  }
+
   // Real-time event listeners - these are now handled by DataContext
   useEffect(() => {
     // The DataContext handles real-time updates, so we don't need manual event listeners here
@@ -680,6 +760,105 @@ const Dashboard = () => {
                 <i className="fas fa-chart-line text-secondary text-xl"></i>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Backup Section */}
+        <div className="card bg-white shadow-custom mb-8">
+          <div className="px-6 py-4 border-b border-border-color">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-cloud-download-alt text-green-600"></i>
+                </div>
+                <h3 className="text-lg font-semibold text-primary">
+                  Auto Backup
+                </h3>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-text-light">
+                  {backups.autoBackupEnabled ? 'Enabled' : 'Disabled'}
+                </div>
+                {backups.lastBackup && (
+                  <div className="text-sm text-text-light">
+                    Last: {new Date(backups.lastBackup).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button
+                onClick={createBackup}
+                disabled={loading.backup}
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-save"></i>
+                <span>{loading.backup ? 'Creating...' : 'Create Backup'}</span>
+              </button>
+              
+              <button
+                onClick={downloadBackup}
+                className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-download"></i>
+                <span>Download Backup</span>
+              </button>
+              
+              <button
+                onClick={() => setAutoBackup(!backups.autoBackupEnabled)}
+                className={`px-4 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center space-x-2 ${
+                  backups.autoBackupEnabled 
+                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
+              >
+                <i className="fas fa-clock"></i>
+                <span>{backups.autoBackupEnabled ? 'Disable Auto' : 'Enable Auto'}</span>
+              </button>
+              
+              <button
+                onClick={clearBackupHistory}
+                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-trash"></i>
+                <span>Clear History</span>
+              </button>
+            </div>
+            
+            {backups.backupHistory.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-sm font-medium text-text-light uppercase tracking-wide mb-3">
+                  Backup History
+                </h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {backups.backupHistory.map((backup, index) => (
+                    <div key={backup.timestamp} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-gray-500">#{index + 1}</span>
+                        <span className="text-gray-700">
+                          {new Date(backup.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-500">
+                        <span>{backup.metadata?.totalJobs || 0} jobs</span>
+                        <span>•</span>
+                        <span>{backup.metadata?.totalApplications || 0} apps</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {backups.nextBackupTime && (
+              <div className="mt-4 text-sm text-text-light">
+                <i className="fas fa-info-circle mr-2"></i>
+                Next automatic backup: {new Date(backups.nextBackupTime).toLocaleString()}
+              </div>
+            )}
           </div>
         </div>
 
@@ -912,8 +1091,18 @@ const Dashboard = () => {
                     Applications
                   </h3>
                 </div>
-                <div className="text-sm text-text-light">
-                  {filterApplications(applications).length} applications
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={downloadApplicationsExcel}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium flex items-center space-x-2"
+                    title="Download applications data as Excel"
+                  >
+                    <i className="fas fa-file-excel"></i>
+                    <span>Download Excel</span>
+                  </button>
+                  <div className="text-sm text-text-light">
+                    {filterApplications(applications).length} applications
+                  </div>
                 </div>
               </div>
 

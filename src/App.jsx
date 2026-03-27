@@ -135,9 +135,9 @@ const AnimatedRoutes = () => {
         />
 
         <Route
-          path={ROUTES.POSTS_FEED}
+          path={ROUTES.JOBS}
           element={
-            <RouteAccess path="/feed">
+            <RouteAccess path="/jobs">
               <motion.div
                 variants={ANIMATION_VARIANTS.pageTransition}
                 initial="initial"

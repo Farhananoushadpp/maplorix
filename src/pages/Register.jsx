@@ -168,17 +168,18 @@ const Register = () => {
       console.log('Registration response:', response)
 
       // Auto-login - save token and user data if registration successful
-      if (response.data?.token && response.data?.user) {
+      if (response.data?.data?.token && response.data?.data?.user) {
         // Save authentication data
-        localStorage.setItem('authToken', response.data.token)
-        localStorage.setItem('user', JSON.stringify(response.data.user))
+        localStorage.setItem('authToken', response.data.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.data.user))
         
         // Update success message based on user role
-        const successMsg = response.data.user?.role === 'admin' 
-          ? 'Admin registration successful! Redirecting to dashboard...'
-          : 'Registration successful! Redirecting to home page...'
+        const successMsg = response.data.data.user?.role === 'admin' 
+          ? '🎉 Admin registration successful! Logging you in and redirecting to dashboard...'
+          : '🎉 Registration successful! Logging you in and redirecting to home page...'
         
         setSuccessMessage(successMsg)
+        setIsLoading(false) // Stop loading but show success message
 
         // Clear form
         setFormData({
@@ -192,17 +193,18 @@ const Register = () => {
           role: 'user',
         })
 
-        // Redirect based on user role
+        // Redirect based on user role after a short delay to show success message
         setTimeout(() => {
-          if (response.data.user?.role === 'admin') {
+          if (response.data.data.user?.role === 'admin') {
             navigate(ROUTES.DASHBOARD)
           } else {
             navigate(ROUTES.HOME)
           }
-        }, 2000)
+        }, 2500)
       } else {
         // Registration successful but no auto-login
-        setSuccessMessage('Registration successful! Please login to continue.')
+        setSuccessMessage('✅ Registration successful! Redirecting to login page...')
+        setIsLoading(false)
         
         // Clear form
         setFormData({

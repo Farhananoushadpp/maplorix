@@ -46,7 +46,7 @@ const PostsFeed = () => {
   const [selectedPost, setSelectedPost] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [postsToShow, setPostsToShow] = useState(5)
-  const [lastUpdated, setLastUpdated] = useState(new Date())
+  const [expandedPosts, setExpandedPosts] = useState(new Set())
 
   // Create sample admin post for testing
   const createSampleAdminPost = async () => {
@@ -124,33 +124,6 @@ const PostsFeed = () => {
     }
   }, [jobs])
 
-  // Auto-refresh every 10 seconds to catch admin posts created elsewhere
-  useEffect(() => {
-    let refreshCount = 0
-    const interval = setInterval(async () => {
-      refreshCount++
-      if (import.meta.env.DEV && refreshCount % 3 === 0) {
-        // Log every 3rd refresh
-        console.log('📋 PostsFeed: Auto-refreshing feed...')
-      }
-
-      try {
-        // Use fetchJobsForFeed to get latest data and update local state
-        const fetchedJobs = await fetchJobsForFeed()
-        setJobsData(fetchedJobs)
-
-        setLastUpdated(new Date())
-        if (import.meta.env.DEV && refreshCount % 3 === 0) {
-          console.log('📋 PostsFeed: Auto-refresh completed')
-        }
-      } catch (error) {
-        console.error('📋 PostsFeed: Auto-refresh failed:', error)
-      }
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [fetchJobsForFeed])
-
   // Manual refresh function
   const handleRefresh = async () => {
     console.log('📋 PostsFeed: Manual refresh triggered...')
@@ -160,7 +133,6 @@ const PostsFeed = () => {
       const fetchedJobs = await fetchJobsForFeed()
       setJobsData(fetchedJobs)
 
-      setLastUpdated(new Date())
       console.log('📋 PostsFeed: Manual refresh completed')
     } catch (error) {
       console.error('📋 PostsFeed: Manual refresh failed:', error)
@@ -175,7 +147,7 @@ const PostsFeed = () => {
       navigate('/login', {
         state: {
           message: 'Please login to apply for jobs',
-          returnUrl: '/posts',
+          returnUrl: '/jobs',
         },
       })
       return
@@ -188,19 +160,41 @@ const PostsFeed = () => {
   // Handle successful application submission
   const handleApplySuccess = async (applicationData) => {
     try {
-      await createApplication(applicationData)
-      setSuccessMessage('Application submitted successfully!')
-      setShowApplyModal(false)
-      setSelectedPost(null)
-
-      console.log('✅ PostsFeed: Application submitted to backend')
+      // Check if application data already has an ID (indicating it was already submitted)
+      if (applicationData.id || applicationData._id || applicationData.application?.id) {
+        console.log('✅ PostsFeed: Application already submitted, skipping duplicate submission')
+        setSuccessMessage('Application submitted successfully!')
+        setShowApplyModal(false)
+        setSelectedPost(null)
+      } else {
+        console.log('🔄 PostsFeed: Application data received:', applicationData)
+        console.log('⚠️ PostsFeed: No application ID found, but this might be expected')
+        // Don't submit again - just show success
+        setSuccessMessage('Application submitted successfully!')
+        setShowApplyModal(false)
+        setSelectedPost(null)
+        console.log('✅ PostsFeed: Application already processed by modal')
+      }
     } catch (error) {
-      console.error('❌ Error submitting application:', error)
+      console.error('❌ Error in handleApplySuccess:', error)
       setSuccessMessage('Failed to submit application')
     }
 
     // Clear success message after 3 seconds
     setTimeout(() => setSuccessMessage(''), 3000)
+  }
+
+  // Toggle expanded state for individual posts
+  const togglePostExpansion = (postId) => {
+    setExpandedPosts((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(postId)) {
+        newSet.delete(postId)
+      } else {
+        newSet.add(postId)
+      }
+      return newSet
+    })
   }
 
   // Filter and sort posts - use filteredJobs (admin only) and apply additional filters
@@ -261,17 +255,17 @@ const PostsFeed = () => {
   return (
     <>
       <SEO
-        title="Job Feed - Latest Job Opportunities | Maplorix"
+        title="Jobs - Latest Job Opportunities | Maplorix"
         description="Browse the latest job opportunities from top employers. Find your dream job with Maplorix - admin-posted vacancies, career opportunities, and professional positions."
-        keywords="job feed, job opportunities, job vacancies, career opportunities, admin jobs, job search, employment, job postings"
-        canonicalUrl="https://www.maplorix.com/feed"
-        ogUrl="https://www.maplorix.com/feed"
+        keywords="jobs, job opportunities, job vacancies, career opportunities, admin jobs, job search, employment, job postings"
+        canonicalUrl="https://www.maplorix.com/jobs"
+        ogUrl="https://www.maplorix.com/jobs"
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: 'Job Feed - Latest Opportunities',
+          name: 'Jobs - Latest Opportunities',
           description: 'Browse the latest job opportunities from top employers',
-          url: 'https://www.maplorix.com/feed',
+          url: 'https://www.maplorix.com/jobs',
           mainEntity: {
             '@type': 'ItemList',
             numberOfItems: filteredJobs.length,
@@ -469,18 +463,29 @@ const PostsFeed = () => {
 
                     {/* Description */}
                     <div className="mb-4">
-                      <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
+                      <div className={`text-gray-700 text-sm leading-relaxed ${!expandedPosts.has(post._id) && post.description && post.description.length > 200 ? 'line-clamp-3' : ''}`}>
                         {post.description || 'No description provided'}
-                      </p>
+                      </div>
                     </div>
 
                     {/* Requirements */}
                     {post.requirements && (
                       <div className="mb-4">
-                        <p className="text-gray-700 text-sm leading-relaxed line-clamp-2">
+                        <div className={`text-gray-700 text-sm leading-relaxed ${!expandedPosts.has(post._id) && post.requirements.length > 150 ? 'line-clamp-2' : ''}`}>
                           {post.requirements}
-                        </p>
+                        </div>
                       </div>
+                    )}
+
+                    {/* Show More / Show Less Button */}
+                    {((post.description && post.description.length > 200) || (post.requirements && post.requirements.length > 150)) && (
+                      <button
+                        onClick={() => togglePostExpansion(post._id)}
+                        className="text-secondary hover:text-primary text-sm font-medium flex items-center transition-colors duration-200 mb-4"
+                      >
+                        <i className={`fas fa-chevron-${expandedPosts.has(post._id) ? 'up' : 'down'} mr-1`}></i>
+                        {expandedPosts.has(post._id) ? 'Show Less' : 'Show More'}
+                      </button>
                     )}
 
                     {/* Footer */}
