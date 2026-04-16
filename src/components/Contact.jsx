@@ -21,7 +21,7 @@ const Contact = () => {
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'info@maplorix.ae',
+      text: 'hr@maplorix.com',
       description: 'We respond within 24 hours',
     },
     {
@@ -187,7 +187,6 @@ const Contact = () => {
                 </p>
               </div>
             )}
-
             <form
               onSubmit={handleSubmit}
               className="space-y-3 sm:space-y-4 lg:space-y-6"
@@ -310,3 +309,4 @@ const Contact = () => {
 }
 
 export default Contact
+

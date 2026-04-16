@@ -10,7 +10,7 @@ const EMAILJS_CONFIG = {
 
 // Email configuration
 const EMAIL_CONFIG = {
-  recipient: 'maplorixae@gmail.com',
+  recipient: 'hr@maplorix.ae',
   subject: 'New Contact Form Message from Maplorix Website',
 }
 
@@ -20,7 +20,7 @@ emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY)
 // Send email using EmailJS
 export const sendContactEmail = async (formData) => {
   try {
-    console.log('📧 Sending email to maplorixae@gmail.com...')
+    console.log('📧 Sending email to hr@maplorix.ae...')
 
     // Prepare email template parameters
     const templateParams = {

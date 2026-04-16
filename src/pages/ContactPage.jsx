@@ -22,7 +22,7 @@ const ContactPage = () => {
     {
       icon: 'fa-envelope',
       title: 'Email Us',
-      text: 'maplorixae@gmail.com',
+      text: 'hr@maplorix.ae',
       description: 'We respond within 24 hours',
     },
     {
@@ -61,7 +61,6 @@ const ContactPage = () => {
 
     return newErrors
   }
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -93,11 +92,11 @@ const ContactPage = () => {
       // Log the email data for debugging
       logEmailData(formData)
 
-      // Open email client with pre-filled message to maplorixae@gmail.com
+      // Open email client with pre-filled message to hr@maplorix.ae
       const result = sendEmailViaMailto(formData)
 
       setSubmitMessage(
-        '📧 Your email client has been opened with your message pre-filled. Please send the email to maplorixae@gmail.com to complete your submission.'
+        '📧 Your email client has been opened with your message pre-filled. Please send the email to hr@maplorix.ae to complete your submission.'
       )
 
       // Reset form after successful opening

@@ -40,7 +40,7 @@ VITE_APP_NAME=Maplorix
 VITE_APP_DESCRIPTION=Professional Job Consultancy Services
 EOF
     echo "📝 Created default .env.production file. Please update the API_BASE_URL before deployment."
-fi
+if
 
 # Build the project
 echo "🔨 Building the project..."

@@ -45,11 +45,11 @@ export const NAVIGATION_ITEMS = [
 // Contact Information
 
 export const CONTACT_INFO = {
-  phone: '+1 (555) 123-4567',
+  phone: '+971 58 192 9900',
 
-  email: 'info@maplorix.com',
+  email: 'hr@maplorix.com',
 
-  address: '123 Business Ave, Suite 100\nNew York, NY 10001',
+  address: 'A5 Block, Office No:45, Xavier Business Center, Burj Nahar Mall, Al Muteena, Dubai',
 
   hours: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 2:00 PM',
 }

@@ -74,11 +74,16 @@ const Login = () => {
     }
 
     try {
-      await login(formData.email, formData.password)
+      const loginResponse = await login(formData.email, formData.password)
 
-      // Get return URL from location state or default to home
-      const returnURL = location.state?.returnUrl || ROUTES.HOME
-      navigate(returnURL)
+      // Check if user is admin and redirect accordingly
+      if (loginResponse.user?.role === 'admin') {
+        navigate(ROUTES.DASHBOARD)
+      } else {
+        // Get return URL from location state or default to home
+        const returnURL = location.state?.returnUrl || ROUTES.HOME
+        navigate(returnURL)
+      }
     } catch (error) {
       // Error is handled by the auth context
     }

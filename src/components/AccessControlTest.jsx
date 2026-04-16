@@ -9,11 +9,10 @@ export const AccessControlTest = () => {
   // Test access for different pages
   const homeAccess = usePageAccess('/home')
   const aboutAccess = usePageAccess('/about')
-  const feedAccess = usePageAccess('/feed')
+  const feedAccess = usePageAccess('/jobs')
   const contactAccess = usePageAccess('/contact')
   const dashboardAccess = usePageAccess('/dashboard')
   const adminPostsAccess = usePageAccess('/admin-posts')
-  
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-xl font-bold mb-4">Access Control Test</h2>
@@ -23,7 +22,6 @@ export const AccessControlTest = () => {
           User: {isAuthenticated ? `${user?.firstName} (${user?.role})` : 'Not authenticated'}
         </p>
       </div>
-      
       <div className="space-y-2">
         <h3 className="font-semibold">Page Access Status:</h3>
         
@@ -36,7 +34,7 @@ export const AccessControlTest = () => {
         </div>
         
         <div className={`p-2 rounded ${feedAccess.canAccess ? 'bg-green-100' : 'bg-red-100'}`}>
-          Feed: {feedAccess.canAccess ? '✅ Accessible' : '❌ Restricted'} ({feedAccess.reason})
+          jobs: {feedAccess.canAccess ? '✅ Accessible' : '❌ Restricted'} ({feedAccess.reason})
         </div>
         
         <div className={`p-2 rounded ${contactAccess.canAccess ? 'bg-green-100' : 'bg-red-100'}`}>

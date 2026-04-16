@@ -172,12 +172,13 @@ const Register = () => {
         // Save authentication data
         localStorage.setItem('authToken', response.data.data.token)
         localStorage.setItem('user', JSON.stringify(response.data.data.user))
-        
+
         // Update success message based on user role
-        const successMsg = response.data.data.user?.role === 'admin' 
-          ? '🎉 Admin registration successful! Logging you in and redirecting to dashboard...'
-          : '🎉 Registration successful! Logging you in and redirecting to home page...'
-        
+        const successMsg =
+          response.data.data.user?.role === 'admin'
+            ? '🎉 Admin registration successful! Logging you in and redirecting to dashboard...'
+            : '🎉 Registration successful! Logging you in and redirecting to home page...'
+
         setSuccessMessage(successMsg)
         setIsLoading(false) // Stop loading but show success message
 
@@ -203,9 +204,11 @@ const Register = () => {
         }, 2500)
       } else {
         // Registration successful but no auto-login
-        setSuccessMessage('✅ Registration successful! Redirecting to login page...')
+        setSuccessMessage(
+          '✅ Registration successful! Redirecting to login page...'
+        )
         setIsLoading(false)
-        
+
         // Clear form
         setFormData({
           firstName: '',

@@ -202,7 +202,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-envelope text-accent mr-2 sm:mr-3 w-4"></i>
-                <span className="break-all">info@maplorix.ae</span>
+                <span className="break-all">hr@maplorix.com</span>
               </div>
               <div className="flex items-start justify-center sm:justify-start text-white/80 text-xs sm:text-sm">
                 <i className="fas fa-map-marker-alt text-secondary mr-2 sm:mr-3 w-4 mt-0.5"></i>
@@ -214,7 +214,6 @@ const Footer = () => {
             </div>
           </div>
         </div>
-
         {/* Footer Bottom */}
         <div className="border-t border-white/20 pt-4 sm:pt-6">
           <div className="flex justify-center items-center">
