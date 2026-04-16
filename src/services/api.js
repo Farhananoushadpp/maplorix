@@ -31,7 +31,7 @@ const getApiBaseUrl = () => {
   // }
 
   // Use direct HTTP backend (no proxy)
-  return 'http://159.198.76.95:4000/api'
+  return 'http://localhost:4001/api'
 }
 
 // Create axios instance with default configuration
@@ -61,13 +61,14 @@ api.interceptors.request.use(
 // Function to update baseURL if needed - DISABLED to force port 4000
 const updateApiBaseUrl = async () => {
   // Always use direct HTTP backend (no proxy)
-  console.log('🔧 Using direct HTTP backend: http://159.198.76.95:4000/api')
-  api.defaults.baseURL = 'http://159.198.76.95:4000/api'
+  console.log('Using direct HTTP backend: http://localhost:4001/api')
+  api.defaults.baseURL = 'http://localhost:4001/api'
   return
 }
 
 // Try to update the base URL on initialization
 if (import.meta.env.DEV) {
+  console.log(' API Service: Initializing port detection...')
   console.log('🔧 API Service: Initializing port detection...')
 }
 updateApiBaseUrl()
