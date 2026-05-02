@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajmal KM - Managing Director Profile</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Signika:wght@300;400;500;600;700;800;900&family=Comfortaa:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comfortaa', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #023341 0%, #149FC9 40%, #4CBD99 70%, #023341 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(135deg, #149FC9 0%, #4CBD99 100%);
+            z-index: 0;
+        }
+        
+        .profile-header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .profile-name {
+            font-family: 'Signika', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .profile-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .profile-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-family: 'Signika', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #023341;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-icon {
+            font-size: 1.5rem;
+            color: #149FC9;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-item:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+        
+        .contact-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #149FC9, #4CBD99);
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+        
+        .contact-text {
+            font-size: 1rem;
+            color: #2d3748;
+            font-weight: 500;
+        }
+        
+        .address-item {
+            align-items: flex-start;
+            line-height: 1.6;
+        }
+        
+        .profile-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+        
+        .company-name {
+            font-family: 'Signika', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #023341;
+            margin-bottom: 5px;
+        }
+        
+        .tagline {
+            font-size: 1rem;
+            color: #64748b;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-card">
+        <div class="profile-header">
+            <h1 class="profile-name">Ajmal KM</h1>
+            <p class="profile-title">Managing Director</p>
+        </div>
+        
+        <div class="profile-section">
+            <h2 class="section-title">
+                <span class="section-icon">📱</span>
+                Contact Information
+            </h2>
+            
+            <div class="contact-item">
+                <div class="contact-icon">📱</div>
+                <div class="contact-text">+971 52 52 999 61</div>
+            </div>
+            
+            <div class="contact-item">
+                <div class="contact-icon">☎</div>
+                <div class="contact-text">+971 52 52 99 661</div>
+            </div>
+            
+            <div class="contact-item">
+                <div class="contact-icon">✉</div>
+                <div class="contact-text">ajmalkm@maplorix.ae</div>
+            </div>
+            
+            <div class="contact-item">
+                <div class="contact-icon">🌐</div>
+                <div class="contact-text">www.maplorix.ae</div>
+            </div>
+        </div>
+        
+        <div class="profile-section">
+            <h2 class="section-title">
+                <span class="section-icon">📍</span>
+                Address
+            </h2>
+            
+            <div class="contact-item address-item">
+                <div class="contact-icon">📍</div>
+                <div class="contact-text">
+                    A5 Block, Office No: 45,<br>
+                    Xavier Business Center,<br>
+                    Burj Nahar Mall, Al Muteena, Dubai
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-footer">
+            <div class="company-name">Maplorix Recruitment</div>
+            <div class="tagline">Connecting Talent • Building Exceptional Teams</div>
+        </div>
+    </div>
+</body>
+</html>
