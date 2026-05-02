@@ -1,3 +1,6 @@
+/* reCAPTCHA Styling */
+@import './styles/recaptcha.css';
+
 @tailwind base;
 
 @tailwind components;

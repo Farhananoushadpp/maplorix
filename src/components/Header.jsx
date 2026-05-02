@@ -70,14 +70,13 @@ const Header = () => {
                 <img
                   src="/maplorixlogo.svg"
                   alt="Maplorix Logo"
-                  className="h-8 sm:h-9 md:h-10 w-auto"
+                  className="h-7 sm:h-10 md:h-12 w-auto"
                 />
               </Link>
-
               <img
                 src="/logo.svg"
                 alt="Maplorix Recruitment Agency"
-                className="h-8 sm:h-9 md:h-10 w-auto"
+                className="h-7 sm:h-8 md:h-9 w-auto"
               />
             </div>
 

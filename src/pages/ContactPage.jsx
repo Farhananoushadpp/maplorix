@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { sendEmailViaMailto, logEmailData } from '../services/emailService'
 
 const ContactPage = () => {
@@ -7,10 +7,17 @@ const ContactPage = () => {
     email: '',
     subject: '',
     message: '',
+    recaptchaToken: '',
   })
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
+
+  // reCAPTCHA configuration
+  const recaptchaRef = useRef()
+  const RECAPTCHA_SITE_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Test key for development
 
   const contactInfo = [
     {
@@ -59,6 +66,12 @@ const ContactPage = () => {
       newErrors.message = 'Please enter a message (at least 10 characters)'
     }
 
+    // reCAPTCHA validation
+    const recaptchaToken = recaptchaRef.current?.getValue()
+    if (!recaptchaToken) {
+      newErrors.recaptcha = 'Please complete the reCAPTCHA challenge'
+    }
+
     return newErrors
   }
   const handleInputChange = (e) => {
@@ -75,7 +88,6 @@ const ContactPage = () => {
       }))
     }
   }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -85,29 +97,47 @@ const ContactPage = () => {
       return
     }
 
+    // Get reCAPTCHA token
+    const recaptchaToken = recaptchaRef.current?.getValue()
+    if (!recaptchaToken) {
+      setErrors({ recaptcha: 'Please complete the reCAPTCHA challenge' })
+      return
+    }
+
     setIsSubmitting(true)
     setSubmitMessage('')
 
     try {
+      // Add reCAPTCHA token to form data
+      const submissionData = {
+        ...formData,
+        recaptchaToken,
+      }
+
       // Log the email data for debugging
-      logEmailData(formData)
+      logEmailData(submissionData)
 
       // Open email client with pre-filled message to hr@maplorix.ae
-      const result = sendEmailViaMailto(formData)
+      const result = sendEmailViaMailto(submissionData)
 
       setSubmitMessage(
         '📧 Your email client has been opened with your message pre-filled. Please send the email to hr@maplorix.ae to complete your submission.'
       )
 
-      // Reset form after successful opening
+      // Reset form and reCAPTCHA after successful opening
       setTimeout(() => {
         setFormData({
           name: '',
           email: '',
           subject: '',
           message: '',
+          recaptchaToken: '',
         })
         setErrors({})
+        // Reset reCAPTCHA widget
+        if (recaptchaRef.current) {
+          recaptchaRef.current.reset()
+        }
       }, 2000)
 
       setTimeout(() => {
@@ -116,25 +146,82 @@ const ContactPage = () => {
     } catch (error) {
       console.error('Contact form error:', error)
       setSubmitMessage(`❌ ${error.message}`)
+      // Reset reCAPTCHA on error
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset()
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-20">
-      <div className="container px-4">
-        {/* Page Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-black text-primary mb-4">
-            Contact Us
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-            Have questions? Ready to get started? We're here to help you
-            succeed.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      {/* Hero Section */}
+      <div className="relative bg-primary overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+          <div
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+              backgroundSize: '30px 30px',
+            }}
+          ></div>
         </div>
+        <div className="relative z-10 container px-4 py-24 sm:py-32 text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+            Get In{' '}
+            <span className="bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+              Touch
+            </span>
+          </h1>
+          <p className="text-white/75 max-w-2xl mx-auto text-lg sm:text-xl leading-relaxed">
+            Have questions? Ready to get started? We're here to help you
+            succeed. Reach out and our team will respond within 24 hours.
+          </p>
+          {/* Quick contact chips */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
+            <a
+              href="tel:044538999"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300"
+            >
+              <i className="fas fa-phone text-secondary"></i>
+              044538999
+            </a>
+            <a
+              href="mailto:hr@maplorix.ae"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300"
+            >
+              <i className="fas fa-envelope text-accent"></i>
+              hr@maplorix.ae
+            </a>
+            <span className="flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium">
+              <i className="fas fa-map-marker-alt text-secondary"></i>
+              Dubai, UAE
+            </span>
+          </div>
+        </div>
+        {/* Wave divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg
+            viewBox="0 0 1440 60"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-auto"
+          >
+            <path
+              d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 28C840 36 960 42 1080 40C1200 38 1320 28 1380 23L1440 18V60H0Z"
+              fill="#f9fafb"
+            />
+          </svg>
+        </div>
+      </div>
 
+      <div className="container px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Information */}
           <div>
@@ -143,9 +230,9 @@ const ContactPage = () => {
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {contactInfo.map((info, index) => (
+              {contactInfo.map((info) => (
                 <div
-                  key={index}
+                  key={info.title}
                   className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex items-center mb-3">
@@ -307,6 +394,22 @@ const ContactPage = () => {
                   </p>
                 )}
               </div>
+
+              {/* reCAPTCHA Widget */}
+              <div className="flex justify-center">
+                <div
+                  className="g-recaptcha"
+                  data-sitekey={RECAPTCHA_SITE_KEY}
+                  ref={recaptchaRef}
+                ></div>
+              </div>
+
+              {errors.recaptcha && (
+                <p className="text-red-500 text-sm text-center">
+                  <i className="fas fa-exclamation-circle mr-1"></i>
+                  {errors.recaptcha}
+                </p>
+              )}
 
               <button
                 type="submit"

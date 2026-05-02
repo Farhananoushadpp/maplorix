@@ -71,12 +71,12 @@ const Footer = () => {
               <img
                 src="/maplorixlogo.svg"
                 alt="Maplorix"
-                className="h-7 sm:h-8 md:h-10 w-auto"
+                className="h-7 sm:h-9 md:h-11 w-auto"
               />
               <img
                 src="/logo.svg"
                 alt="Maplorix"
-                className="h-7 sm:h-8 md:h-10 w-auto"
+                className="h-6 sm:h-7 md:h-8 w-auto"
               />
             </div>
             <p className="text-white/80 leading-relaxed mb-4 text-xs sm:text-sm max-w-xs sm:max-w-none mx-auto sm:mx-0">
@@ -100,7 +100,7 @@ const Footer = () => {
                 rel="noopener noreferrer"
                 className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-secondary hover:text-primary transition-all duration-300 transform hover:scale-110"
               >
-                <i className="fab fa-twitter text-xs sm:text-sm"></i>
+                <i className="fab fa-twitter fa-brands text-xs sm:text-sm"></i>
               </a>
               <a
                 href="https://www.linkedin.com/company/maplorix/"
@@ -153,7 +153,6 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-
           {/* Quick Links */}
           <div className="text-center sm:text-left">
             <h4 className="text-base sm:text-lg font-bold mb-2 sm:mb-4">

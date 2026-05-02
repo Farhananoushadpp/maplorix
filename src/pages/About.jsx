@@ -1,12 +1,12 @@
-import React from 'react';
-import About from '../components/About';
+import React from 'react'
+import About from '../components/About'
 
 const AboutPage = () => {
   return (
-    <div className="min-h-screen bg-white pt-24">
+    <div className="min-h-screen bg-white">
       <About />
     </div>
-  );
-};
+  )
+}
 
-export default AboutPage;
+export default AboutPage

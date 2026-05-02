@@ -19,7 +19,6 @@ export const useApi = () => {
       setLoading(false)
     }
   }, [])
-
   const clearError = useCallback(() => {
     setError(null)
   }, [])

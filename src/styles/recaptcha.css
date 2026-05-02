@@ -1,0 +1,81 @@
+/* reCAPTCHA Styling for Maplorix */
+
+/* Base reCAPTCHA container styling */
+.g-recaptcha {
+  margin: 20px 0;
+  display: inline-block;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.g-recaptcha:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 480px) {
+  .g-recaptcha {
+    transform: scale(0.9);
+    transform-origin: 0 0;
+    margin: 15px 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .g-recaptcha {
+    transform: scale(0.85);
+    transform-origin: 0 0;
+    margin: 10px 0;
+  }
+}
+
+/* Error state styling */
+.g-recaptcha-error {
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+/* Dark theme support (if needed in the future) */
+@media (prefers-color-scheme: dark) {
+  .g-recaptcha {
+    filter: brightness(0.9);
+  }
+}
+
+/* Loading state */
+.g-recaptcha-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Focus states for accessibility */
+.g-recaptcha iframe:focus {
+  outline: 2px solid #149FC9;
+  outline-offset: 2px;
+}
+
+/* Container for better alignment */
+.recaptcha-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+}
+
+/* Error message styling */
+.recaptcha-error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recaptcha-error-message i {
+  margin-right: 4px;
+}

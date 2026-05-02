@@ -190,6 +190,11 @@ const Dashboard = () => {
     }
   }, [jobFilters])
 
+  // Debug applicationFilters changes
+  useEffect(() => {
+    console.log('🔍 Application Filters Updated:', applicationFilters)
+  }, [applicationFilters])
+
   // Filter applications
   const filterApplications = useMemo(() => {
     return (applicationsToFilter) => {
@@ -211,10 +216,20 @@ const Dashboard = () => {
                 .includes(applicationFilters.email.toLowerCase()))
           const matchesJobRole =
             !applicationFilters.jobRole ||
-            (application.jobRole &&
-              application.jobRole
-                .toLowerCase()
-                .includes(applicationFilters.jobRole.toLowerCase()))
+            (application.jobRole && applicationFilters.jobRole === 'other'
+              ? !application.jobRole.toLowerCase().includes('developer') &&
+                !application.jobRole.toLowerCase().includes('designer') &&
+                !application.jobRole.toLowerCase().includes('manager') &&
+                !application.jobRole.toLowerCase().includes('analyst') &&
+                !application.jobRole.toLowerCase().includes('engineer') &&
+                !application.jobRole.toLowerCase().includes('consultant') &&
+                !application.jobRole.toLowerCase().includes('accountant') &&
+                !application.jobRole.toLowerCase().includes('marketing') &&
+                !application.jobRole.toLowerCase().includes('sales') &&
+                !application.jobRole.toLowerCase().includes('hr')
+              : application.jobRole
+                  .toLowerCase()
+                  .includes(applicationFilters.jobRole.toLowerCase()))
           const matchesExperience =
             !applicationFilters.experience ||
             (application.experience &&
@@ -222,13 +237,19 @@ const Dashboard = () => {
           const matchesSalary =
             !applicationFilters.expectedSalary ||
             (application.expectedSalary &&
-              (typeof application.expectedSalary === 'object'
-                ? application.expectedSalary.min &&
-                  parseInt(application.expectedSalary.min) >=
-                    parseInt(applicationFilters.expectedSalary)
-                : parseInt(application.expectedSalary) >=
-                  parseInt(applicationFilters.expectedSalary)))
-
+              (() => {
+                const appSalary =
+                  typeof application.expectedSalary === 'object'
+                    ? application.expectedSalary.min
+                    : application.expectedSalary
+                const appSalaryNum = Number(
+                  String(appSalary).replace(/[^0-9.-]+/g, '')
+                )
+                const filterSalaryNum = Number(
+                  applicationFilters.expectedSalary
+                )
+                return appSalaryNum >= filterSalaryNum
+              })())
           return (
             matchesName &&
             matchesEmail &&
@@ -562,10 +583,10 @@ const Dashboard = () => {
   const downloadApplicationsExcel = () => {
     try {
       console.log('📊 Downloading applications data as Excel...')
-      
+
       // Get filtered applications
       const filteredApps = filterApplications(applications)
-      
+
       if (!filteredApps || filteredApps.length === 0) {
         setSuccessMessage('No applications data to download')
         setTimeout(() => setSuccessMessage(''), 3000)
@@ -577,27 +598,30 @@ const Dashboard = () => {
         'S.No': index + 1,
         'Application ID': app._id || '',
         'Full Name': app.fullName || '',
-        'Email': app.email || '',
-        'Phone': app.phone || '',
+        Email: app.email || '',
+        Phone: app.phone || '',
         'Job Role': app.jobRole || '',
-        'Experience': app.experience || '',
+        Experience: app.experience || '',
         'Current Company': app.currentCompany || '',
         'Current Position': app.currentPosition || '',
-        'Education': app.education || '',
-        'Skills': app.skills || '',
+        Education: app.education || '',
+        Skills: app.skills || '',
         'Cover Letter': app.coverLetter || '',
-        'LinkedIn': app.linkedin || '',
-        'Portfolio': app.portfolio || '',
+        LinkedIn: app.linkedin || '',
+        Portfolio: app.portfolio || '',
         'Expected Salary': app.expectedSalary || '',
         'Notice Period': app.noticePeriod || '',
         'Work Mode': app.workMode || '',
-        'Location': app.location || '',
-        'Status': app.status || 'Pending',
-        'Applied Date': app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '',
-        'Updated Date': app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : '',
-        'Resume Available': app.resume && app.resume.data ? 'Yes' : 'No'
+        Location: app.location || '',
+        Status: app.status || 'Pending',
+        'Applied Date': app.createdAt
+          ? new Date(app.createdAt).toLocaleDateString()
+          : '',
+        'Updated Date': app.updatedAt
+          ? new Date(app.updatedAt).toLocaleDateString()
+          : '',
+        'Resume Available': app.resume && app.resume.data ? 'Yes' : 'No',
       }))
-
       // Create workbook and worksheet
       const ws = XLSX.utils.json_to_sheet(excelData)
       const wb = XLSX.utils.book_new()
@@ -608,7 +632,7 @@ const Dashboard = () => {
       Object.keys(excelData[0] || {}).forEach((key) => {
         const maxLength = Math.max(
           key.length,
-          ...excelData.map(row => String(row[key] || '').length)
+          ...excelData.map((row) => String(row[key] || '').length)
         )
         colWidths.push({ wch: Math.min(maxLength + 2, 50) })
       })
@@ -621,7 +645,9 @@ const Dashboard = () => {
       // Download the file
       XLSX.writeFile(wb, filename)
 
-      setSuccessMessage(`Successfully downloaded ${filteredApps.length} applications as Excel!`)
+      setSuccessMessage(
+        `Successfully downloaded ${filteredApps.length} applications as Excel!`
+      )
       setTimeout(() => setSuccessMessage(''), 3000)
 
       console.log(`✅ Excel file downloaded: ${filename}`)
@@ -787,7 +813,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <button
@@ -798,7 +824,7 @@ const Dashboard = () => {
                 <i className="fas fa-save"></i>
                 <span>{loading.backup ? 'Creating...' : 'Create Backup'}</span>
               </button>
-              
+
               <button
                 onClick={downloadBackup}
                 className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
@@ -806,19 +832,21 @@ const Dashboard = () => {
                 <i className="fas fa-download"></i>
                 <span>Download Backup</span>
               </button>
-              
+
               <button
                 onClick={() => setAutoBackup(!backups.autoBackupEnabled)}
                 className={`px-4 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center space-x-2 ${
-                  backups.autoBackupEnabled 
-                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                  backups.autoBackupEnabled
+                    ? 'bg-orange-600 text-white hover:bg-orange-700'
                     : 'bg-gray-600 text-white hover:bg-gray-700'
                 }`}
               >
                 <i className="fas fa-clock"></i>
-                <span>{backups.autoBackupEnabled ? 'Disable Auto' : 'Enable Auto'}</span>
+                <span>
+                  {backups.autoBackupEnabled ? 'Disable Auto' : 'Enable Auto'}
+                </span>
               </button>
-              
+
               <button
                 onClick={clearBackupHistory}
                 className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
@@ -827,7 +855,7 @@ const Dashboard = () => {
                 <span>Clear History</span>
               </button>
             </div>
-            
+
             {backups.backupHistory.length > 0 && (
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-text-light uppercase tracking-wide mb-3">
@@ -835,7 +863,10 @@ const Dashboard = () => {
                 </h4>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {backups.backupHistory.map((backup, index) => (
-                    <div key={backup.timestamp} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                    <div
+                      key={backup.timestamp}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm"
+                    >
                       <div className="flex items-center space-x-3">
                         <span className="text-gray-500">#{index + 1}</span>
                         <span className="text-gray-700">
@@ -845,18 +876,21 @@ const Dashboard = () => {
                       <div className="flex items-center space-x-2 text-gray-500">
                         <span>{backup.metadata?.totalJobs || 0} jobs</span>
                         <span>•</span>
-                        <span>{backup.metadata?.totalApplications || 0} apps</span>
+                        <span>
+                          {backup.metadata?.totalApplications || 0} apps
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
+
             {backups.nextBackupTime && (
               <div className="mt-4 text-sm text-text-light">
                 <i className="fas fa-info-circle mr-2"></i>
-                Next automatic backup: {new Date(backups.nextBackupTime).toLocaleString()}
+                Next automatic backup:{' '}
+                {new Date(backups.nextBackupTime).toLocaleString()}
               </div>
             )}
           </div>
@@ -1182,6 +1216,12 @@ const Dashboard = () => {
                     <option value="designer">Designer</option>
                     <option value="manager">Manager</option>
                     <option value="analyst">Analyst</option>
+                    <option value="engineer">Engineer</option>
+                    <option value="consultant">Consultant</option>
+                    <option value="accountant">Accountant</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="sales">Sales</option>
+                    <option value="hr">HR</option>
                     <option value="other">Other</option>
                   </select>
                   <button

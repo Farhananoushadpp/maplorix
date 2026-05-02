@@ -8,8 +8,28 @@ const ApplyJob = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Google reCAPTCHA site key - replace with your actual site key
-  const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // Test key, replace with production key
+  // Google reCAPTCHA site key from environment variable
+  const RECAPTCHA_SITE_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Test key for development
+
+  // Check if reCAPTCHA loads, otherwise show fallback
+  useEffect(() => {
+    const checkRecaptcha = setTimeout(() => {
+      const recaptchaContainer = document.getElementById('recaptcha-container')
+      const fallbackCaptcha = document.getElementById('fallback-captcha')
+
+      // If reCAPTCHA container is empty after 3 seconds, show fallback
+      if (recaptchaContainer && !recaptchaContainer.querySelector('iframe')) {
+        console.warn('reCAPTCHA failed to load, showing fallback checkbox')
+        if (fallbackCaptcha) {
+          fallbackCaptcha.classList.remove('hidden')
+        }
+      }
+    }, 3000)
+
+    return () => clearTimeout(checkRecaptcha)
+  }, [])
 
   // Check for job context from navigation state (Feed Apply Now)
   const jobContext = location.state || {}
@@ -23,7 +43,6 @@ const ApplyJob = () => {
     email: '',
     phone: '',
     location: '',
-
     // Essential Professional Information
     jobRole: jobContext.jobTitle || '', // Pre-fill from Feed context
     experience: '',
@@ -136,8 +155,8 @@ const ApplyJob = () => {
       newErrors.experience = 'Experience level is required'
     }
 
-    // CAPTCHA validation - optional during development
-    if (process.env.NODE_ENV === 'production' && !formData.captchaToken) {
+    // CAPTCHA validation - required in all environments
+    if (!formData.captchaToken) {
       newErrors.captcha = 'Please complete the CAPTCHA verification'
     }
 
@@ -738,15 +757,52 @@ const ApplyJob = () => {
                 </label>
               </div>
               <div className="flex flex-col items-center bg-gradient-to-r from-primary/5 to-secondary/10 p-6 rounded-xl border border-primary/20">
-                <ReCAPTCHA
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={handleCaptchaChange}
-                  onErrored={handleCaptchaError}
-                  onExpired={handleCaptchaExpired}
-                  asyncScriptOnLoad={() => {
-                    console.log('reCAPTCHA script loaded')
-                  }}
-                />
+                {/* Debug info */}
+                <div className="text-xs text-gray-500 mb-2">
+                  Site Key:{' '}
+                  {RECAPTCHA_SITE_KEY
+                    ? RECAPTCHA_SITE_KEY.substring(0, 10) + '...'
+                    : 'Not found'}
+                </div>
+
+                {/* Google reCAPTCHA */}
+                <div id="recaptcha-container">
+                  <ReCAPTCHA
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={handleCaptchaChange}
+                    onErrored={handleCaptchaError}
+                    onExpired={handleCaptchaExpired}
+                    asyncScriptOnLoad={() => {
+                      console.log('✅ reCAPTCHA script loaded successfully')
+                    }}
+                  />
+                </div>
+
+                {/* Fallback checkbox if reCAPTCHA fails to load */}
+                <div id="fallback-captcha" className="hidden">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.captchaToken}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          captchaToken: e.target.checked
+                            ? 'fallback-verified-' + Date.now()
+                            : '',
+                        }))
+                        if (errors.captcha) {
+                          setErrors((prev) => ({ ...prev, captcha: '' }))
+                        }
+                      }}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I confirm I am not a robot
+                    </span>
+                  </label>
+                </div>
+
                 {errors.captcha && (
                   <p className="mt-2 text-sm text-error text-center flex items-center">
                     <i className="fas fa-exclamation-circle mr-1"></i>
@@ -755,7 +811,7 @@ const ApplyJob = () => {
                 )}
                 <p className="mt-3 text-sm text-text-light text-center flex items-center">
                   <i className="fas fa-shield-alt mr-1"></i>
-                  Please complete the CAPTCHA to verify you are human.
+                  Please complete the verification to confirm you are human.
                 </p>
               </div>
             </div>

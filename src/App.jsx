@@ -68,7 +68,6 @@ import AllApplicationsEnhanced from './pages/AllApplicationsEnhanced'
 import AllJobs from './pages/AllJobs'
 
 // Constants
-
 import { ANIMATION_VARIANTS, ROUTES } from './constants'
 
 /**
@@ -313,7 +312,6 @@ const App = () => {
       window.removeEventListener('jobPosted', handleJobPosted)
     }
   }, [])
-
   return (
     <AuthProvider>
       <ApplicationProvider>

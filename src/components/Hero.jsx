@@ -186,7 +186,6 @@ const Hero = ({ onPostJob, onFindJob }) => {
 
     fetchJobData()
   }, [])
-
   useEffect(() => {
     // Only run video logic for the active controller
     if (!isControllerActive.current) return

@@ -6,6 +6,7 @@ const AllJobs = () => {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const [expandedJobs, setExpandedJobs] = useState(new Set())
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -124,6 +125,19 @@ const AllJobs = () => {
     setFilters(cleared)
     sessionStorage.removeItem('jobFilters')
     fetchJobs(1)
+  }
+
+  // Toggle job expansion
+  const toggleJobExpansion = (jobId) => {
+    setExpandedJobs((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId)
+      } else {
+        newSet.add(jobId)
+      }
+      return newSet
+    })
   }
 
   // Handle pagination
@@ -373,54 +387,141 @@ const AllJobs = () => {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Details
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {jobs.map((job) => (
-                    <tr key={job._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {job.title}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.location}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.type || job.jobType || 'Not specified'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.salary ? `${job.salary.currency || ''} ${job.salary.min || ''}${job.salary.max ? ` - ${job.salary.max}` : ''}` : 'Not specified'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(job.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            job.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {job.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <button
-                          onClick={() => console.log('Edit job:', job._id)}
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => console.log('Delete job:', job._id)}
-                          className="ml-2 text-red-600 hover:text-red-900 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={job._id}>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {job.title}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.location}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.type || job.jobType || 'Not specified'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.salary
+                            ? `${job.salary.currency || ''} ${job.salary.min || ''}${job.salary.max ? ` - ${job.salary.max}` : ''}`
+                            : 'Not specified'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(job.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              job.isActive
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {job.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <button
+                            onClick={() => toggleJobExpansion(job._id)}
+                            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium flex items-center"
+                          >
+                            {expandedJobs.has(job._id) ? (
+                              <>
+                                <i className="fas fa-chevron-up mr-1"></i>
+                                Show Less
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-chevron-down mr-1"></i>
+                                Show More
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <button
+                            onClick={() => console.log('Edit job:', job._id)}
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => console.log('Delete job:', job._id)}
+                            className="ml-2 text-red-600 hover:text-red-900 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedJobs.has(job._id) && (
+                        <tr>
+                          <td colSpan="8" className="px-6 py-4 bg-gray-50">
+                            <div className="text-sm text-gray-700 space-y-2">
+                              <div>
+                                <span className="font-semibold">
+                                  Description:
+                                </span>
+                                <p className="mt-1 text-gray-600">
+                                  {job.description ||
+                                    'No description available'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-semibold">
+                                  Requirements:
+                                </span>
+                                <p className="mt-1 text-gray-600">
+                                  {job.requirements ||
+                                    'No requirements specified'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-semibold">
+                                  Experience Level:
+                                </span>
+                                <span className="ml-2 text-gray-600">
+                                  {job.experience || 'Not specified'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-semibold">
+                                  Department:
+                                </span>
+                                <span className="ml-2 text-gray-600">
+                                  {job.department || 'Not specified'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-semibold">
+                                  Application Deadline:
+                                </span>
+                                <span className="ml-2 text-gray-600">
+                                  {job.deadline
+                                    ? new Date(
+                                        job.deadline
+                                      ).toLocaleDateString()
+                                    : 'Not specified'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-semibold">
+                                  Posted By:
+                                </span>
+                                <span className="ml-2 text-gray-600">
+                                  {job.postedBy || 'Not specified'}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
