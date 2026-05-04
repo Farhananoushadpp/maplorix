@@ -55,6 +55,7 @@ const ApplyJob = () => {
       currency: 'USD',
     },
     noticePeriod: '30 days',
+    coverLetter: '', // Added cover letter field
 
     // Optional but useful
     resume: null,
@@ -234,6 +235,7 @@ const ApplyJob = () => {
         submitData.append('skills', formData.skills)
         submitData.append('currentCompany', formData.currentCompany)
         submitData.append('currentDesignation', formData.currentDesignation)
+        submitData.append('coverLetter', formData.coverLetter) // Added cover letter
 
         // Handle expectedSalary as JSON string
         if (formData.expectedSalary) {
@@ -266,6 +268,7 @@ const ApplyJob = () => {
           currentDesignation: formData.currentDesignation,
           expectedSalary: formData.expectedSalary,
           noticePeriod: formData.noticePeriod,
+          coverLetter: formData.coverLetter, // Added cover letter
           captchaToken: formData.captchaToken || 'development-bypass',
         }
 
@@ -292,6 +295,7 @@ const ApplyJob = () => {
         currentDesignation: formData.currentDesignation,
         expectedSalary: formData.expectedSalary,
         noticePeriod: formData.noticePeriod,
+        coverLetter: formData.coverLetter, // Added cover letter
         status: 'submitted', // Use valid enum value
         createdAt: new Date().toISOString(),
       }
@@ -658,17 +662,97 @@ const ApplyJob = () => {
                   <label className="block text-sm font-semibold text-text-dark mb-2">
                     Expected Salary
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <i className="fas fa-money-bill text-text-light"></i>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-dollar-sign text-text-light"></i>
+                        </div>
+                        <input
+                          type="number"
+                          name="expectedSalaryMin"
+                          value={formData.expectedSalary.min}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              expectedSalary: {
+                                ...prev.expectedSalary,
+                                min: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
+                          placeholder="Min"
+                        />
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      name="expectedSalary"
-                      value={formData.expectedSalary}
+                    <div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-dollar-sign text-text-light"></i>
+                        </div>
+                        <input
+                          type="number"
+                          name="expectedSalaryMax"
+                          value={formData.expectedSalary.max}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              expectedSalary: {
+                                ...prev.expectedSalary,
+                                max: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
+                          placeholder="Max"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <i className="fas fa-coins text-text-light"></i>
+                        </div>
+                        <select
+                          name="expectedSalaryCurrency"
+                          value={formData.expectedSalary.currency}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              expectedSalary: {
+                                ...prev.expectedSalary,
+                                currency: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary appearance-none bg-white transition-colors"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="AED">AED</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-text-dark mb-2">
+                    Cover Letter
+                  </label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-3 pointer-events-none">
+                      <i className="fas fa-file-alt text-text-light"></i>
+                    </div>
+                    <textarea
+                      name="coverLetter"
+                      value={formData.coverLetter || ''}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors"
-                      placeholder="$80,000 - $100,000"
+                      rows={4}
+                      className="w-full pl-10 pr-3 py-3 border border-border-color rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary placeholder-text-light transition-colors resize-none"
+                      placeholder="Tell us why you're interested in this position and what makes you a great fit..."
                     />
                   </div>
                 </div>

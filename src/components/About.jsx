@@ -44,8 +44,7 @@ const About = () => {
 
   return (
     <>
-      {/* Hero Section */}
-
+      {/* Main Content Section */}
       <section
         id="about"
         className="py-20 sm:py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden"
@@ -66,7 +65,7 @@ const About = () => {
             }`}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary">
-              About Maplorix
+              Our Story & Mission
             </h2>
             <div className="w-24 h-1 bg-gradient-to-r from-secondary to-accent mx-auto rounded-full mt-4"></div>
           </div>

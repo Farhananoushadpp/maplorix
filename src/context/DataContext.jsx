@@ -293,7 +293,10 @@ const dataReducer = (state, action) => {
         backups: {
           ...state.backups,
           lastBackup: action.payload.timestamp,
-          backupHistory: [action.payload, ...state.backups.backupHistory].slice(0, 10), // Keep last 10 backups
+          backupHistory: [action.payload, ...state.backups.backupHistory].slice(
+            0,
+            10
+          ), // Keep last 10 backups
           nextBackupTime: new Date(Date.now() + state.backups.backupInterval),
         },
       }
@@ -452,7 +455,7 @@ export const DataProvider = ({ children }) => {
   const createBackup = useCallback(async () => {
     try {
       dispatch({ type: DATA_ACTIONS.BACKUP_START })
-      
+
       const backupData = {
         timestamp: new Date().toISOString(),
         jobs: state.jobs,
@@ -471,12 +474,20 @@ export const DataProvider = ({ children }) => {
       localStorage.setItem(backupKey, JSON.stringify(backupData))
 
       // Also store in sessionStorage for quick access
-      sessionStorage.setItem('maplorix_latest_backup', JSON.stringify(backupData))
+      sessionStorage.setItem(
+        'maplorix_latest_backup',
+        JSON.stringify(backupData)
+      )
 
       // Store backup history
-      const existingHistory = JSON.parse(localStorage.getItem('maplorix_backup_history') || '[]')
+      const existingHistory = JSON.parse(
+        localStorage.getItem('maplorix_backup_history') || '[]'
+      )
       const newHistory = [backupData, ...existingHistory].slice(0, 10) // Keep last 10 backups
-      localStorage.setItem('maplorix_backup_history', JSON.stringify(newHistory))
+      localStorage.setItem(
+        'maplorix_backup_history',
+        JSON.stringify(newHistory)
+      )
 
       dispatch({
         type: DATA_ACTIONS.BACKUP_SUCCESS,
@@ -521,7 +532,11 @@ export const DataProvider = ({ children }) => {
     const interval = setInterval(checkAndCreateBackup, 60000) // Check every minute
 
     return () => clearInterval(interval)
-  }, [state.backups.autoBackupEnabled, state.backups.nextBackupTime, createBackup])
+  }, [
+    state.backups.autoBackupEnabled,
+    state.backups.nextBackupTime,
+    createBackup,
+  ])
 
   // Initialize backup time on first load
   useEffect(() => {
@@ -532,7 +547,11 @@ export const DataProvider = ({ children }) => {
         payload: state.backups.backupInterval,
       })
     }
-  }, [state.backups.autoBackupEnabled, state.backups.nextBackupTime, state.backups.backupInterval])
+  }, [
+    state.backups.autoBackupEnabled,
+    state.backups.nextBackupTime,
+    state.backups.backupInterval,
+  ])
 
   // Jobs actions
   const fetchJobs = useCallback(async (filters = {}) => {
@@ -583,9 +602,12 @@ export const DataProvider = ({ children }) => {
     try {
       dispatch({ type: DATA_ACTIONS.CREATE_JOB_START })
       const response = await jobsAPI.createJob(jobData)
+      // Extract the job object from nested response: {success, data: {job: {...}}}
+      const createdJob =
+        response.data?.job || response.job || response.data || response
       dispatch({
         type: DATA_ACTIONS.CREATE_JOB_SUCCESS,
-        payload: response.data || response,
+        payload: createdJob,
       })
       return response
     } catch (error) {
@@ -600,9 +622,12 @@ export const DataProvider = ({ children }) => {
     try {
       dispatch({ type: DATA_ACTIONS.UPDATE_JOB_START })
       const response = await jobsAPI.updateJob(id, jobData)
+      // Extract the job object from nested response: {success, data: {job: {...}}}
+      const updatedJob =
+        response.data?.job || response.job || response.data || response
       dispatch({
         type: DATA_ACTIONS.UPDATE_JOB_SUCCESS,
-        payload: response.data || response,
+        payload: updatedJob,
       })
       return response
     } catch (error) {
@@ -729,7 +754,7 @@ export const DataProvider = ({ children }) => {
   const restoreBackup = useCallback(async (backupData) => {
     try {
       console.log('🔄 Restoring backup from:', backupData.timestamp)
-      
+
       // Restore jobs
       if (backupData.jobs && Array.isArray(backupData.jobs)) {
         dispatch({
@@ -773,7 +798,7 @@ export const DataProvider = ({ children }) => {
       // Create downloadable JSON file
       const dataStr = JSON.stringify(backupData, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
-      
+
       const url = window.URL.createObjectURL(dataBlob)
       const link = document.createElement('a')
       link.href = url

@@ -161,14 +161,22 @@ const PostsFeed = () => {
   const handleApplySuccess = async (applicationData) => {
     try {
       // Check if application data already has an ID (indicating it was already submitted)
-      if (applicationData.id || applicationData._id || applicationData.application?.id) {
-        console.log('✅ PostsFeed: Application already submitted, skipping duplicate submission')
+      if (
+        applicationData.id ||
+        applicationData._id ||
+        applicationData.application?.id
+      ) {
+        console.log(
+          '✅ PostsFeed: Application already submitted, skipping duplicate submission'
+        )
         setSuccessMessage('Application submitted successfully!')
         setShowApplyModal(false)
         setSelectedPost(null)
       } else {
         console.log('🔄 PostsFeed: Application data received:', applicationData)
-        console.log('⚠️ PostsFeed: No application ID found, but this might be expected')
+        console.log(
+          '⚠️ PostsFeed: No application ID found, but this might be expected'
+        )
         // Don't submit again - just show success
         setSuccessMessage('Application submitted successfully!')
         setShowApplyModal(false)
@@ -462,29 +470,47 @@ const PostsFeed = () => {
                     </div>
 
                     {/* Description */}
-                    <div className="mb-4">
-                      <div className={`text-gray-700 text-sm leading-relaxed ${!expandedPosts.has(post._id) && post.description && post.description.length > 200 ? 'line-clamp-3' : ''}`}>
+                    <div className="mb-4 overflow-hidden">
+                      <div
+                        className={`text-gray-700 text-sm leading-relaxed break-all overflow-wrap-anywhere ${!expandedPosts.has(post._id) && post.description && post.description.length > 200 ? 'line-clamp-3' : ''}`}
+                        style={{
+                          overflowWrap: 'anywhere',
+                          wordBreak: 'break-all',
+                        }}
+                      >
                         {post.description || 'No description provided'}
                       </div>
                     </div>
 
                     {/* Requirements */}
                     {post.requirements && (
-                      <div className="mb-4">
-                        <div className={`text-gray-700 text-sm leading-relaxed ${!expandedPosts.has(post._id) && post.requirements.length > 150 ? 'line-clamp-2' : ''}`}>
+                      <div className="mb-4 overflow-hidden">
+                        <div
+                          className={`text-gray-700 text-sm leading-relaxed break-all ${!expandedPosts.has(post._id) && post.requirements.length > 150 ? 'line-clamp-2' : ''}`}
+                          style={{
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-all',
+                          }}
+                        >
                           {post.requirements}
                         </div>
                       </div>
                     )}
 
                     {/* Show More / Show Less Button */}
-                    {((post.description && post.description.length > 200) || (post.requirements && post.requirements.length > 150)) && (
+                    {((post.description && post.description.length > 200) ||
+                      (post.requirements &&
+                        post.requirements.length > 150)) && (
                       <button
                         onClick={() => togglePostExpansion(post._id)}
                         className="text-secondary hover:text-primary text-sm font-medium flex items-center transition-colors duration-200 mb-4"
                       >
-                        <i className={`fas fa-chevron-${expandedPosts.has(post._id) ? 'up' : 'down'} mr-1`}></i>
-                        {expandedPosts.has(post._id) ? 'Show Less' : 'Show More'}
+                        <i
+                          className={`fas fa-chevron-${expandedPosts.has(post._id) ? 'up' : 'down'} mr-1`}
+                        ></i>
+                        {expandedPosts.has(post._id)
+                          ? 'Show Less'
+                          : 'Show More'}
                       </button>
                     )}
 

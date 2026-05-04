@@ -98,27 +98,38 @@ const AdminPosts = () => {
   const validateForm = () => {
     const newErrors = {}
 
+    console.log('🔍 Validating form data:', formData)
+
     if (!formData.title.trim()) {
       newErrors.title = 'Job Title is required'
+      console.log('❌ Title validation failed')
     }
     if (!formData.location.trim()) {
       newErrors.location = 'Location is required'
+      console.log('❌ Location validation failed')
     }
     if (!formData.experience.trim()) {
       newErrors.experience = 'Experience level is required'
+      console.log('❌ Experience validation failed')
     }
     if (!formData.salary.trim()) {
       newErrors.salary = 'Salary is required'
+      console.log('❌ Salary validation failed')
     }
     if (!formData.requirements.trim()) {
       newErrors.requirements = 'Requirements are required'
+      console.log('❌ Requirements validation failed')
     }
     if (!formData.description.trim()) {
       newErrors.description = 'Job Description is required'
+      console.log('❌ Description validation failed')
     }
 
+    console.log('🔍 Validation errors:', newErrors)
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    const isValid = Object.keys(newErrors).length === 0
+    console.log('🔍 Form is valid:', isValid)
+    return isValid
   }
 
   // Handle form input changes
@@ -180,7 +191,11 @@ const AdminPosts = () => {
   const handleUpdatePost = async (e) => {
     e.preventDefault()
 
+    console.log('🚀 Starting job update process...')
+    console.log('🔍 Editing post ID:', editingPost?._id)
+
     if (!validateForm()) {
+      console.log('❌ Form validation failed, update cancelled')
       return
     }
 
@@ -196,7 +211,11 @@ const AdminPosts = () => {
         status: 'active', // Maintain active status for admin posts
       }
 
-      await updateJob(editingPost._id, jobData)
+      console.log('📤 Sending update data:', jobData)
+      console.log('📤 Updating job ID:', editingPost._id)
+
+      const response = await updateJob(editingPost._id, jobData)
+      console.log('✅ Update response:', response)
 
       setSuccessMessage('Job vacancy updated successfully!')
       setTimeout(() => setSuccessMessage(''), 3000)
@@ -209,6 +228,7 @@ const AdminPosts = () => {
       console.log('✅ AdminPosts: Job vacancy updated successfully')
     } catch (error) {
       console.error('❌ Error updating job vacancy:', error)
+      console.error('❌ Error details:', error.response?.data || error.message)
       setSuccessMessage('Failed to update job vacancy')
       setTimeout(() => setSuccessMessage(''), 3000)
     }

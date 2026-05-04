@@ -490,7 +490,8 @@ export const jobsAPI = {
         sortOrder: 'desc',
       },
     })
-    return response.data.data || response.data // Handle both old and new response structures
+    // Handle backend response structure: {success: true, jobs: [...]}
+    return response.data.jobs || response.data.data?.jobs || response.data || []
   },
 
   getJobsForFeed: async (filters = {}) => {
@@ -505,7 +506,10 @@ export const jobsAPI = {
           sortOrder: 'desc',
         },
       })
-      return response.data.data || response.data // Handle both old and new response structures
+      // Handle backend response structure: {success: true, jobs: [...]}
+      return (
+        response.data.jobs || response.data.data?.jobs || response.data || []
+      )
     })
   },
 }
@@ -566,7 +570,13 @@ export const applicationsAPI = {
         sortOrder: 'desc',
       },
     })
-    return response.data
+    // Handle backend response structure: {success: true, data: {applications: [...]}}
+    return (
+      response.data.data?.applications ||
+      response.data.applications ||
+      response.data ||
+      []
+    )
   },
 
   createApplicationFromFeed: async (applicationData) => {

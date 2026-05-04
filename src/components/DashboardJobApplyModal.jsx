@@ -19,8 +19,11 @@ const DashboardJobApplyModal = ({
     phone: '',
     jobRole: '',
     experience: 'Entry Level',
-    expectedSalary: '',
-    currency: 'AED',
+    expectedSalary: {
+      min: '',
+      max: '',
+      currency: 'AED',
+    },
     coverLetter: '',
     resume: null,
     captchaToken: '', // For Google reCAPTCHA
@@ -36,8 +39,11 @@ const DashboardJobApplyModal = ({
         phone: prefillData.phone || '',
         jobRole: prefillData.jobRole || '',
         experience: prefillData.experience || 'Entry Level',
-        expectedSalary: prefillData.expectedSalary || '',
-        currency: prefillData.currency || 'AED',
+        expectedSalary: prefillData.expectedSalary || {
+          min: '',
+          max: '',
+          currency: 'AED',
+        },
         coverLetter: prefillData.coverLetter || '',
         resume: prefillData.resume || null,
       }))
@@ -59,12 +65,35 @@ const DashboardJobApplyModal = ({
     return () => clearTimeout(showFallback)
   }, [isOpen])
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB max file size
+
   const handleChange = (e) => {
     const { name, value, type, files } = e.target
     if (type === 'file') {
+      const file = files[0]
+      if (file && file.size > MAX_FILE_SIZE) {
+        alert(
+          `File size (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds the 10MB limit. Please upload a smaller file.`
+        )
+        e.target.value = ''
+        return
+      }
       setFormData((prev) => ({
         ...prev,
-        [name]: files[0],
+        [name]: file,
+      }))
+    } else if (
+      name === 'expectedSalaryMin' ||
+      name === 'expectedSalaryMax' ||
+      name === 'expectedSalaryCurrency'
+    ) {
+      // Handle expectedSalary object fields
+      setFormData((prev) => ({
+        ...prev,
+        expectedSalary: {
+          ...prev.expectedSalary,
+          [name.replace('expectedSalary', '').toLowerCase()]: value,
+        },
       }))
     } else {
       setFormData((prev) => ({
@@ -119,16 +148,20 @@ const DashboardJobApplyModal = ({
       formDataToSend.append('phone', formData.phone)
       formDataToSend.append('jobRole', formData.jobRole)
       formDataToSend.append('experience', formData.experience)
-      formDataToSend.append('expectedSalary', formData.expectedSalary)
-      formDataToSend.append('currency', formData.currency)
+      // Send expectedSalary as object with min/max/currency
+      formDataToSend.append(
+        'expectedSalary',
+        JSON.stringify(formData.expectedSalary)
+      )
       formDataToSend.append('coverLetter', formData.coverLetter)
-      formDataToSend.append('status', 'pending')
-      formDataToSend.append('source', 'website') // Fixed: use valid backend value
-      formDataToSend.append('location', 'Dubai, UAE') // Added back required location field
-
-      // Try alternative field names that backend might expect
-      formDataToSend.append('name', formData.fullName) // Backend might also accept 'name'
-      formDataToSend.append('position', formData.jobRole) // Backend might expect 'position'
+      formDataToSend.append('status', 'submitted')
+      formDataToSend.append('source', 'website')
+      formDataToSend.append('location', 'Dubai, UAE')
+      // Send captcha token for backend recaptcha middleware
+      formDataToSend.append(
+        'recaptchaToken',
+        formData.captchaToken || 'development-bypass'
+      )
 
       // Add resume if it exists and is a valid file
       console.log('🔍 Resume check - formData.resume:', formData.resume)
@@ -157,7 +190,7 @@ const DashboardJobApplyModal = ({
       console.log('🚀 Starting application submission...')
       const startTime = Date.now()
 
-      // Prepare the application data
+      // Prepare the application data (used for guest/fallback JSON submissions)
       const jsonData = {
         fullName: formData.fullName,
         email: formData.email,
@@ -165,11 +198,11 @@ const DashboardJobApplyModal = ({
         jobRole: formData.jobRole,
         experience: formData.experience,
         expectedSalary: formData.expectedSalary,
-        currency: formData.currency,
         coverLetter: formData.coverLetter,
-        status: 'pending',
+        status: 'submitted',
         source: 'website',
         location: 'Dubai, UAE',
+        recaptchaToken: formData.captchaToken || 'development-bypass',
       }
 
       // Check if user is authenticated
@@ -235,8 +268,11 @@ const DashboardJobApplyModal = ({
             phone: '',
             jobRole: '',
             experience: 'Entry Level',
-            expectedSalary: '',
-            currency: 'AED',
+            expectedSalary: {
+              min: '',
+              max: '',
+              currency: 'AED',
+            },
             coverLetter: '',
             resume: null,
           })
@@ -320,8 +356,11 @@ const DashboardJobApplyModal = ({
           phone: '',
           jobRole: '',
           experience: 'Entry Level',
-          expectedSalary: '',
-          currency: 'AED',
+          expectedSalary: {
+            min: '',
+            max: '',
+            currency: 'AED',
+          },
           coverLetter: '',
           resume: null,
         })
@@ -331,6 +370,7 @@ const DashboardJobApplyModal = ({
         }, 1000)
       } catch (apiError) {
         console.error('❌ API service failed, trying fallback:', apiError)
+        console.error('❌ API error response data:', apiError.response?.data)
 
         // Fallback: Try direct fetch with different approach
         try {
@@ -377,8 +417,11 @@ const DashboardJobApplyModal = ({
             phone: '',
             jobRole: '',
             experience: 'Entry Level',
-            expectedSalary: '',
-            currency: 'AED',
+            expectedSalary: {
+              min: '',
+              max: '',
+              currency: 'AED',
+            },
             coverLetter: '',
             resume: null,
           })
@@ -397,7 +440,7 @@ const DashboardJobApplyModal = ({
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data,
+        data: JSON.stringify(error.response?.data, null, 2),
       })
 
       // Show more detailed error message
@@ -534,14 +577,24 @@ const DashboardJobApplyModal = ({
               <label className="block text-sm font-medium text-primary mb-1">
                 Expected Salary
               </label>
-              <input
-                type="number"
-                name="expectedSalary"
-                value={formData.expectedSalary}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
-                placeholder="e.g. 8000"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  name="expectedSalaryMin"
+                  value={formData.expectedSalary.min}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
+                  placeholder="Min"
+                />
+                <input
+                  type="number"
+                  name="expectedSalaryMax"
+                  value={formData.expectedSalary.max}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
+                  placeholder="Max"
+                />
+              </div>
             </div>
 
             <div>
@@ -549,8 +602,8 @@ const DashboardJobApplyModal = ({
                 Currency
               </label>
               <select
-                name="currency"
-                value={formData.currency}
+                name="expectedSalaryCurrency"
+                value={formData.expectedSalary.currency}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
               >

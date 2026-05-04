@@ -460,62 +460,109 @@ const AllJobs = () => {
                         </td>
                       </tr>
                       {expandedJobs.has(job._id) && (
-                        <tr>
-                          <td colSpan="8" className="px-6 py-4 bg-gray-50">
-                            <div className="text-sm text-gray-700 space-y-2">
-                              <div>
-                                <span className="font-semibold">
-                                  Description:
-                                </span>
-                                <p className="mt-1 text-gray-600">
+                        <tr className="border-l-4 border-accent">
+                          <td
+                            colSpan="8"
+                            className="px-6 py-6 bg-gradient-to-r from-gray-50 to-blue-50 border-t border-b"
+                          >
+                            <div className="space-y-4">
+                              {/* Description Section */}
+                              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <h4 className="font-bold text-primary text-lg mb-2 flex items-center">
+                                  <i className="fas fa-file-alt mr-2 text-accent"></i>
+                                  Job Description
+                                </h4>
+                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                                   {job.description ||
                                     'No description available'}
                                 </p>
                               </div>
-                              <div>
-                                <span className="font-semibold">
-                                  Requirements:
-                                </span>
-                                <p className="mt-1 text-gray-600">
+
+                              {/* Requirements Section */}
+                              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <h4 className="font-bold text-primary text-lg mb-2 flex items-center">
+                                  <i className="fas fa-check-circle mr-2 text-secondary"></i>
+                                  Requirements
+                                </h4>
+                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                                   {job.requirements ||
                                     'No requirements specified'}
                                 </p>
                               </div>
-                              <div>
-                                <span className="font-semibold">
-                                  Experience Level:
-                                </span>
-                                <span className="ml-2 text-gray-600">
-                                  {job.experience || 'Not specified'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="font-semibold">
-                                  Department:
-                                </span>
-                                <span className="ml-2 text-gray-600">
-                                  {job.department || 'Not specified'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="font-semibold">
-                                  Application Deadline:
-                                </span>
-                                <span className="ml-2 text-gray-600">
-                                  {job.deadline
-                                    ? new Date(
-                                        job.deadline
-                                      ).toLocaleDateString()
-                                    : 'Not specified'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="font-semibold">
-                                  Posted By:
-                                </span>
-                                <span className="ml-2 text-gray-600">
-                                  {job.postedBy || 'Not specified'}
-                                </span>
+
+                              {/* Job Details Grid */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                  <div className="flex items-center text-accent font-semibold mb-1">
+                                    <i className="fas fa-briefcase mr-2"></i>
+                                    Experience Level
+                                  </div>
+                                  <p className="text-gray-700">
+                                    {job.experience || 'Not specified'}
+                                  </p>
+                                </div>
+
+                                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                  <div className="flex items-center text-accent font-semibold mb-1">
+                                    <i className="fas fa-building mr-2"></i>
+                                    Department
+                                  </div>
+                                  <p className="text-gray-700">
+                                    {job.department || 'Not specified'}
+                                  </p>
+                                </div>
+
+                                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                  <div className="flex items-center text-accent font-semibold mb-1">
+                                    <i className="fas fa-calendar-alt mr-2"></i>
+                                    Application Deadline
+                                  </div>
+                                  <p className="text-gray-700">
+                                    {job.deadline
+                                      ? new Date(
+                                          job.deadline
+                                        ).toLocaleDateString('en-US', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric',
+                                        })
+                                      : 'Not specified'}
+                                  </p>
+                                </div>
+
+                                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                  <div className="flex items-center text-accent font-semibold mb-1">
+                                    <i className="fas fa-user mr-2"></i>
+                                    Posted By
+                                  </div>
+                                  <p className="text-gray-700">
+                                    {job.postedBy || 'Not specified'}
+                                  </p>
+                                </div>
+
+                                {job.salary && (
+                                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                    <div className="flex items-center text-accent font-semibold mb-1">
+                                      <i className="fas fa-money-bill-wave mr-2"></i>
+                                      Salary
+                                    </div>
+                                    <p className="text-gray-700">
+                                      {typeof job.salary === 'object'
+                                        ? `${job.salary.currency || 'AED'} ${job.salary.min || ''}${job.salary.max ? ` - ${job.salary.max}` : ''}`
+                                        : job.salary}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {job.type && (
+                                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                    <div className="flex items-center text-accent font-semibold mb-1">
+                                      <i className="fas fa-clock mr-2"></i>
+                                      Job Type
+                                    </div>
+                                    <p className="text-gray-700">{job.type}</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>

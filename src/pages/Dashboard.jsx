@@ -441,16 +441,19 @@ const Dashboard = () => {
       const { applicationsAPI } = await import('../services/api')
       const response = await applicationsAPI.downloadResume(applicationId)
 
-      // Check if response has data
-      if (!response.data || response.data.size === 0) {
+      // Check if response has valid data
+      if (!response || !response.data || response.data.size === 0) {
         setSuccessMessage('No resume file available for this application')
         setTimeout(() => setSuccessMessage(''), 3000)
         return
       }
 
+      // Safely get headers (may be undefined with mock data fallback)
+      const headers = response.headers || {}
+
       // Create a blob from the response
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream',
+        type: headers['content-type'] || 'application/octet-stream',
       })
 
       // Create a temporary URL and trigger download
@@ -459,7 +462,7 @@ const Dashboard = () => {
       link.href = url
 
       // Get filename from response headers or use default
-      const contentDisposition = response.headers['content-disposition']
+      const contentDisposition = headers['content-disposition']
       let filename = `resume_${applicationId}.pdf`
 
       if (contentDisposition) {
@@ -540,16 +543,19 @@ const Dashboard = () => {
       const { applicationsAPI } = await import('../services/api')
       const response = await applicationsAPI.downloadResume(applicationId)
 
-      // Check if response has data
-      if (!response.data || response.data.size === 0) {
+      // Check if response has valid data
+      if (!response || !response.data || response.data.size === 0) {
         setSuccessMessage('No resume file available for this application')
         setTimeout(() => setSuccessMessage(''), 3000)
         return
       }
 
+      // Safely get headers (may be undefined with mock data fallback)
+      const headers = response.headers || {}
+
       // Create a blob from the response
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream',
+        type: headers['content-type'] || 'application/octet-stream',
       })
 
       // Create a URL and open in new tab
@@ -1296,9 +1302,25 @@ const Dashboard = () => {
                               {application.expectedSalary
                                 ? typeof application.expectedSalary === 'object'
                                   ? application.expectedSalary.amount ||
-                                    application.expectedSalary.min
-                                    ? `${application.expectedSalary.currency || 'AED'} ${application.expectedSalary.amount || application.expectedSalary.min}`
-                                    : `${application.expectedSalary.currency || 'AED'} (Not specified)`
+                                    application.expectedSalary.min ||
+                                    application.expectedSalary.max
+                                    ? `${
+                                        application.expectedSalary.currency ||
+                                        'AED'
+                                      } ${
+                                        application.expectedSalary.amount ||
+                                        application.expectedSalary.min ||
+                                        ''
+                                      }${
+                                        application.expectedSalary.min &&
+                                        application.expectedSalary.max
+                                          ? ` - ${application.expectedSalary.max}`
+                                          : application.expectedSalary.min &&
+                                              !application.expectedSalary.max
+                                            ? '+'
+                                            : ''
+                                      }`
+                                    : 'Not specified'
                                   : `${application.currency || 'AED'} ${application.expectedSalary}`
                                 : 'Not specified'}
                             </p>
@@ -1548,10 +1570,25 @@ const Dashboard = () => {
                     {selectedApplication.expectedSalary
                       ? typeof selectedApplication.expectedSalary === 'object'
                         ? selectedApplication.expectedSalary.amount ||
-                          selectedApplication.expectedSalary.min
-                          ? `${selectedApplication.expectedSalary.currency || 'AED'} ${selectedApplication.expectedSalary.amount || selectedApplication.expectedSalary.min}`
-                          : `${selectedApplication.expectedSalary.currency || 'AED'} (Not specified)`
-                        : `${selectedApplication.currency || 'AED'} ${selectedApplication.expectedSalary}`
+                          selectedApplication.expectedSalary.min ||
+                          selectedApplication.expectedSalary.max
+                          ? `${selectedApplication.expectedSalary.currency || 'AED'} ${
+                              selectedApplication.expectedSalary.amount ||
+                              selectedApplication.expectedSalary.min ||
+                              ''
+                            }${
+                              selectedApplication.expectedSalary.min &&
+                              selectedApplication.expectedSalary.max
+                                ? ` - ${selectedApplication.expectedSalary.max}`
+                                : selectedApplication.expectedSalary.min &&
+                                    !selectedApplication.expectedSalary.max
+                                  ? '+'
+                                  : ''
+                            }`
+                          : 'Not specified'
+                        : `${selectedApplication.currency || 'AED'} ${
+                            selectedApplication.expectedSalary
+                          }`
                       : 'Not specified'}
                   </p>
                 </div>
