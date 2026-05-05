@@ -161,7 +161,10 @@ const Register = () => {
       }
 
       console.log('Registration data to send:', registrationData)
-      console.log('API endpoint: http://localhost:4000/api/auth/register')
+      console.log(
+        'API endpoint:',
+        `${import.meta.env.VITE_API_URL || 'https://maplorix.ae/api'}/auth/register`
+      )
 
       const response = await authAPI.register(registrationData)
 

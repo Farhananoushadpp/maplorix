@@ -216,7 +216,7 @@ const DashboardJobApplyModal = ({
         // Try direct submission without auth headers
         try {
           const guestResponse = await fetch(
-            'http://localhost:4000/api/applications',
+            `${import.meta.env.VITE_API_URL || 'https://maplorix.ae/api'}/applications`,
             {
               method: 'POST',
               headers: {
@@ -375,7 +375,7 @@ const DashboardJobApplyModal = ({
         // Fallback: Try direct fetch with different approach
         try {
           const fallbackResponse = await fetch(
-            'http://localhost:4000/api/applications',
+            `${import.meta.env.VITE_API_URL || 'https://maplorix.ae/api'}/applications`,
             {
               method: 'POST',
               headers: {

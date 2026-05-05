@@ -23,19 +23,15 @@ const debounceRequest = (key, fn) => {
 // Try to connect to available backend ports (prioritize 4000 since backend is running there)
 const API_PORTS = [4000, 4001, 4002, 4003]
 
-// Get API URL - Use proxy to connect to backend on port 4000
+// Get API URL - Use environment variables from .env.production
 const getApiBaseUrl = () => {
+  // Always use the environment variable if available
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL
   }
 
-  // Use proxy in development to connect to backend on port 4000
-  if (import.meta.env.DEV) {
-    return '/api'
-  }
-
-  // Use direct HTTP backend in production
-  return 'http://localhost:4000/api'
+  // Default to production URL
+  return 'https://maplorix.ae/api'
 }
 
 // Create axios instance with default configuration
@@ -637,9 +633,9 @@ export const contactAPI = {
 
 export const healthAPI = {
   checkHealth: async () => {
-    const response = await axios.get(
-      `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000'}/health`
-    )
+    const baseUrl =
+      import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://maplorix.ae'
+    const response = await axios.get(`${baseUrl}/health`)
 
     return response.data
   },
