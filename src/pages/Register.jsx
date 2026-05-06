@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
 import { ROUTES } from '../constants'
-import ReCAPTCHA from 'react-google-recaptcha'
 
 const Register = () => {
   // Google reCAPTCHA site key from environment variable
@@ -27,6 +26,8 @@ const Register = () => {
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [recaptchaWidgetId, setRecaptchaWidgetId] = useState(null)
+  const recaptchaContainerRef = useRef(null)
 
   const navigate = useNavigate()
 
@@ -45,6 +46,81 @@ const Register = () => {
       setPasswordStrength(0)
     }
   }, [formData.password])
+
+  // Render reCAPTCHA explicitly when component mounts
+  useEffect(() => {
+    const renderRecaptcha = () => {
+      if (
+        recaptchaContainerRef.current &&
+        window.grecaptcha &&
+        recaptchaWidgetId === null
+      ) {
+        try {
+          const widgetId = window.grecaptcha.render(
+            recaptchaContainerRef.current,
+            {
+              sitekey: RECAPTCHA_SITE_KEY,
+              callback: (token) => {
+                setFormData((prev) => ({ ...prev, captchaToken: token }))
+                if (errors.captcha) {
+                  setErrors((prev) => ({ ...prev, captcha: '' }))
+                }
+              },
+              'expired-callback': () => {
+                console.warn('reCAPTCHA expired')
+                setFormData((prev) => ({ ...prev, captchaToken: '' }))
+                setErrors((prev) => ({
+                  ...prev,
+                  captcha: 'CAPTCHA expired. Please verify again.',
+                }))
+              },
+              'error-callback': () => {
+                console.warn('reCAPTCHA error occurred')
+                setErrors((prev) => ({
+                  ...prev,
+                  captcha: 'CAPTCHA verification failed. Please try again.',
+                }))
+              },
+            }
+          )
+          setRecaptchaWidgetId(widgetId)
+          console.log('✅ reCAPTCHA rendered with widgetId:', widgetId)
+        } catch (err) {
+          console.error('Error rendering reCAPTCHA:', err)
+        }
+      }
+    }
+
+    // Use the global helper to wait for reCAPTCHA to be ready
+    if (window.whenRecaptchaReady) {
+      window.whenRecaptchaReady(renderRecaptcha)
+    } else if (window.grecaptcha) {
+      renderRecaptcha()
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (recaptchaWidgetId !== null && window.grecaptcha) {
+        try {
+          window.grecaptcha.reset(recaptchaWidgetId)
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+      }
+    }
+  }, [RECAPTCHA_SITE_KEY, errors.captcha, recaptchaWidgetId])
+
+  // Reset reCAPTCHA helper
+  const resetRecaptcha = useCallback(() => {
+    if (recaptchaWidgetId !== null && window.grecaptcha) {
+      try {
+        window.grecaptcha.reset(recaptchaWidgetId)
+        setFormData((prev) => ({ ...prev, captchaToken: '' }))
+      } catch (err) {
+        console.error('Error resetting reCAPTCHA:', err)
+      }
+    }
+  }, [recaptchaWidgetId])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -72,41 +148,6 @@ const Register = () => {
     if (passwordStrength <= 2) return 'Weak'
     if (passwordStrength <= 4) return 'Medium'
     return 'Strong'
-  }
-
-  // reCAPTCHA handlers
-  const handleCaptchaChange = (token) => {
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: token,
-    }))
-    // Clear CAPTCHA error when verified
-    if (errors.captcha) {
-      setErrors((prev) => ({
-        ...prev,
-        captcha: '',
-      }))
-    }
-  }
-
-  const handleCaptchaError = () => {
-    console.warn('reCAPTCHA error occurred')
-    setErrors((prev) => ({
-      ...prev,
-      captcha: 'CAPTCHA verification failed. Please try again.',
-    }))
-  }
-
-  const handleCaptchaExpired = () => {
-    console.warn('reCAPTCHA expired')
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: '',
-    }))
-    setErrors((prev) => ({
-      ...prev,
-      captcha: 'CAPTCHA expired. Please verify again.',
-    }))
   }
 
   const validateForm = () => {
@@ -245,10 +286,8 @@ const Register = () => {
           captchaToken: '',
         })
 
-        // Reset reCAPTCHA
-        if (window.grecaptcha) {
-          window.grecaptcha.reset()
-        }
+        // Reset reCAPTCHA with widgetId
+        resetRecaptcha()
 
         // Redirect based on user role after a short delay to show success message
         setTimeout(() => {
@@ -278,10 +317,8 @@ const Register = () => {
           captchaToken: '',
         })
 
-        // Reset reCAPTCHA
-        if (window.grecaptcha) {
-          window.grecaptcha.reset()
-        }
+        // Reset reCAPTCHA with widgetId
+        resetRecaptcha()
 
         // Redirect to login after 2 seconds
         setTimeout(() => {
@@ -313,14 +350,8 @@ const Register = () => {
 
       setErrors({ submit: errorMessage })
 
-      // Reset reCAPTCHA on error
-      if (window.grecaptcha) {
-        window.grecaptcha.reset()
-      }
-      setFormData((prev) => ({
-        ...prev,
-        captchaToken: '',
-      }))
+      // Reset reCAPTCHA on error with widgetId
+      resetRecaptcha()
     } finally {
       setIsLoading(false)
     }
@@ -645,18 +676,13 @@ const Register = () => {
               </div>
             </div>
 
-            {/* reCAPTCHA Verification */}
+            {/* reCAPTCHA Verification - Explicit Render */}
             <div>
               <div className="flex justify-center">
-                <ReCAPTCHA
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={handleCaptchaChange}
-                  onErrored={handleCaptchaError}
-                  onExpired={handleCaptchaExpired}
-                  asyncScriptOnLoad={() => {
-                    console.log('✅ reCAPTCHA script loaded successfully')
-                  }}
-                />
+                <div
+                  ref={recaptchaContainerRef}
+                  id="register-recaptcha-container"
+                ></div>
               </div>
               {errors.captcha && (
                 <p className="mt-2 text-sm text-error text-center flex items-center justify-center">

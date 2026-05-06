@@ -223,8 +223,36 @@
       crossorigin="anonymous"
     />
 
-    <!-- Google reCAPTCHA v2 -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Google reCAPTCHA v2 - Explicit render mode -->
+    <script
+      src="https://www.google.com/recaptcha/api.js?render=explicit&onload=onRecaptchaLoad"
+      async
+      defer
+    ></script>
+    <script>
+      // Global reCAPTCHA ready flag and callback queue
+      window.recaptchaReady = false
+      window.recaptchaCallbacks = []
+
+      // Called when reCAPTCHA script loads
+      window.onRecaptchaLoad = function () {
+        window.recaptchaReady = true
+        // Execute any queued callbacks
+        window.recaptchaCallbacks.forEach(function (callback) {
+          callback()
+        })
+        window.recaptchaCallbacks = []
+      }
+
+      // Helper to run code when reCAPTCHA is ready
+      window.whenRecaptchaReady = function (callback) {
+        if (window.recaptchaReady && window.grecaptcha) {
+          callback()
+        } else {
+          window.recaptchaCallbacks.push(callback)
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
