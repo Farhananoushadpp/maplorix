@@ -7,17 +7,10 @@ const ContactPage = () => {
     email: '',
     subject: '',
     message: '',
-    recaptchaToken: '',
   })
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
-
-  // reCAPTCHA configuration
-  const recaptchaRef = useRef()
-  const RECAPTCHA_SITE_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Test key for development
 
   const contactInfo = [
     {
@@ -66,13 +59,8 @@ const ContactPage = () => {
       newErrors.message = 'Please enter a message (at least 10 characters)'
     }
 
-    // reCAPTCHA validation
-    const recaptchaToken = recaptchaRef.current?.getValue()
-    if (!recaptchaToken) {
-      newErrors.recaptcha = 'Please complete the reCAPTCHA challenge'
-    }
-
-    return newErrors
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -91,27 +79,17 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const newErrors = validateForm()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
+    if (!validateForm()) {
       return
     }
-
-    // Get reCAPTCHA token
-    const recaptchaToken = recaptchaRef.current?.getValue()
-    if (!recaptchaToken) {
-      setErrors({ recaptcha: 'Please complete the reCAPTCHA challenge' })
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmitMessage('')
 
     try {
-      // Add reCAPTCHA token to form data
+      setIsSubmitting(true)
+      setSubmitMessage('')
+
+      // Add form data to submission
       const submissionData = {
         ...formData,
-        recaptchaToken,
       }
 
       // Log the email data for debugging
@@ -124,20 +102,15 @@ const ContactPage = () => {
         '📧 Your email client has been opened with your message pre-filled. Please send the email to hr@maplorix.ae to complete your submission.'
       )
 
-      // Reset form and reCAPTCHA after successful opening
+      // Reset form after successful opening
       setTimeout(() => {
         setFormData({
           name: '',
           email: '',
           subject: '',
           message: '',
-          recaptchaToken: '',
         })
         setErrors({})
-        // Reset reCAPTCHA widget
-        if (recaptchaRef.current) {
-          recaptchaRef.current.reset()
-        }
       }, 2000)
 
       setTimeout(() => {
@@ -146,10 +119,6 @@ const ContactPage = () => {
     } catch (error) {
       console.error('Contact form error:', error)
       setSubmitMessage(`❌ ${error.message}`)
-      // Reset reCAPTCHA on error
-      if (recaptchaRef.current) {
-        recaptchaRef.current.reset()
-      }
     } finally {
       setIsSubmitting(false)
     }
@@ -394,22 +363,6 @@ const ContactPage = () => {
                   </p>
                 )}
               </div>
-
-              {/* reCAPTCHA Widget */}
-              <div className="flex justify-center">
-                <div
-                  className="g-recaptcha"
-                  data-sitekey={RECAPTCHA_SITE_KEY}
-                  ref={recaptchaRef}
-                ></div>
-              </div>
-
-              {errors.recaptcha && (
-                <p className="text-red-500 text-sm text-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.recaptcha}
-                </p>
-              )}
 
               <button
                 type="submit"

@@ -7,12 +7,6 @@ const JobPost = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // reCAPTCHA configuration
-  const recaptchaRef = useRef()
-  const RECAPTCHA_SITE_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Test key for development
-
   const [formData, setFormData] = useState({
     // Job Details (matching backend API field names)
     title: '',
@@ -229,12 +223,6 @@ const JobPost = () => {
       newErrors.currency = 'Currency must be AED'
     }
 
-    // reCAPTCHA validation
-    const recaptchaToken = recaptchaRef.current?.getValue()
-    if (!recaptchaToken) {
-      newErrors.recaptcha = 'Please complete the reCAPTCHA challenge'
-    }
-
     return newErrors
   }
 
@@ -274,13 +262,6 @@ const JobPost = () => {
       return
     }
 
-    // Get reCAPTCHA token
-    const recaptchaToken = recaptchaRef.current?.getValue()
-    if (!recaptchaToken) {
-      setErrors({ recaptcha: 'Please complete the reCAPTCHA challenge' })
-      return
-    }
-
     setIsSubmitting(true)
     setSubmitMessage('')
     setUploadProgress(0)
@@ -297,9 +278,6 @@ const JobPost = () => {
         company: formData.company || 'Maplorix',
         type: formData.type || 'Full-time',
         description: formData.description || '',
-
-        // Add reCAPTCHA token
-        recaptchaToken,
       }
 
       console.log('Submitting job data:', jobData)
@@ -1166,22 +1144,6 @@ const JobPost = () => {
                   </div>
                 </div>
               </div>
-
-              {/* reCAPTCHA Widget */}
-              <div className="flex justify-center pt-4">
-                <div
-                  className="g-recaptcha"
-                  data-sitekey={RECAPTCHA_SITE_KEY}
-                  ref={recaptchaRef}
-                ></div>
-              </div>
-
-              {errors.recaptcha && (
-                <p className="text-red-500 text-sm text-center mt-2">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.recaptcha}
-                </p>
-              )}
 
               {/* Submit Button */}
               <div className="pt-6">
