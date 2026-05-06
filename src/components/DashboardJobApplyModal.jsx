@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import ReCAPTCHA from 'react-google-recaptcha'
 import { applicationsAPI } from '../services/api'
 
 const DashboardJobApplyModal = ({
@@ -8,11 +7,6 @@ const DashboardJobApplyModal = ({
   onSuccess,
   prefillData = {},
 }) => {
-  // Google reCAPTCHA site key from environment variable
-  const RECAPTCHA_SITE_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Google's official test key for development
-
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -26,7 +20,6 @@ const DashboardJobApplyModal = ({
     },
     coverLetter: '',
     resume: null,
-    captchaToken: '', // For Google reCAPTCHA
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -49,21 +42,6 @@ const DashboardJobApplyModal = ({
       }))
     }
   }, [isOpen, prefillData])
-
-  // Show fallback checkbox immediately to avoid reCAPTCHA issues
-  useEffect(() => {
-    if (!isOpen) return
-
-    const showFallback = setTimeout(() => {
-      const fallbackCaptcha = document.getElementById('fallback-captcha')
-      if (fallbackCaptcha) {
-        fallbackCaptcha.classList.remove('hidden')
-        console.log('Showing fallback verification checkbox')
-      }
-    }, 1000) // Show fallback after 1 second
-
-    return () => clearTimeout(showFallback)
-  }, [isOpen])
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB max file size
 
@@ -103,40 +81,8 @@ const DashboardJobApplyModal = ({
     }
   }
 
-  // reCAPTCHA handlers
-  const handleCaptchaChange = (token) => {
-    console.log('reCAPTCHA token received:', token ? 'success' : 'failed')
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: token,
-    }))
-  }
-
-  const handleCaptchaError = () => {
-    console.warn('reCAPTCHA error occurred - using fallback verification')
-    // Set a fallback token for development
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: 'fallback-verification-' + Date.now(),
-    }))
-  }
-
-  const handleCaptchaExpired = () => {
-    console.warn('reCAPTCHA expired')
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: '',
-    }))
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
-
-    // Validate reCAPTCHA
-    if (!formData.captchaToken) {
-      alert('Please complete the CAPTCHA verification')
-      return
-    }
 
     setIsSubmitting(true)
 
@@ -157,11 +103,6 @@ const DashboardJobApplyModal = ({
       formDataToSend.append('status', 'submitted')
       formDataToSend.append('source', 'website')
       formDataToSend.append('location', 'Dubai, UAE')
-      // Send captcha token for backend recaptcha middleware
-      formDataToSend.append(
-        'recaptchaToken',
-        formData.captchaToken || 'development-bypass'
-      )
 
       // Add resume if it exists and is a valid file
       console.log('🔍 Resume check - formData.resume:', formData.resume)
@@ -202,7 +143,6 @@ const DashboardJobApplyModal = ({
         status: 'submitted',
         source: 'website',
         location: 'Dubai, UAE',
-        recaptchaToken: formData.captchaToken || 'development-bypass',
       }
 
       // Check if user is authenticated
@@ -644,53 +584,6 @@ const DashboardJobApplyModal = ({
             <p className="text-xs text-gray-500 mt-2">
               Accepted formats: PDF, DOC, DOCX (Max 5MB)
             </p>
-          </div>
-
-          {/* Security Verification */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <label className="block text-sm font-medium text-primary mb-2 flex items-center">
-              <i className="fas fa-shield-alt mr-2 text-secondary"></i>
-              Security Verification *
-            </label>
-            <div className="flex flex-col items-center space-y-3">
-              {/* Simple verification checkbox */}
-              <div
-                id="fallback-captcha"
-                className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
-              >
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-secondary to-accent rounded-full">
-                    <i className="fas fa-shield-alt text-white text-sm"></i>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={!!formData.captchaToken}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        captchaToken: e.target.checked
-                          ? 'verified-' + Date.now()
-                          : '',
-                      }))
-                    }}
-                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                  />
-                  <span className="text-sm text-gray-700 font-medium">
-                    I confirm I am not a robot
-                  </span>
-                </label>
-              </div>
-              <p className="text-xs text-gray-500 text-center">
-                Please complete the verification to confirm you are human.
-              </p>
-
-              {/* Status */}
-              <div className="text-xs text-blue-500 text-center">
-                {formData.captchaToken
-                  ? '✅ Verified'
-                  : '⏳ Pending verification'}
-              </div>
-            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

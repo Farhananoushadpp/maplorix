@@ -1,35 +1,11 @@
 // Job Application Page Component - Handles applications from Home Banner and Feed Apply Now
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import ReCAPTCHA from 'react-google-recaptcha'
 import { applicationsAPI } from '../services/api'
 
 const ApplyJob = () => {
   const navigate = useNavigate()
   const location = useLocation()
-
-  // Google reCAPTCHA site key from environment variable
-  const RECAPTCHA_SITE_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Test key for development
-
-  // Check if reCAPTCHA loads, otherwise show fallback
-  useEffect(() => {
-    const checkRecaptcha = setTimeout(() => {
-      const recaptchaContainer = document.getElementById('recaptcha-container')
-      const fallbackCaptcha = document.getElementById('fallback-captcha')
-
-      // If reCAPTCHA container is empty after 3 seconds, show fallback
-      if (recaptchaContainer && !recaptchaContainer.querySelector('iframe')) {
-        console.warn('reCAPTCHA failed to load, showing fallback checkbox')
-        if (fallbackCaptcha) {
-          fallbackCaptcha.classList.remove('hidden')
-        }
-      }
-    }, 3000)
-
-    return () => clearTimeout(checkRecaptcha)
-  }, [])
 
   // Check for job context from navigation state (Feed Apply Now)
   const jobContext = location.state || {}
@@ -62,7 +38,6 @@ const ApplyJob = () => {
     linkedinProfile: '',
     portfolio: '',
     source: jobContext.source || 'website', // Track source: 'adminFeed' or 'website'
-    captchaToken: '', // For Google reCAPTCHA
 
     // Additional context from Feed
     jobCompany: jobContext.company || '',
@@ -156,47 +131,8 @@ const ApplyJob = () => {
       newErrors.experience = 'Experience level is required'
     }
 
-    // CAPTCHA validation - required in all environments
-    if (!formData.captchaToken) {
-      newErrors.captcha = 'Please complete the CAPTCHA verification'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }
-
-  const handleCaptchaChange = (token) => {
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: token,
-    }))
-    // Clear CAPTCHA error when verified
-    if (errors.captcha) {
-      setErrors((prev) => ({
-        ...prev,
-        captcha: '',
-      }))
-    }
-  }
-
-  const handleCaptchaError = () => {
-    console.warn('reCAPTCHA error occurred')
-    setErrors((prev) => ({
-      ...prev,
-      captcha: 'CAPTCHA verification failed. Please try again.',
-    }))
-  }
-
-  const handleCaptchaExpired = () => {
-    console.warn('reCAPTCHA expired')
-    setFormData((prev) => ({
-      ...prev,
-      captchaToken: '',
-    }))
-    setErrors((prev) => ({
-      ...prev,
-      captcha: 'CAPTCHA expired. Please verify again.',
-    }))
   }
 
   const handleSubmit = async (e) => {
@@ -246,10 +182,6 @@ const ApplyJob = () => {
         }
 
         submitData.append('noticePeriod', formData.noticePeriod)
-        submitData.append(
-          'captchaToken',
-          formData.captchaToken || 'development-bypass'
-        )
         submitData.append('resume', formData.resume)
 
         console.log('Submitting application with resume file')
@@ -269,7 +201,6 @@ const ApplyJob = () => {
           expectedSalary: formData.expectedSalary,
           noticePeriod: formData.noticePeriod,
           coverLetter: formData.coverLetter, // Added cover letter
-          captchaToken: formData.captchaToken || 'development-bypass',
         }
 
         console.log(
@@ -354,16 +285,11 @@ const ApplyJob = () => {
           linkedinProfile: '',
           portfolio: '',
           source: 'website',
-          captchaToken: '',
 
           // Additional context fields
           jobCompany: '',
           jobDescription: '',
         })
-        // Reset reCAPTCHA
-        if (window.grecaptcha) {
-          window.grecaptcha.reset()
-        }
         setSubmitSuccess(false)
         navigate('/')
       }, 3000)
@@ -829,74 +755,6 @@ const ApplyJob = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* CAPTCHA Verification */}
-            <div className="py-6">
-              <div className="flex items-center mb-4">
-                <div className="h-8 w-1 bg-secondary rounded-full mr-3"></div>
-                <label className="text-sm font-semibold text-primary">
-                  Security Verification *
-                </label>
-              </div>
-              <div className="flex flex-col items-center bg-gradient-to-r from-primary/5 to-secondary/10 p-6 rounded-xl border border-primary/20">
-                {/* Debug info */}
-                <div className="text-xs text-gray-500 mb-2">
-                  Site Key:{' '}
-                  {RECAPTCHA_SITE_KEY
-                    ? RECAPTCHA_SITE_KEY.substring(0, 10) + '...'
-                    : 'Not found'}
-                </div>
-
-                {/* Google reCAPTCHA */}
-                <div id="recaptcha-container">
-                  <ReCAPTCHA
-                    sitekey={RECAPTCHA_SITE_KEY}
-                    onChange={handleCaptchaChange}
-                    onErrored={handleCaptchaError}
-                    onExpired={handleCaptchaExpired}
-                    asyncScriptOnLoad={() => {
-                      console.log('✅ reCAPTCHA script loaded successfully')
-                    }}
-                  />
-                </div>
-
-                {/* Fallback checkbox if reCAPTCHA fails to load */}
-                <div id="fallback-captcha" className="hidden">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.captchaToken}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          captchaToken: e.target.checked
-                            ? 'fallback-verified-' + Date.now()
-                            : '',
-                        }))
-                        if (errors.captcha) {
-                          setErrors((prev) => ({ ...prev, captcha: '' }))
-                        }
-                      }}
-                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <span className="text-sm text-gray-700">
-                      I confirm I am not a robot
-                    </span>
-                  </label>
-                </div>
-
-                {errors.captcha && (
-                  <p className="mt-2 text-sm text-error text-center flex items-center">
-                    <i className="fas fa-exclamation-circle mr-1"></i>
-                    {errors.captcha}
-                  </p>
-                )}
-                <p className="mt-3 text-sm text-text-light text-center flex items-center">
-                  <i className="fas fa-shield-alt mr-1"></i>
-                  Please complete the verification to confirm you are human.
-                </p>
               </div>
             </div>
 
