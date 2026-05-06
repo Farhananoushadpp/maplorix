@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
 import { ROUTES } from '../constants'
+import ReCAPTCHA from 'react-google-recaptcha'
 
 const Register = () => {
+  // Google reCAPTCHA site key from environment variable
+  const RECAPTCHA_SITE_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Google's official test key for development
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -13,6 +19,7 @@ const Register = () => {
     confirmPassword: '',
     agreeToTerms: false,
     role: 'user',
+    captchaToken: '', // For Google reCAPTCHA
   })
   const [errors, setErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState('')
@@ -65,6 +72,41 @@ const Register = () => {
     if (passwordStrength <= 2) return 'Weak'
     if (passwordStrength <= 4) return 'Medium'
     return 'Strong'
+  }
+
+  // reCAPTCHA handlers
+  const handleCaptchaChange = (token) => {
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: token,
+    }))
+    // Clear CAPTCHA error when verified
+    if (errors.captcha) {
+      setErrors((prev) => ({
+        ...prev,
+        captcha: '',
+      }))
+    }
+  }
+
+  const handleCaptchaError = () => {
+    console.warn('reCAPTCHA error occurred')
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA verification failed. Please try again.',
+    }))
+  }
+
+  const handleCaptchaExpired = () => {
+    console.warn('reCAPTCHA expired')
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: '',
+    }))
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA expired. Please verify again.',
+    }))
   }
 
   const validateForm = () => {
@@ -127,6 +169,11 @@ const Register = () => {
     // Terms validation
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions'
+    }
+
+    // reCAPTCHA validation
+    if (!formData.captchaToken) {
+      newErrors.captcha = 'Please complete the CAPTCHA verification.'
     }
 
     setErrors(newErrors)
@@ -195,7 +242,13 @@ const Register = () => {
           confirmPassword: '',
           agreeToTerms: false,
           role: 'user',
+          captchaToken: '',
         })
+
+        // Reset reCAPTCHA
+        if (window.grecaptcha) {
+          window.grecaptcha.reset()
+        }
 
         // Redirect based on user role after a short delay to show success message
         setTimeout(() => {
@@ -222,7 +275,13 @@ const Register = () => {
           confirmPassword: '',
           agreeToTerms: false,
           role: 'user',
+          captchaToken: '',
         })
+
+        // Reset reCAPTCHA
+        if (window.grecaptcha) {
+          window.grecaptcha.reset()
+        }
 
         // Redirect to login after 2 seconds
         setTimeout(() => {
@@ -253,6 +312,15 @@ const Register = () => {
       }
 
       setErrors({ submit: errorMessage })
+
+      // Reset reCAPTCHA on error
+      if (window.grecaptcha) {
+        window.grecaptcha.reset()
+      }
+      setFormData((prev) => ({
+        ...prev,
+        captchaToken: '',
+      }))
     } finally {
       setIsLoading(false)
     }
@@ -575,6 +643,27 @@ const Register = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* reCAPTCHA Verification */}
+            <div>
+              <div className="flex justify-center">
+                <ReCAPTCHA
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={handleCaptchaChange}
+                  onErrored={handleCaptchaError}
+                  onExpired={handleCaptchaExpired}
+                  asyncScriptOnLoad={() => {
+                    console.log('✅ reCAPTCHA script loaded successfully')
+                  }}
+                />
+              </div>
+              {errors.captcha && (
+                <p className="mt-2 text-sm text-error text-center flex items-center justify-center">
+                  <i className="fas fa-exclamation-circle mr-1"></i>
+                  {errors.captcha}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

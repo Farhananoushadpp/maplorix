@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { jobsAPI } from '../services/api'
+import ReCAPTCHA from 'react-google-recaptcha'
 import './PostJobForm.css'
 
 const PostJobForm = () => {
+  // Google reCAPTCHA site key from environment variable
+  const RECAPTCHA_SITE_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Google's official test key for development
+
   const [formData, setFormData] = useState({
     title: '',
     company: '',
@@ -18,6 +24,7 @@ const PostJobForm = () => {
     featured: false,
     active: true,
     applicationDeadline: '',
+    captchaToken: '', // For Google reCAPTCHA
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -40,6 +47,32 @@ const PostJobForm = () => {
     })
   }
 
+  // reCAPTCHA handlers
+  const handleCaptchaChange = (token) => {
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: token,
+    }))
+    // Clear CAPTCHA error when verified
+    if (error.includes('CAPTCHA')) {
+      setError('')
+    }
+  }
+
+  const handleCaptchaError = () => {
+    console.warn('reCAPTCHA error occurred')
+    setError('CAPTCHA verification failed. Please try again.')
+  }
+
+  const handleCaptchaExpired = () => {
+    console.warn('reCAPTCHA expired')
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: '',
+    }))
+    setError('CAPTCHA expired. Please verify again.')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -55,6 +88,13 @@ const PostJobForm = () => {
 
     if (user.role !== 'admin') {
       setError('Only admin users can post jobs.')
+      setLoading(false)
+      return
+    }
+
+    // reCAPTCHA validation
+    if (!formData.captchaToken) {
+      setError('Please complete the CAPTCHA verification.')
       setLoading(false)
       return
     }
@@ -82,6 +122,7 @@ const PostJobForm = () => {
           name: user?.name || 'Admin',
           email: user?.email || '',
         },
+        captchaToken: formData.captchaToken, // Include reCAPTCHA token
       }
 
       console.log('Submitting job data:', jobData)
@@ -105,7 +146,13 @@ const PostJobForm = () => {
         featured: false,
         active: true,
         applicationDeadline: '',
+        captchaToken: '',
       })
+
+      // Reset reCAPTCHA
+      if (window.grecaptcha) {
+        window.grecaptcha.reset()
+      }
 
       // Navigate to admin posts after delay
       setTimeout(() => {
@@ -295,6 +342,28 @@ const PostJobForm = () => {
               <span>Featured Job</span>
             </label>
           </div>
+        </div>
+
+        {/* reCAPTCHA Verification */}
+        <div className="form-group">
+          <label>Security Verification *</label>
+          <div className="recaptcha-container">
+            <ReCAPTCHA
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={handleCaptchaChange}
+              onErrored={handleCaptchaError}
+              onExpired={handleCaptchaExpired}
+              asyncScriptOnLoad={() => {
+                console.log('✅ reCAPTCHA script loaded successfully')
+              }}
+            />
+          </div>
+          {error && error.includes('CAPTCHA') && (
+            <div className="error-message captcha-error">
+              <i className="fas fa-exclamation-circle"></i>
+              {error}
+            </div>
+          )}
         </div>
 
         <div className="form-actions">

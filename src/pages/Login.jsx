@@ -5,13 +5,21 @@ import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 import { ROUTES } from '../constants'
+import ReCAPTCHA from 'react-google-recaptcha'
 
 const Login = () => {
   const location = useLocation()
+
+  // Google reCAPTCHA site key from environment variable
+  const RECAPTCHA_SITE_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Google's official test key for development
+
   const [formData, setFormData] = useState({
     email: '',
 
     password: '',
+    captchaToken: '', // For Google reCAPTCHA
   })
 
   const [errors, setErrors] = useState({})
@@ -46,6 +54,41 @@ const Login = () => {
     }
   }
 
+  // reCAPTCHA handlers
+  const handleCaptchaChange = (token) => {
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: token,
+    }))
+    // Clear CAPTCHA error when verified
+    if (errors.captcha) {
+      setErrors((prev) => ({
+        ...prev,
+        captcha: '',
+      }))
+    }
+  }
+
+  const handleCaptchaError = () => {
+    console.warn('reCAPTCHA error occurred')
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA verification failed. Please try again.',
+    }))
+  }
+
+  const handleCaptchaExpired = () => {
+    console.warn('reCAPTCHA expired')
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: '',
+    }))
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'CAPTCHA expired. Please verify again.',
+    }))
+  }
+
   const validateForm = () => {
     const newErrors = {}
 
@@ -59,6 +102,11 @@ const Login = () => {
       newErrors.password = 'Password is required'
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters'
+    }
+
+    // reCAPTCHA validation
+    if (!formData.captchaToken) {
+      newErrors.captcha = 'Please complete the CAPTCHA verification.'
     }
 
     setErrors(newErrors)
@@ -76,6 +124,18 @@ const Login = () => {
     try {
       const loginResponse = await login(formData.email, formData.password)
 
+      // Reset form and reCAPTCHA after successful login
+      setFormData({
+        email: '',
+        password: '',
+        captchaToken: '',
+      })
+
+      // Reset reCAPTCHA
+      if (window.grecaptcha) {
+        window.grecaptcha.reset()
+      }
+
       // Check if user is admin and redirect accordingly
       if (loginResponse.user?.role === 'admin') {
         navigate(ROUTES.DASHBOARD)
@@ -85,6 +145,14 @@ const Login = () => {
         navigate(returnURL)
       }
     } catch (error) {
+      // Reset reCAPTCHA on error
+      if (window.grecaptcha) {
+        window.grecaptcha.reset()
+      }
+      setFormData((prev) => ({
+        ...prev,
+        captchaToken: '',
+      }))
       // Error is handled by the auth context
     }
   }
@@ -214,6 +282,27 @@ const Login = () => {
                   Forgot your password?
                 </a>
               </div>
+            </div>
+
+            {/* reCAPTCHA Verification */}
+            <div>
+              <div className="flex justify-center">
+                <ReCAPTCHA
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={handleCaptchaChange}
+                  onErrored={handleCaptchaError}
+                  onExpired={handleCaptchaExpired}
+                  asyncScriptOnLoad={() => {
+                    console.log('✅ reCAPTCHA script loaded successfully')
+                  }}
+                />
+              </div>
+              {errors.captcha && (
+                <p className="mt-2 text-sm text-error text-center flex items-center justify-center">
+                  <i className="fas fa-exclamation-circle mr-1"></i>
+                  {errors.captcha}
+                </p>
+              )}
             </div>
 
             <div>
