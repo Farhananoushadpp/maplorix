@@ -235,113 +235,15 @@ const calculateMockStats = () => {
   }
 }
 
-// Add response interceptor to handle backend not available
+// Response interceptor to handle errors (never fake success on auth errors)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle network errors and 404s (backend not available)
-    if (
-      error.code === 'ECONNREFUSED' ||
-      error.code === 'ERR_NETWORK' ||
-      error.response?.status === 404
-    ) {
-      console.warn('â ï¸ Backend not available, using mock data')
-
-      // Handle authentication requests with mock responses
-      if (error.config?.url?.includes('/auth/login')) {
-        console.log('ð Using mock login response')
-        return Promise.resolve({
-          data: {
-            success: true,
-            data: {
-              token: 'mock-jwt-token-' + Date.now(),
-              user: {
-                _id: 'mock-user-id',
-                email: error.config?.data
-                  ? JSON.parse(error.config.data).email
-                  : 'mock@example.com',
-                fullName: 'Mock User',
-                role: 'user',
-              },
-            },
-          },
-        })
-      }
-
-      if (error.config?.url?.includes('/auth/register')) {
-        console.log('ð Using mock register response')
-        return Promise.resolve({
-          data: {
-            success: true,
-            data: {
-              token: 'mock-jwt-token-' + Date.now(),
-              user: {
-                _id: 'mock-user-id',
-                email: error.config?.data
-                  ? JSON.parse(error.config.data).email
-                  : 'mock@example.com',
-                fullName: 'Mock User',
-                role: 'user',
-              },
-            },
-          },
-        })
-      }
-
-      if (error.config?.url?.includes('/auth/me')) {
-        console.log('ð Using mock profile response')
-        return Promise.resolve({
-          data: {
-            success: true,
-            user: {
-              _id: 'mock-user-id',
-              email: 'mock@example.com',
-              fullName: 'Mock User',
-              role: 'user',
-            },
-          },
-        })
-      }
-
-      // Handle application submissions
-      if (
-        error.config?.url?.includes('/applications') &&
-        error.config?.method === 'post'
-      ) {
-        console.log('ð Using mock application submission response')
-        const appData =
-          error.config?.data instanceof FormData
-            ? Object.fromEntries(error.config.data.entries())
-            : JSON.parse(error.config?.data || '{}')
-
-        return Promise.resolve({
-          data: {
-            success: true,
-            application: {
-              _id: 'mock-app-' + Date.now(),
-              ...appData,
-              status: 'submitted',
-              createdAt: new Date().toISOString(),
-            },
-          },
-        })
-      }
-
-      // Handle other requests with existing mock data
-      const mockDataWithStats = {
-        ...mockData,
-        stats: calculateMockStats(),
-      }
-      console.log('ð Mock data stats:', mockDataWithStats.stats)
-      return Promise.resolve({
-        data: { success: true, data: mockDataWithStats },
-      })
-    }
     return Promise.reject(error)
   }
 )
-// Request interceptor to add auth token
 
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken')
@@ -352,49 +254,7 @@ api.interceptors.request.use(
 
     return config
   },
-
   (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// Response interceptor to handle errors - DISABLED PORT SWITCHING
-api.interceptors.response.use(
-  (response) => {
-    return response
-  },
-
-  async (error) => {
-    const originalRequest = error.config
-
-    // DISABLED: Don't try to switch ports on network errors
-    // Force use of port 4000 only
-
-    // Handle 429 Too Many Requests with retry
-    if (error.response?.status === 429 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      console.log('⚠️ Rate limited (429), retrying in 2 seconds...')
-
-      // Wait 2 seconds and retry once
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      try {
-        return await api(originalRequest)
-      } catch (retryError) {
-        console.error('❌ Retry failed for 429 error')
-      }
-    }
-
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-
-    console.error('API Error:', error)
-    console.error('Response:', error.response)
-
     return Promise.reject(error)
   }
 )
@@ -402,33 +262,42 @@ api.interceptors.response.use(
 // Authentication API
 
 export const authAPI = {
-  login: async (email, password) => {
-    const response = await api.post('/auth/login', { email, password })
+  sendOtp: async (otpData) => {
+    const response = await api.post('/auth/send-otp', otpData)
+    return response.data
+  },
 
-    return response // Return full response, not response.data
+  verifyOtp: async (otpData) => {
+    const response = await api.post('/auth/verify-otp', otpData)
+    return response.data
+  },
+
+  login: async (email, password, captchaToken = '') => {
+    const response = await api.post('/auth/login', {
+      email,
+      password,
+      recaptchaToken: captchaToken,
+    })
+    return response
   },
 
   register: async (userData) => {
     const response = await api.post('/auth/register', userData)
-
     return response.data
   },
 
   getProfile: async () => {
     const response = await api.get('/auth/me')
-
     return response.data
   },
 
   updateProfile: async (userData) => {
     const response = await api.put('/auth/me', userData)
-
     return response.data
   },
 
   changePassword: async (passwordData) => {
     const response = await api.post('/auth/change-password', passwordData)
-
     return response.data
   },
 }
@@ -514,7 +383,11 @@ export const jobsAPI = {
 
 export const applicationsAPI = {
   getAllApplications: async (params = {}) => {
-    const response = await api.get('/applications', { params })
+    let config = { params }
+    if (typeof params === 'string') {
+      config = { params: new URLSearchParams(params) }
+    }
+    const response = await api.get('/applications', config)
     return response.data
   },
 

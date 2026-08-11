@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-
-import { useAuth } from '../context/AuthContext'
-
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-
+import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
+import { getFriendlyErrorMessage } from '../utils/errorUtils'
 
 const Login = () => {
   const location = useLocation()
@@ -25,16 +23,19 @@ const Login = () => {
   const recaptchaContainerRef = useRef(null)
 
   const { login, isLoading, error, clearError } = useAuth()
-
   const navigate = useNavigate()
 
   // Render reCAPTCHA explicitly when component mounts
   useEffect(() => {
+    let isMounted = true
+
     const renderRecaptcha = () => {
       if (
+        isMounted &&
         recaptchaContainerRef.current &&
+        recaptchaContainerRef.current.children.length === 0 &&
         window.grecaptcha &&
-        recaptchaWidgetId === null
+        window.grecaptcha.render
       ) {
         try {
           const widgetId = window.grecaptcha.render(
@@ -43,12 +44,9 @@ const Login = () => {
               sitekey: RECAPTCHA_SITE_KEY,
               callback: (token) => {
                 setFormData((prev) => ({ ...prev, captchaToken: token }))
-                if (errors.captcha) {
-                  setErrors((prev) => ({ ...prev, captcha: '' }))
-                }
+                setErrors((prev) => ({ ...prev, captcha: '' }))
               },
               'expired-callback': () => {
-                console.warn('reCAPTCHA expired')
                 setFormData((prev) => ({ ...prev, captchaToken: '' }))
                 setErrors((prev) => ({
                   ...prev,
@@ -56,7 +54,6 @@ const Login = () => {
                 }))
               },
               'error-callback': () => {
-                console.warn('reCAPTCHA error occurred')
                 setErrors((prev) => ({
                   ...prev,
                   captcha: 'CAPTCHA verification failed. Please try again.',
@@ -64,58 +61,25 @@ const Login = () => {
               },
             }
           )
-          setRecaptchaWidgetId(widgetId)
-          console.log('✅ reCAPTCHA rendered with widgetId:', widgetId)
+          if (isMounted) setRecaptchaWidgetId(widgetId)
         } catch (err) {
-          console.error('Error rendering reCAPTCHA:', err)
+          if (!err?.message?.includes('already been rendered')) {
+            console.error('Error rendering reCAPTCHA:', err)
+          }
         }
       }
     }
 
-    // Use the global helper to wait for reCAPTCHA to be ready
     if (window.whenRecaptchaReady) {
       window.whenRecaptchaReady(renderRecaptcha)
     } else if (window.grecaptcha) {
       renderRecaptcha()
     }
 
-    // Cleanup on unmount
     return () => {
-      if (recaptchaWidgetId !== null && window.grecaptcha) {
-        try {
-          window.grecaptcha.reset(recaptchaWidgetId)
-        } catch (err) {
-          // Ignore cleanup errors
-        }
-      }
+      isMounted = false
     }
-  }, [RECAPTCHA_SITE_KEY, errors.captcha, recaptchaWidgetId])
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-
-    setFormData((prev) => ({
-      ...prev,
-
-      [name]: value,
-    }))
-
-    // Clear field-specific error when user starts typing
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-
-        [name]: '',
-      }))
-    }
-
-    // Clear general error when user starts typing
-
-    if (error) {
-      clearError()
-    }
-  }
+  }, [RECAPTCHA_SITE_KEY])
 
   // Reset reCAPTCHA helper
   const resetRecaptcha = useCallback(() => {
@@ -129,10 +93,30 @@ const Login = () => {
     }
   }, [recaptchaWidgetId])
 
+  const handleChange = (e) => {
+    const { name, value } = e.target
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }))
+    }
+
+    if (error) {
+      clearError()
+    }
+  }
+
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.email) {
+    if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid'
@@ -144,25 +128,29 @@ const Login = () => {
       newErrors.password = 'Password must be at least 6 characters'
     }
 
-    // reCAPTCHA validation
     if (!formData.captchaToken) {
       newErrors.captcha = 'Please complete the CAPTCHA verification.'
     }
 
     setErrors(newErrors)
-
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (isLoading) return // Prevent double click
+
     if (!validateForm()) {
       return
     }
 
     try {
-      const loginResponse = await login(formData.email, formData.password)
+      const loginResponse = await login(
+        formData.email.trim().toLowerCase(),
+        formData.password,
+        formData.captchaToken
+      )
 
       // Reset form and reCAPTCHA after successful login
       setFormData({
@@ -171,21 +159,20 @@ const Login = () => {
         captchaToken: '',
       })
 
-      // Reset reCAPTCHA with widgetId
       resetRecaptcha()
 
-      // Check if user is admin and redirect accordingly
-      if (loginResponse.user?.role === 'admin') {
+      // Redirect based on role
+      const user = loginResponse?.user || loginResponse?.data?.user
+      if (user?.role === 'admin') {
         navigate(ROUTES.DASHBOARD)
       } else {
-        // Get return URL from location state or default to home
         const returnURL = location.state?.returnUrl || ROUTES.HOME
         navigate(returnURL)
       }
-    } catch (error) {
-      // Reset reCAPTCHA on error with widgetId
+    } catch (err) {
       resetRecaptcha()
-      // Error is handled by the auth context
+      const friendlyMsg = getFriendlyErrorMessage(err)
+      setErrors({ form: friendlyMsg })
     }
   }
 
@@ -214,9 +201,10 @@ const Login = () => {
               </div>
             )}
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-lg text-sm">
-                {error}
+            {(errors.form || error) && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
+                <i className="fas fa-exclamation-circle mr-2"></i>
+                <span>{errors.form || getFriendlyErrorMessage(error)}</span>
               </div>
             )}
 
@@ -239,7 +227,7 @@ const Login = () => {
                   autoComplete="email"
                   required
                   className={`appearance-none relative block w-full pl-10 pr-3 py-3 border ${
-                    errors.email ? 'border-error' : 'border-border-color'
+                    errors.email ? 'border-red-300' : 'border-border-color'
                   } placeholder-text-light text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors`}
                   placeholder="Enter your email"
                   value={formData.email}
@@ -248,7 +236,7 @@ const Login = () => {
               </div>
 
               {errors.email && (
-                <p className="mt-1 text-sm text-error flex items-center">
+                <p className="mt-1 text-sm text-red-600 flex items-center">
                   <i className="fas fa-exclamation-circle mr-1"></i>
                   {errors.email}
                 </p>
@@ -274,7 +262,7 @@ const Login = () => {
                   autoComplete="current-password"
                   required
                   className={`appearance-none relative block w-full pl-10 pr-3 py-3 border ${
-                    errors.password ? 'border-error' : 'border-border-color'
+                    errors.password ? 'border-red-300' : 'border-border-color'
                   } placeholder-text-light text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors`}
                   placeholder="Enter your password"
                   value={formData.password}
@@ -283,7 +271,7 @@ const Login = () => {
               </div>
 
               {errors.password && (
-                <p className="mt-1 text-sm text-error flex items-center">
+                <p className="mt-1 text-sm text-red-600 flex items-center">
                   <i className="fas fa-exclamation-circle mr-1"></i>
                   {errors.password}
                 </p>
@@ -316,7 +304,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* reCAPTCHA Verification - Explicit Render */}
+            {/* reCAPTCHA Verification */}
             <div>
               <div className="flex justify-center">
                 <div
@@ -325,7 +313,7 @@ const Login = () => {
                 ></div>
               </div>
               {errors.captcha && (
-                <p className="mt-2 text-sm text-error text-center flex items-center justify-center">
+                <p className="mt-2 text-sm text-red-600 text-center flex items-center justify-center">
                   <i className="fas fa-exclamation-circle mr-1"></i>
                   {errors.captcha}
                 </p>

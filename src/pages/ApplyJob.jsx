@@ -138,6 +138,8 @@ const ApplyJob = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (isSubmitting) return
+
     if (!validateForm()) {
       return
     }

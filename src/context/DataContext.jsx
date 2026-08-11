@@ -90,6 +90,20 @@ const DATA_ACTIONS = {
   CLEAR_ERROR: 'CLEAR_ERROR',
 }
 
+// Utility helper to deduplicate objects by unique ID
+const deduplicateById = (items) => {
+  if (!Array.isArray(items)) return []
+  const seen = new Set()
+  return items.filter((item) => {
+    if (!item) return false
+    const id = item._id || item.id
+    if (!id) return true
+    if (seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+}
+
 // Reducer
 const dataReducer = (state, action) => {
   switch (action.type) {
@@ -104,7 +118,7 @@ const dataReducer = (state, action) => {
     case DATA_ACTIONS.FETCH_JOBS_SUCCESS:
       return {
         ...state,
-        jobs: action.payload,
+        jobs: deduplicateById(action.payload),
         loading: { ...state.loading, jobs: false },
         error: null,
       }
@@ -126,7 +140,7 @@ const dataReducer = (state, action) => {
     case DATA_ACTIONS.CREATE_JOB_SUCCESS:
       return {
         ...state,
-        jobs: [action.payload, ...state.jobs],
+        jobs: deduplicateById([action.payload, ...state.jobs]),
         loading: { ...state.loading, createJob: false },
         error: null,
       }
@@ -195,7 +209,7 @@ const dataReducer = (state, action) => {
     case DATA_ACTIONS.FETCH_APPLICATIONS_SUCCESS:
       return {
         ...state,
-        applications: action.payload,
+        applications: deduplicateById(action.payload),
         loading: { ...state.loading, applications: false },
         error: null,
       }
@@ -217,7 +231,7 @@ const dataReducer = (state, action) => {
     case DATA_ACTIONS.CREATE_APPLICATION_SUCCESS:
       return {
         ...state,
-        applications: [action.payload, ...state.applications],
+        applications: deduplicateById([action.payload, ...state.applications]),
         loading: { ...state.loading, createApplication: false },
         error: null,
       }

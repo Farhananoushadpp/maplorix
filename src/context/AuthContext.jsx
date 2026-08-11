@@ -163,31 +163,30 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   // Login function
-
-  const login = async (email, password) => {
+  const login = async (email, password, captchaToken = '') => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START })
 
-      const response = await authAPI.login(email, password)
+      const response = await authAPI.login(email, password, captchaToken)
+      const authData = response.data?.data || response.data
 
-      // Store token and user in localStorage
-      // FIX: Access nested data structure correctly
-      localStorage.setItem('authToken', response.data.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.data.user))
+      if (authData?.token && authData?.user) {
+        localStorage.setItem('authToken', authData.token)
+        localStorage.setItem('user', JSON.stringify(authData.user))
+      }
 
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
-
-        payload: response.data.data,
+        payload: authData,
       })
 
-      return response.data.data
+      return authData
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed'
+      const errorMessage =
+        error.response?.data?.message || error.message || 'Login failed'
 
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
-
         payload: errorMessage,
       })
 
@@ -201,26 +200,25 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START })
 
       const response = await authAPI.register(userData)
+      const authData = response.data || response
 
-      // Store token and user in localStorage
-      // Fix: Access nested data structure correctly
-      localStorage.setItem('authToken', response.data.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.data.user))
+      if (authData?.token && authData?.user) {
+        localStorage.setItem('authToken', authData.token)
+        localStorage.setItem('user', JSON.stringify(authData.user))
+      }
 
       dispatch({
         type: AUTH_ACTIONS.REGISTER_SUCCESS,
-
-        payload: response.data.data,
+        payload: authData,
       })
 
-      return response.data.data
+      return authData
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || 'Registration failed'
+        error.response?.data?.message || error.message || 'Registration failed'
 
       dispatch({
         type: AUTH_ACTIONS.REGISTER_FAILURE,
-
         payload: errorMessage,
       })
 

@@ -68,9 +68,9 @@ const AllApplications = () => {
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
 
       const response = await applicationsAPI.getAllApplications(params.toString())
-      
-      setApplications(response.data.data.applications)
-      setPagination(response.data.data.pagination)
+      const apps = response.data?.data?.applications || response.data?.applications || response.applications || []
+      setApplications(apps)
+      setPagination(response.data?.data?.pagination || { current: 1, pageSize: 10, total: apps.length, pages: 1 })
     } catch (error) {
       console.error('Error fetching applications:', error)
     } finally {

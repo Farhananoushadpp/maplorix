@@ -186,13 +186,9 @@ const Home = () => {
                   <article className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
                     <div className="mb-4">
                       <img
-                        src="/images/jobsearch.webp"
+                        src="/jobsearch.webp"
                         alt="Job Search Assistance - Professional career guidance"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          // Fallback to jpg if webp fails
-                          e.target.src = '/jobsearch.webp'
-                        }}
                       />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -407,12 +403,9 @@ const Home = () => {
                   <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow border border-gray-100">
                     <div className="mb-4">
                       <img
-                        src="/images/talent-acquisition.jpg"
+                        src="/talent-acquisition.webp"
                         alt="Talent Acquisition"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = `/talent-acquisition.webp`
-                        }}
                       />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -443,12 +436,9 @@ const Home = () => {
                   <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow border border-gray-100">
                     <div className="mb-4">
                       <img
-                        src="/images/candidate-screening.jpg"
+                        src="/candidate-screening.webp"
                         alt="Candidate Screening"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = `/candidate-screening.webp`
-                        }}
                       />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -479,12 +469,9 @@ const Home = () => {
                   <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow border border-gray-100">
                     <div className="mb-4">
                       <img
-                        src="/images/staffing-solutions.jpg"
+                        src="/staffing-solutions.webp"
                         alt="Staffing Solutions"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = `/staffing-solutions.webp`
-                        }}
                       />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-primary mb-3">
@@ -515,12 +502,9 @@ const Home = () => {
                   <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow border border-gray-100">
                     <div className="mb-4">
                       <img
-                        src="/images/executive-search.jpg"
+                        src="/executive-search.webp"
                         alt="Executive Search"
                         className="w-full h-40 sm:h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = `/executive-search.webp`
-                        }}
                       />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-primary mb-3">

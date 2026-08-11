@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
+import { getFriendlyErrorMessage } from '../utils/errorUtils'
 
 const Register = () => {
   // Google reCAPTCHA site key from environment variable
@@ -9,51 +11,88 @@ const Register = () => {
     import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
     '6LeIxAcTAAAAAJcZVRqyHh71UMIEbQjQ5y3FkT_y' // Google's official test key for development
 
+  // Step state: 1 = Form, 2 = OTP, 3 = Password Setup
+  const [step, setStep] = useState(1)
+
+  // Registration form state using strict camelCase naming
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    mobile: '',
+    attachedCv: null,
+    nationality: '',
+    currentlyLocated: '',
+    visaStatus: 'visitVisa',
+    captcha: '',
+  })
+
+  // OTP state
+  const [otp, setOtp] = useState('')
+
+  // Password setup state
+  const [passwordState, setPasswordState] = useState({
     password: '',
     confirmPassword: '',
-    agreeToTerms: false,
-    role: 'user',
-    captchaToken: '', // For Google reCAPTCHA
   })
+
+  // UI state
   const [errors, setErrors] = useState({})
-  const [successMessage, setSuccessMessage] = useState('')
+  const [isExistingUser, setIsExistingUser] = useState(false)
+  const [existingUserMessage, setExistingUserMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [recaptchaWidgetId, setRecaptchaWidgetId] = useState(null)
-  const recaptchaContainerRef = useRef(null)
+  const [otpResendCountdown, setOtpResendCountdown] = useState(0)
 
+  const recaptchaContainerRef = useRef(null)
   const navigate = useNavigate()
+  const { register: authRegister } = useAuth()
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    let timer
+    if (otpResendCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpResendCountdown((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [otpResendCountdown])
 
   // Password strength checker
   useEffect(() => {
-    if (formData.password) {
+    if (passwordState.password) {
       let strength = 0
-      if (formData.password.length >= 8) strength++
-      if (formData.password.length >= 12) strength++
-      if (/[a-z]/.test(formData.password)) strength++
-      if (/[A-Z]/.test(formData.password)) strength++
-      if (/[0-9]/.test(formData.password)) strength++
-      if (/[^a-zA-Z0-9]/.test(formData.password)) strength++
+      if (passwordState.password.length >= 6) strength++
+      if (passwordState.password.length >= 8) strength++
+      if (/[a-z]/.test(passwordState.password)) strength++
+      if (/[A-Z]/.test(passwordState.password)) strength++
+      if (/[0-9]/.test(passwordState.password)) strength++
+      if (/[^a-zA-Z0-9]/.test(passwordState.password)) strength++
       setPasswordStrength(strength)
     } else {
       setPasswordStrength(0)
     }
-  }, [formData.password])
+  }, [passwordState.password])
 
-  // Render reCAPTCHA explicitly when component mounts
+  // Render reCAPTCHA explicitly when component mounts or on Step 1
   useEffect(() => {
+    if (step !== 1) return
+    let isMounted = true
+
     const renderRecaptcha = () => {
       if (
+        isMounted &&
         recaptchaContainerRef.current &&
+        recaptchaContainerRef.current.children.length === 0 &&
         window.grecaptcha &&
-        recaptchaWidgetId === null
+        window.grecaptcha.render
       ) {
         try {
           const widgetId = window.grecaptcha.render(
@@ -61,21 +100,17 @@ const Register = () => {
             {
               sitekey: RECAPTCHA_SITE_KEY,
               callback: (token) => {
-                setFormData((prev) => ({ ...prev, captchaToken: token }))
-                if (errors.captcha) {
-                  setErrors((prev) => ({ ...prev, captcha: '' }))
-                }
+                setFormData((prev) => ({ ...prev, captcha: token }))
+                setErrors((prev) => ({ ...prev, captcha: '' }))
               },
               'expired-callback': () => {
-                console.warn('reCAPTCHA expired')
-                setFormData((prev) => ({ ...prev, captchaToken: '' }))
+                setFormData((prev) => ({ ...prev, captcha: '' }))
                 setErrors((prev) => ({
                   ...prev,
                   captcha: 'CAPTCHA expired. Please verify again.',
                 }))
               },
               'error-callback': () => {
-                console.warn('reCAPTCHA error occurred')
                 setErrors((prev) => ({
                   ...prev,
                   captcha: 'CAPTCHA verification failed. Please try again.',
@@ -83,58 +118,332 @@ const Register = () => {
               },
             }
           )
-          setRecaptchaWidgetId(widgetId)
-          console.log('✅ reCAPTCHA rendered with widgetId:', widgetId)
+          if (isMounted) setRecaptchaWidgetId(widgetId)
         } catch (err) {
-          console.error('Error rendering reCAPTCHA:', err)
+          if (!err?.message?.includes('already been rendered')) {
+            console.error('Error rendering reCAPTCHA:', err)
+          }
         }
       }
     }
 
-    // Use the global helper to wait for reCAPTCHA to be ready
     if (window.whenRecaptchaReady) {
       window.whenRecaptchaReady(renderRecaptcha)
     } else if (window.grecaptcha) {
       renderRecaptcha()
     }
 
-    // Cleanup on unmount
     return () => {
-      if (recaptchaWidgetId !== null && window.grecaptcha) {
-        try {
-          window.grecaptcha.reset(recaptchaWidgetId)
-        } catch (err) {
-          // Ignore cleanup errors
-        }
-      }
+      isMounted = false
     }
-  }, [RECAPTCHA_SITE_KEY, errors.captcha, recaptchaWidgetId])
+  }, [RECAPTCHA_SITE_KEY, step])
 
   // Reset reCAPTCHA helper
   const resetRecaptcha = useCallback(() => {
     if (recaptchaWidgetId !== null && window.grecaptcha) {
       try {
         window.grecaptcha.reset(recaptchaWidgetId)
-        setFormData((prev) => ({ ...prev, captchaToken: '' }))
+        setFormData((prev) => ({ ...prev, captcha: '' }))
       } catch (err) {
         console.error('Error resetting reCAPTCHA:', err)
       }
     }
   }, [recaptchaWidgetId])
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+  // Reset all states when New Registration button is clicked
+  const handleNewRegistration = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      mobile: '',
+      attachedCv: null,
+      nationality: '',
+      currentlyLocated: '',
+      visaStatus: 'visitVisa',
+      captcha: '',
+    })
+    setOtp('')
+    setPasswordState({
+      password: '',
+      confirmPassword: '',
+    })
+    setErrors({})
+    setIsExistingUser(false)
+    setExistingUserMessage('')
+    setIsLoading(false)
+    setSuccessMessage('')
+    setStep(1)
+    resetRecaptcha()
+  }
 
-    // Clear error for this field when user starts typing
+  // Handle form input changes
+  const handleChange = (e) => {
+    const { name, value, type, files } = e.target
+    if (type === 'file') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0] || null,
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
       }))
+    }
+  }
+
+  // Handle password input changes
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target
+    setPasswordState((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }))
+    }
+  }
+
+  // Step 1 Validation
+  const validateStep1 = () => {
+    const newErrors = {}
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required'
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required'
+    } else if (formData.mobile.replace(/\D/g, '').length < 7) {
+      newErrors.mobile = 'Please enter a valid mobile number'
+    }
+
+    if (!formData.attachedCv) {
+      newErrors.attachedCv = 'Attached CV is required'
+    }
+
+    if (!formData.nationality.trim()) {
+      newErrors.nationality = 'Nationality is required'
+    }
+
+    if (!formData.currentlyLocated.trim()) {
+      newErrors.currentlyLocated = 'Current location is required'
+    }
+
+    if (!formData.visaStatus) {
+      newErrors.visaStatus = 'Visa status is required'
+    }
+
+    if (!formData.captcha) {
+      newErrors.captcha = 'Please complete the CAPTCHA verification.'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Step 1 Submit: Backend Verification & Send OTP
+  const handleStep1Submit = async (e) => {
+    e.preventDefault()
+
+    if (!validateStep1()) return
+
+    setIsLoading(true)
+    setErrors({})
+    setIsExistingUser(false)
+
+    try {
+      // Send OTP to user's email while checking existing user
+      const response = await authAPI.sendOtp({
+        email: formData.email.trim().toLowerCase(),
+        mobile: formData.mobile.trim(),
+      })
+
+      if (response.success) {
+        setSuccessMessage('OTP sent successfully to your email.')
+        setOtpResendCountdown(60)
+        setStep(2) // Move to OTP verification screen
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error)
+      const errorCode = error.response?.data?.errorCode
+
+      if (errorCode === 'USER_ALREADY_EXISTS' || error.response?.status === 409) {
+        setIsExistingUser(true)
+        setExistingUserMessage(
+          'An account with this email or mobile number already exists.'
+        )
+      } else {
+        setErrors({
+          submit: getFriendlyErrorMessage(error),
+        })
+      }
+      resetRecaptcha()
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Step 2 Submit: Verify OTP
+  const handleStep2Submit = async (e) => {
+    e.preventDefault()
+
+    if (!otp.trim()) {
+      setErrors({ otp: 'Please enter the 6-digit OTP code' })
+      return
+    }
+
+    if (otp.trim().length !== 6) {
+      setErrors({ otp: 'OTP must be 6 digits' })
+      return
+    }
+
+    setIsLoading(true)
+    setErrors({})
+
+    try {
+      const response = await authAPI.verifyOtp({
+        email: formData.email.trim().toLowerCase(),
+        otp: otp.trim(),
+      })
+
+      if (response.success) {
+        setSuccessMessage('OTP verified successfully! Please set your password.')
+        setStep(3) // Move to password setup screen
+      }
+    } catch (error) {
+      console.error('Verify OTP error:', error)
+      setErrors({
+        otp: getFriendlyErrorMessage(error),
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Resend OTP handler
+  const handleResendOtp = async () => {
+    if (otpResendCountdown > 0) return
+
+    setIsLoading(true)
+    setErrors({})
+
+    try {
+      await authAPI.sendOtp({
+        email: formData.email.trim().toLowerCase(),
+        mobile: formData.mobile.trim(),
+      })
+      setSuccessMessage('A new OTP has been sent to your email.')
+      setOtpResendCountdown(60)
+    } catch (error) {
+      setErrors({
+        otp: getFriendlyErrorMessage(error),
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Step 3 Submit: Password Setup & Final Registration
+  const handleStep3Submit = async (e) => {
+    e.preventDefault()
+
+    const newErrors = {}
+    if (!passwordState.password) {
+      newErrors.password = 'Password is required'
+    } else if (passwordState.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long'
+    }
+
+    if (!passwordState.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password'
+    } else if (passwordState.password !== passwordState.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
+    setIsLoading(true)
+    setErrors({})
+
+    try {
+      const registrationPayload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        mobile: formData.mobile.trim(),
+        phone: formData.mobile.trim(),
+        nationality: formData.nationality.trim(),
+        currentlyLocated: formData.currentlyLocated.trim(),
+        visaStatus: formData.visaStatus,
+        password: passwordState.password,
+        recaptchaToken: formData.captcha,
+        attachedCvName: formData.attachedCv ? formData.attachedCv.name : undefined,
+      }
+
+      const response = await authAPI.register(registrationPayload)
+
+      setSuccessMessage('🎉 Account created successfully! Logging you in...')
+
+      // Save token and user if returned
+      const token = response.data?.token || response.token
+      const user = response.data?.user || response.user
+
+      if (token && user) {
+        localStorage.setItem('authToken', token)
+        localStorage.setItem('user', JSON.stringify(user))
+      }
+
+      // Clear password values from memory immediately
+      setPasswordState({ password: '', confirmPassword: '' })
+
+      setTimeout(() => {
+        if (user?.role === 'admin') {
+          navigate(ROUTES.DASHBOARD)
+        } else {
+          navigate(ROUTES.HOME)
+        }
+      }, 1500)
+    } catch (error) {
+      console.error('Final Registration Error:', error)
+      const errorCode = error.response?.data?.errorCode
+      if (errorCode === 'USER_ALREADY_EXISTS' || error.response?.status === 409) {
+        setIsExistingUser(true)
+        setExistingUserMessage(
+          'An account with this email or mobile number already exists.'
+        )
+      } else {
+        setErrors({
+          submit: getFriendlyErrorMessage(error),
+        })
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -150,213 +459,6 @@ const Register = () => {
     return 'Strong'
   }
 
-  const validateForm = () => {
-    const newErrors = {}
-
-    // First Name validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required'
-    } else if (
-      formData.firstName.length < 2 ||
-      formData.firstName.length > 50
-    ) {
-      newErrors.firstName = 'First name must be between 2 and 50 characters'
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.firstName)) {
-      newErrors.firstName = 'First name can only contain letters and spaces'
-    }
-
-    // Last Name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required'
-    } else if (formData.lastName.length < 2 || formData.lastName.length > 50) {
-      newErrors.lastName = 'Last name must be between 2 and 50 characters'
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.lastName)) {
-      newErrors.lastName = 'Last name can only contain letters and spaces'
-    }
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email is invalid'
-    }
-
-    // Phone validation
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Phone number is invalid'
-    } else if (formData.phone.replace(/\D/g, '').length < 10) {
-      newErrors.phone = 'Phone number must have at least 10 digits'
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long'
-    } else if (passwordStrength < 3) {
-      newErrors.password =
-        'Password is too weak. Please include uppercase, lowercase, numbers, and special characters'
-    }
-
-    // Confirm Password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password'
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
-    }
-
-    // Terms validation
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms and conditions'
-    }
-
-    // reCAPTCHA validation
-    if (!formData.captchaToken) {
-      newErrors.captcha = 'Please complete the CAPTCHA verification.'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    console.log('=== REGISTRATION SUBMISSION DEBUG ===')
-    console.log('Form data:', formData)
-    console.log('Password strength:', passwordStrength)
-    console.log('Terms agreed:', formData.agreeToTerms)
-
-    if (!validateForm()) {
-      console.log('Validation failed')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      console.log('Attempting registration...')
-
-      const registrationData = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        password: formData.password,
-        role: formData.role,
-      }
-
-      console.log('Registration data to send:', registrationData)
-      console.log(
-        'API endpoint:',
-        `${import.meta.env.VITE_API_URL || 'https://maplorix.ae/api'}/auth/register`
-      )
-
-      const response = await authAPI.register(registrationData)
-
-      console.log('Registration response:', response)
-
-      // Auto-login - save token and user data if registration successful
-      if (response.data?.data?.token && response.data?.data?.user) {
-        // Save authentication data
-        localStorage.setItem('authToken', response.data.data.token)
-        localStorage.setItem('user', JSON.stringify(response.data.data.user))
-
-        // Update success message based on user role
-        const successMsg =
-          response.data.data.user?.role === 'admin'
-            ? '🎉 Admin registration successful! Logging you in and redirecting to dashboard...'
-            : '🎉 Registration successful! Logging you in and redirecting to home page...'
-
-        setSuccessMessage(successMsg)
-        setIsLoading(false) // Stop loading but show success message
-
-        // Clear form
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          password: '',
-          confirmPassword: '',
-          agreeToTerms: false,
-          role: 'user',
-          captchaToken: '',
-        })
-
-        // Reset reCAPTCHA with widgetId
-        resetRecaptcha()
-
-        // Redirect based on user role after a short delay to show success message
-        setTimeout(() => {
-          if (response.data.data.user?.role === 'admin') {
-            navigate(ROUTES.DASHBOARD)
-          } else {
-            navigate(ROUTES.HOME)
-          }
-        }, 2500)
-      } else {
-        // Registration successful but no auto-login
-        setSuccessMessage(
-          '✅ Registration successful! Redirecting to login page...'
-        )
-        setIsLoading(false)
-
-        // Clear form
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          password: '',
-          confirmPassword: '',
-          agreeToTerms: false,
-          role: 'user',
-          captchaToken: '',
-        })
-
-        // Reset reCAPTCHA with widgetId
-        resetRecaptcha()
-
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          navigate(ROUTES.LOGIN)
-        }, 2000)
-      }
-    } catch (error) {
-      console.error('Registration error:', error)
-      console.error('Error response:', error.response)
-      console.error('Error status:', error.response?.status)
-      console.error('Error data:', error.response?.data)
-
-      let errorMessage = 'Registration failed. Please try again.'
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error.message) {
-        errorMessage = error.message
-      } else if (
-        error.code === 'ECONNREFUSED' ||
-        error.code === 'ERR_NETWORK' ||
-        error.message?.includes('Network Error')
-      ) {
-        errorMessage =
-          'Cannot connect to server. Please check if the backend is running on port 4000.'
-      }
-
-      setErrors({ submit: errorMessage })
-
-      // Reset reCAPTCHA on error with widgetId
-      resetRecaptcha()
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -365,367 +467,553 @@ const Register = () => {
             <i className="fas fa-user-plus text-accent text-2xl"></i>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-primary font-heading">
-            Create Your Account
+            {step === 1 && 'Create Your Account'}
+            {step === 2 && 'Email Verification'}
+            {step === 3 && 'Set Your Password'}
           </h2>
           <p className="mt-2 text-sm text-text-light">
-            Join Maplorix to find your dream job
+            {step === 1 && 'Join Maplorix to find your dream job'}
+            {step === 2 && `An OTP was sent to ${formData.email}`}
+            {step === 3 && 'Choose a secure password for your account'}
           </p>
         </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-custom rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {successMessage && (
-              <div className="bg-secondary/10 border border-secondary/20 text-secondary px-4 py-3 rounded-lg text-sm">
-                <i className="fas fa-check-circle mr-2"></i>
-                {successMessage}
+          {/* EXISTING USER MESSAGE UI BOX */}
+          {isExistingUser ? (
+            <div className="text-center space-y-6 py-4">
+              <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <i className="fas fa-exclamation-triangle text-2xl"></i>
               </div>
-            )}
-
-            {errors.submit && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                <i className="fas fa-exclamation-circle mr-2"></i>
-                {errors.submit}
-              </div>
-            )}
-
-            {/* First Name and Last Name */}
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-text-dark mb-2"
-                >
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-user text-text-light text-sm"></i>
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                      errors.firstName
-                        ? 'border-red-300'
-                        : 'border-border-color'
-                    }`}
-                    placeholder="John"
-                  />
-                </div>
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <i className="fas fa-exclamation-circle mr-1"></i>
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-text-dark mb-2"
-                >
-                  Last Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-user text-text-light text-sm"></i>
-                  </div>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                      errors.lastName ? 'border-red-300' : 'border-border-color'
-                    }`}
-                    placeholder="Doe"
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <i className="fas fa-exclamation-circle mr-1"></i>
-                    {errors.lastName}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-text-dark mb-2"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-envelope text-text-light text-sm"></i>
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                    errors.email ? 'border-red-300' : 'border-border-color'
-                  }`}
-                  placeholder="john.doe@example.com"
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.email}
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  User Already Exists
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {existingUserMessage ||
+                    'An account with this email or mobile number already exists.'}
                 </p>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-text-dark mb-2"
-              >
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-phone text-text-light text-sm"></i>
-                </div>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                    errors.phone ? 'border-red-300' : 'border-border-color'
-                  }`}
-                  placeholder="+1 (555) 123-4567"
-                />
               </div>
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.phone}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-text-dark mb-2"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-lock text-text-light text-sm"></i>
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`block w-full pl-10 pr-10 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                    errors.password ? 'border-red-300' : 'border-border-color'
-                  }`}
-                  placeholder="••••••••"
-                />
+              <div className="pt-4 flex flex-col gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={handleNewRegistration}
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent transition-all"
                 >
-                  <i
-                    className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-text-light hover:text-accent transition-colors`}
-                  ></i>
+                  <i className="fas fa-redo mr-2"></i>
+                  New Registration
                 </button>
+                <Link
+                  to={ROUTES.LOGIN}
+                  className="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all"
+                >
+                  Sign in to existing account
+                </Link>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.password}
-                </p>
-              )}
-
-              {/* Password Strength Indicator */}
-              {formData.password && (
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-text-light">
-                      Password strength:
-                    </span>
-                    <span
-                      className={`text-xs font-medium ${getPasswordStrengthColor()}`}
-                    >
-                      {getPasswordStrengthText()}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
-                      style={{ width: `${(passwordStrength / 6) * 100}%` }}
-                    ></div>
-                  </div>
+            </div>
+          ) : (
+            <>
+              {/* Global Error Banner */}
+              {errors.submit && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
+                  <i className="fas fa-exclamation-circle mr-2 text-base"></i>
+                  <span>{errors.submit}</span>
                 </div>
               )}
-            </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-text-dark mb-2"
-              >
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-lock text-text-light text-sm"></i>
+              {/* Global Success Banner */}
+              {successMessage && (
+                <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center">
+                  <i className="fas fa-check-circle mr-2 text-base"></i>
+                  <span>{successMessage}</span>
                 </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={`block w-full pl-10 pr-10 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors ${
-                    errors.confirmPassword
-                      ? 'border-red-300'
-                      : 'border-border-color'
-                  }`}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  <i
-                    className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} text-text-light hover:text-accent transition-colors`}
-                  ></i>
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.confirmPassword}
-                </p>
               )}
-            </div>
 
-            {/* Terms and Conditions */}
-            <div className="space-y-2">
-              <div className="flex items-start">
-                <input
-                  id="agreeToTerms"
-                  name="agreeToTerms"
-                  type="checkbox"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-accent focus:ring-accent border-border-color rounded mt-1"
-                />
-                <div className="ml-3">
-                  <label
-                    htmlFor="agreeToTerms"
-                    className="text-sm text-text-light"
-                  >
-                    I agree to the{' '}
-                    <a
-                      href="#"
-                      className="text-accent hover:text-accent/80 transition-colors"
+              {/* STEP 1: REGISTRATION FORM */}
+              {step === 1 && (
+                <form className="space-y-5" onSubmit={handleStep1Submit}>
+                  {/* 1. First Name */}
+                  <div>
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-text-dark mb-1"
                     >
-                      Terms and Conditions
-                    </a>{' '}
-                    and{' '}
-                    <a
-                      href="#"
-                      className="text-accent hover:text-accent/80 transition-colors"
+                      First Name *
+                    </label>
+                    <input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.firstName ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="John"
+                    />
+                    {errors.firstName && (
+                      <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
+                    )}
+                  </div>
+
+                  {/* 2. Last Name */}
+                  <div>
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-text-dark mb-1"
                     >
-                      Privacy Policy
-                    </a>
-                  </label>
-                  {errors.agreeToTerms && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <i className="fas fa-exclamation-circle mr-1"></i>
-                      {errors.agreeToTerms}
+                      Last Name *
+                    </label>
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      required
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.lastName ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="Doe"
+                    />
+                    {errors.lastName && (
+                      <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+                    )}
+                  </div>
+
+                  {/* 3. Email */}
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Email *
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.email ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="john.doe@example.com"
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                    )}
+                  </div>
+
+                  {/* 4. Mobile */}
+                  <div>
+                    <label
+                      htmlFor="mobile"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Mobile *
+                    </label>
+                    <input
+                      id="mobile"
+                      name="mobile"
+                      type="tel"
+                      required
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.mobile ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="+971 50 123 4567"
+                    />
+                    {errors.mobile && (
+                      <p className="mt-1 text-xs text-red-600">{errors.mobile}</p>
+                    )}
+                  </div>
+
+                  {/* 5. Attached CV */}
+                  <div>
+                    <label
+                      htmlFor="attachedCv"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Attached CV *
+                    </label>
+                    <input
+                      id="attachedCv"
+                      name="attachedCv"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      required
+                      onChange={handleChange}
+                      className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 border rounded-lg p-1 ${
+                        errors.attachedCv ? 'border-red-300' : 'border-border-color'
+                      }`}
+                    />
+                    {formData.attachedCv && (
+                      <p className="mt-1 text-xs text-emerald-600">
+                        <i className="fas fa-file-pdf mr-1"></i>
+                        Selected: {formData.attachedCv.name}
+                      </p>
+                    )}
+                    {errors.attachedCv && (
+                      <p className="mt-1 text-xs text-red-600">{errors.attachedCv}</p>
+                    )}
+                  </div>
+
+                  {/* 6. Nationality */}
+                  <div>
+                    <label
+                      htmlFor="nationality"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Nationality *
+                    </label>
+                    <input
+                      id="nationality"
+                      name="nationality"
+                      type="text"
+                      required
+                      value={formData.nationality}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.nationality ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="e.g. Emirati, Indian, British"
+                    />
+                    {errors.nationality && (
+                      <p className="mt-1 text-xs text-red-600">{errors.nationality}</p>
+                    )}
+                  </div>
+
+                  {/* 7. Currently Located */}
+                  <div>
+                    <label
+                      htmlFor="currentlyLocated"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Currently Located *
+                    </label>
+                    <input
+                      id="currentlyLocated"
+                      name="currentlyLocated"
+                      type="text"
+                      required
+                      value={formData.currentlyLocated}
+                      onChange={handleChange}
+                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                        errors.currentlyLocated ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="e.g. Dubai, UAE"
+                    />
+                    {errors.currentlyLocated && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {errors.currentlyLocated}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 8. Visa Status */}
+                  <div>
+                    <label
+                      htmlFor="visaStatus"
+                      className="block text-sm font-medium text-text-dark mb-1"
+                    >
+                      Visa Status *
+                    </label>
+                    <select
+                      id="visaStatus"
+                      name="visaStatus"
+                      required
+                      value={formData.visaStatus}
+                      onChange={handleChange}
+                      className="block w-full px-3 py-2.5 border border-border-color rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm"
+                    >
+                      <option value="visitVisa">Visit Visa</option>
+                      <option value="residenceVisa">Residence Visa</option>
+                      <option value="spouseVisa">Spouse Visa</option>
+                    </select>
+                    {errors.visaStatus && (
+                      <p className="mt-1 text-xs text-red-600">{errors.visaStatus}</p>
+                    )}
+                  </div>
+
+                  {/* 9. Captcha Verification */}
+                  <div>
+                    <label className="block text-sm font-medium text-text-dark mb-2">
+                      Captcha Verification *
+                    </label>
+                    <div className="flex justify-center">
+                      <div
+                        ref={recaptchaContainerRef}
+                        id="register-recaptcha-container"
+                      ></div>
+                    </div>
+                    {errors.captcha && (
+                      <p className="mt-2 text-xs text-red-600 text-center">
+                        {errors.captcha}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 10. Join Button */}
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                    >
+                      {isLoading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                          Verifying details...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-arrow-right mr-2"></i>
+                          Join
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 2: EMAIL OTP SCREEN */}
+              {step === 2 && (
+                <form className="space-y-6" onSubmit={handleStep2Submit}>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-800">
+                    <p className="font-semibold mb-1">
+                      <i className="fas fa-paper-plane mr-2"></i>
+                      OTP Sent to Email
                     </p>
-                  )}
-                </div>
-              </div>
-            </div>
+                    <p>
+                      We have sent a 6-digit verification code to{' '}
+                      <strong>{formData.email}</strong>. Please check your inbox and
+                      enter the code below.
+                    </p>
+                  </div>
 
-            {/* reCAPTCHA Verification - Explicit Render */}
-            <div>
-              <div className="flex justify-center">
-                <div
-                  ref={recaptchaContainerRef}
-                  id="register-recaptcha-container"
-                ></div>
-              </div>
-              {errors.captcha && (
-                <p className="mt-2 text-sm text-error text-center flex items-center justify-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.captcha}
-                </p>
+                  <div>
+                    <label
+                      htmlFor="otp"
+                      className="block text-sm font-medium text-text-dark mb-2"
+                    >
+                      6-Digit OTP Code *
+                    </label>
+                    <input
+                      id="otp"
+                      name="otp"
+                      type="text"
+                      maxLength={6}
+                      required
+                      value={otp}
+                      onChange={(e) => {
+                        setOtp(e.target.value.replace(/\D/g, ''))
+                        if (errors.otp) setErrors((prev) => ({ ...prev, otp: '' }))
+                      }}
+                      className={`block w-full text-center text-2xl tracking-widest font-mono py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
+                        errors.otp ? 'border-red-300' : 'border-border-color'
+                      }`}
+                      placeholder="000000"
+                    />
+                    {errors.otp && (
+                      <p className="mt-2 text-xs text-red-600 text-center">
+                        <i className="fas fa-exclamation-circle mr-1"></i>
+                        {errors.otp}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={isLoading || otp.length !== 6}
+                      className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                          Verifying OTP...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-check-circle mr-2"></i>
+                          Verify OTP
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-text-light pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="hover:text-accent"
+                    >
+                      ← Back to Registration
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={otpResendCountdown > 0 || isLoading}
+                      className="text-accent hover:underline disabled:opacity-50 disabled:no-underline"
+                    >
+                      {otpResendCountdown > 0
+                        ? `Resend OTP in ${otpResendCountdown}s`
+                        : 'Resend OTP'}
+                    </button>
+                  </div>
+                </form>
               )}
-            </div>
 
-            {/* Submit Button */}
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading || !formData.agreeToTerms}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Creating account...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-user-plus mr-2"></i>
-                    Create Account
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+              {/* STEP 3: PASSWORD SETUP SCREEN */}
+              {step === 3 && (
+                <form className="space-y-6" onSubmit={handleStep3Submit}>
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-text-dark mb-2"
+                    >
+                      Create Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={passwordState.password}
+                        onChange={handlePasswordChange}
+                        className={`block w-full pr-10 py-3 px-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                          errors.password ? 'border-red-300' : 'border-border-color'
+                        }`}
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-light hover:text-accent"
+                      >
+                        <i
+                          className={`fas ${
+                            showPassword ? 'fa-eye-slash' : 'fa-eye'
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                    )}
 
-          {/* Sign In Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-text-light">
-              Already have an account?{' '}
-              <Link
-                to={ROUTES.LOGIN}
-                className="font-medium text-accent hover:text-accent/80 transition-colors"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
+                    {/* Strength indicator */}
+                    {passwordState.password && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-text-light">
+                            Strength:
+                          </span>
+                          <span
+                            className={`text-xs font-medium ${getPasswordStrengthColor()}`}
+                          >
+                            {getPasswordStrengthText()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
+                            style={{
+                              width: `${(passwordStrength / 6) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-text-dark mb-2"
+                    >
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        value={passwordState.confirmPassword}
+                        onChange={handlePasswordChange}
+                        className={`block w-full pr-10 py-3 px-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm ${
+                          errors.confirmPassword
+                            ? 'border-red-300'
+                            : 'border-border-color'
+                        }`}
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-light hover:text-accent"
+                      >
+                        <i
+                          className={`fas ${
+                            showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {errors.confirmPassword}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                          Creating Account...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-user-check mr-2"></i>
+                          Complete Registration
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Sign In Link */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-text-light">
+                  Already have an account?{' '}
+                  <Link
+                    to={ROUTES.LOGIN}
+                    className="font-medium text-accent hover:text-accent/80 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

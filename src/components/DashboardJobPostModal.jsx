@@ -27,6 +27,9 @@ const DashboardJobPostModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (isSubmitting) return
+
     setIsSubmitting(true)
 
     // Validate required fields

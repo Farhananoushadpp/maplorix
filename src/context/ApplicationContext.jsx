@@ -1,4 +1,4 @@
-// Application Context for managing application state across components
+// Application Context for managing application state across components safely without duplicates
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const ApplicationContext = createContext()
@@ -15,20 +15,25 @@ export const ApplicationProvider = ({ children }) => {
         console.log('Application submitted event received:', event.detail)
       }
 
-      // Add the new application to the state
-      const newApplication = event.detail.application
-      setApplications((prev) => [newApplication, ...prev])
+      const newApp = event.detail?.application || event.detail
+      if (!newApp) return
+
+      // Add the new application to state with deduplication by ID
+      setApplications((prev) => {
+        const id = newApp._id || newApp.id
+        if (id && prev.some((app) => (app._id || app.id) === id)) {
+          return prev // Skip duplicate
+        }
+        return [newApp, ...prev]
+      })
     }
 
-    // Add event listener - changed from applicationSubmitted to applicationPosted
     window.addEventListener('applicationPosted', handleApplicationSubmitted)
+    window.addEventListener('applicationSubmitted', handleApplicationSubmitted)
 
-    // Clean up event listener
     return () => {
-      window.removeEventListener(
-        'applicationPosted',
-        handleApplicationSubmitted
-      )
+      window.removeEventListener('applicationPosted', handleApplicationSubmitted)
+      window.removeEventListener('applicationSubmitted', handleApplicationSubmitted)
     }
   }, [])
 

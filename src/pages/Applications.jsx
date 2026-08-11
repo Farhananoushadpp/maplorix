@@ -14,12 +14,6 @@ const Applications = () => {
   })
   const [selectedApplication, setSelectedApplication] = useState(null)
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchApplications()
-    }
-  }, [isAuthenticated, filter, fetchApplications])
-
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true)
@@ -29,7 +23,8 @@ const Applications = () => {
       if (filter.search) params.search = filter.search
 
       const response = await applicationsAPI.getAllApplications(params)
-      setApplications(response.data.applications || [])
+      const apps = response.data?.applications || response.applications || response.data?.data?.applications || []
+      setApplications(apps)
       setError('')
     } catch (error) {
       console.error('Error fetching applications:', error)
@@ -38,6 +33,12 @@ const Applications = () => {
       setLoading(false)
     }
   }, [filter])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchApplications()
+    }
+  }, [isAuthenticated, fetchApplications])
 
   const handleStatusUpdate = async (applicationId, newStatus) => {
     try {
