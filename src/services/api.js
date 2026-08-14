@@ -396,14 +396,17 @@ export const applicationsAPI = {
     return response.data
   },
 
-  createApplication: async (formData) => {
-    // Increased timeout for file uploads
-    const response = await api.post('/applications', formData, {
-      headers: {
+  createApplication: async (data) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+    const config = {
+      timeout: 60000,
+    }
+    if (isFormData) {
+      config.headers = {
         'Content-Type': 'multipart/form-data',
-      },
-      timeout: 60000, // Increased to 60 seconds for file uploads
-    })
+      }
+    }
+    const response = await api.post('/applications', data, config)
     return response.data
   },
 

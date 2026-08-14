@@ -12,7 +12,12 @@ export const getFriendlyErrorMessage = (error) => {
 
   // If string was passed directly
   if (typeof error === 'string') {
-    return mapCodeOrMessageToFriendly(error)
+    const mapped = mapCodeOrMessageToFriendly(error)
+    if (mapped) return mapped
+    if (isTechnicalErrorString(error)) {
+      return 'Failed to submit application. Please try again.'
+    }
+    return error
   }
 
   // Extract from backend JSON response structure
@@ -21,6 +26,10 @@ export const getFriendlyErrorMessage = (error) => {
   const errorCode = responseData?.errorCode || responseData?.code || responseData?.error
 
   // Check specific error codes from backend
+  if (errorCode === 'ALREADY_APPLIED' || (typeof errorCode === 'string' && errorCode.toUpperCase().includes('ALREADY_APPLIED'))) {
+    return 'You have already applied for this job.'
+  }
+
   if (errorCode === 'USER_ALREADY_EXISTS') {
     return 'An account with this email or mobile number already exists.'
   }
@@ -61,6 +70,9 @@ export const getFriendlyErrorMessage = (error) => {
 
   // Handle HTTP status codes
   if (status === 409) {
+    if (responseData?.message?.toLowerCase().includes('applied') || responseData?.code === 'ALREADY_APPLIED') {
+      return 'You have already applied for this job.'
+    }
     return 'An account with this email or mobile number already exists.'
   }
 
@@ -98,7 +110,7 @@ export const getFriendlyErrorMessage = (error) => {
     return error.message
   }
 
-  return 'An unexpected error occurred. Please try again.'
+  return 'Failed to submit application. Please try again.'
 }
 
 /**
@@ -116,7 +128,8 @@ const isTechnicalErrorString = (msg) => {
     lower.includes('cast to objectid') ||
     lower.includes('unhandled rejection') ||
     lower.includes('syntaxerror') ||
-    lower.includes('typeerror')
+    lower.includes('typeerror') ||
+    lower.includes('internal server error')
   )
 }
 
@@ -126,6 +139,10 @@ const isTechnicalErrorString = (msg) => {
 const mapCodeOrMessageToFriendly = (str) => {
   if (!str) return ''
   const upper = str.toUpperCase()
+
+  if (upper.includes('ALREADY_APPLIED') || upper.includes('ALREADY APPLIED')) {
+    return 'You have already applied for this job.'
+  }
 
   if (upper.includes('USER_ALREADY_EXISTS') || upper.includes('USER ALREADY EXISTS')) {
     return 'An account with this email or mobile number already exists.'
@@ -151,3 +168,4 @@ const mapCodeOrMessageToFriendly = (str) => {
 }
 
 export default getFriendlyErrorMessage
+

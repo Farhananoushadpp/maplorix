@@ -158,37 +158,11 @@ const PostsFeed = () => {
   }
 
   // Handle successful application submission
-  const handleApplySuccess = async (applicationData) => {
-    try {
-      // Check if application data already has an ID (indicating it was already submitted)
-      if (
-        applicationData.id ||
-        applicationData._id ||
-        applicationData.application?.id
-      ) {
-        console.log(
-          '✅ PostsFeed: Application already submitted, skipping duplicate submission'
-        )
-        setSuccessMessage('Application submitted successfully!')
-        setShowApplyModal(false)
-        setSelectedPost(null)
-      } else {
-        console.log('🔄 PostsFeed: Application data received:', applicationData)
-        console.log(
-          '⚠️ PostsFeed: No application ID found, but this might be expected'
-        )
-        // Don't submit again - just show success
-        setSuccessMessage('Application submitted successfully!')
-        setShowApplyModal(false)
-        setSelectedPost(null)
-        console.log('✅ PostsFeed: Application already processed by modal')
-      }
-    } catch (error) {
-      console.error('❌ Error in handleApplySuccess:', error)
-      setSuccessMessage('Failed to submit application')
-    }
-
-    // Clear success message after 3 seconds
+  const handleApplySuccess = (result) => {
+    const msg = typeof result === 'string' ? result : 'Job application submitted successfully.'
+    setSuccessMessage(msg)
+    setShowApplyModal(false)
+    setSelectedPost(null)
     setTimeout(() => setSuccessMessage(''), 3000)
   }
 
