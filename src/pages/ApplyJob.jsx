@@ -151,7 +151,6 @@ const ApplyJob = () => {
       
       if (formData.attachedCv) {
         submitData.append('attachedCv', formData.attachedCv)
-        submitData.append('resume', formData.attachedCv) // backward compatibility
       }
 
       submitData.append('nationality', formData.nationality.trim())
@@ -159,7 +158,7 @@ const ApplyJob = () => {
       submitData.append('visaStatus', formData.visaStatus)
       
       if (jobContext.jobId) {
-        submitData.append('jobId', jobContext.jobId)
+        submitData.append('job', jobContext.jobId)
       }
       if (jobContext.jobTitle || jobContext.jobRole) {
         submitData.append('jobRole', jobContext.jobTitle || jobContext.jobRole)
