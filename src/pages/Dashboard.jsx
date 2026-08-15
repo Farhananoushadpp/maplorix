@@ -1,9 +1,9 @@
 // Dashboard Page Component - Side-by-Side Layout with Complete Isolation
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
-import api from '../services/api'
+import api, { candidatesAPI } from '../services/api'
 import * as XLSX from 'xlsx'
 
 const Dashboard = () => {
@@ -61,6 +61,63 @@ const Dashboard = () => {
     sortOrder: 'desc',
   })
 
+  // Candidates Section State
+  const [activeSection, setActiveSection] = useState('all') // 'all', 'candidates', 'applications', 'jobs'
+  const [candidates, setCandidates] = useState([])
+  const [candidateFilters, setCandidateFilters] = useState({
+    search: '',
+    location: '',
+    visaStatus: '',
+    industry: '',
+    nationality: '',
+  })
+  const [selectedCandidate, setSelectedCandidate] = useState(null)
+  const [showCandidateModal, setShowCandidateModal] = useState(false)
+  const [deletingCandidateId, setDeletingCandidateId] = useState(null)
+  const [candidatesToShow, setCandidatesToShow] = useState(6)
+  const [showAllCandidates, setShowAllCandidates] = useState(false)
+
+  // Fetch candidates from API or derive from registered applications
+  const fetchCandidateProfiles = useCallback(async () => {
+    try {
+      const candidatesData = await candidatesAPI.getAllCandidates()
+      if (Array.isArray(candidatesData) && candidatesData.length > 0) {
+        setCandidates(candidatesData)
+      } else {
+        // Fallback: Build candidates list from registered applications & sessionStorage
+        const savedApps = JSON.parse(sessionStorage.getItem('dashboardApplications') || '[]')
+        const allCandidateApps = [...(applications || []), ...savedApps]
+        
+        // Deduplicate candidates by email
+        const candidateMap = new Map()
+        allCandidateApps.forEach((app) => {
+          if (app && app.email && !candidateMap.has(app.email.toLowerCase())) {
+            candidateMap.set(app.email.toLowerCase(), {
+              _id: app._id || app.id || String(Date.now()),
+              firstName: app.firstName || app.fullName?.split(' ')[0] || 'Candidate',
+              lastName: app.lastName || app.fullName?.split(' ').slice(1).join(' ') || '',
+              fullName: app.fullName || `${app.firstName || ''} ${app.lastName || ''}`.trim() || 'Candidate',
+              email: app.email,
+              mobile: app.mobile || app.phone || '',
+              phone: app.phone || app.mobile || '',
+              nationality: app.nationality || 'Not specified',
+              currentlyLocated: app.currentlyLocated || 'Not specified',
+              visaStatus: app.visaStatus || '',
+              industry: app.industry || app.jobRole || app.jobTitle || 'General Profile',
+              attachedCv: app.attachedCv || app.resume || '',
+              resume: app.resume || app.attachedCv || '',
+              createdAt: app.createdAt || new Date().toISOString(),
+              status: app.status || 'Active Candidate',
+            })
+          }
+        })
+        setCandidates(Array.from(candidateMap.values()))
+      }
+    } catch (err) {
+      console.warn('Notice loading candidates:', err)
+    }
+  }, [applications])
+
   // Fetch data on component mount with debouncing
   useEffect(() => {
     let isMounted = true
@@ -85,13 +142,15 @@ const Dashboard = () => {
           applicationsData?.length || 0,
           'applications'
         )
+
+        // Fetch candidate profiles
+        fetchCandidateProfiles()
       } catch (error) {
         if (!isMounted) return
         console.error('❌ Error fetching dashboard data:', error)
       }
     }
 
-    // Debounce the initial fetch
     timeoutId = setTimeout(() => {
       fetchData()
     }, 1000)
@@ -100,7 +159,12 @@ const Dashboard = () => {
       isMounted = false
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [])
+  }, [fetchCandidateProfiles])
+
+  // Refresh candidate profiles when applications change
+  useEffect(() => {
+    fetchCandidateProfiles()
+  }, [applications, fetchCandidateProfiles])
 
   useEffect(() => {
     if (jobs.length > 0 || applications.length > 0) {
@@ -321,6 +385,114 @@ const Dashboard = () => {
       setTimeout(() => setSuccessMessage(''), 3000)
     } finally {
       setDeletingApplicationId(null)
+    }
+  }
+
+  // Filter candidate profiles
+  const filterCandidates = useMemo(() => {
+    return (candidatesToFilter) => {
+      if (!Array.isArray(candidatesToFilter)) return []
+
+      return candidatesToFilter.filter((cand) => {
+        const searchLower = candidateFilters.search.toLowerCase()
+        const matchesSearch =
+          !candidateFilters.search ||
+          cand.fullName?.toLowerCase().includes(searchLower) ||
+          cand.email?.toLowerCase().includes(searchLower) ||
+          cand.mobile?.toLowerCase().includes(searchLower) ||
+          cand.nationality?.toLowerCase().includes(searchLower) ||
+          cand.industry?.toLowerCase().includes(searchLower)
+
+        const matchesLocation =
+          !candidateFilters.location ||
+          cand.currentlyLocated?.toLowerCase() === candidateFilters.location.toLowerCase()
+
+        const matchesVisa =
+          !candidateFilters.visaStatus ||
+          cand.visaStatus?.toLowerCase() === candidateFilters.visaStatus.toLowerCase()
+
+        const matchesIndustry =
+          !candidateFilters.industry ||
+          cand.industry?.toLowerCase().includes(candidateFilters.industry.toLowerCase())
+
+        const matchesNationality =
+          !candidateFilters.nationality ||
+          cand.nationality?.toLowerCase().includes(candidateFilters.nationality.toLowerCase())
+
+        return (
+          matchesSearch &&
+          matchesLocation &&
+          matchesVisa &&
+          matchesIndustry &&
+          matchesNationality
+        )
+      })
+    }
+  }, [candidateFilters])
+
+  const handleDeleteCandidate = async (candidate) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove candidate "${candidate.fullName}" from the talent pool?`
+      )
+    ) {
+      return
+    }
+
+    setDeletingCandidateId(candidate._id)
+    try {
+      await candidatesAPI.deleteCandidate(candidate._id)
+      setCandidates((prev) => prev.filter((c) => c._id !== candidate._id))
+      setSuccessMessage(`Candidate "${candidate.fullName}" removed successfully!`)
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } catch (error) {
+      console.warn('Candidate delete fallback:', error)
+      setCandidates((prev) => prev.filter((c) => c._id !== candidate._id))
+      setSuccessMessage(`Candidate "${candidate.fullName}" removed from list.`)
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } finally {
+      setDeletingCandidateId(null)
+    }
+  }
+
+  const downloadCandidatesExcel = () => {
+    try {
+      const filteredCands = filterCandidates(candidates)
+      if (!filteredCands || filteredCands.length === 0) {
+        setSuccessMessage('No candidates data to download')
+        setTimeout(() => setSuccessMessage(''), 3000)
+        return
+      }
+
+      const excelData = filteredCands.map((cand, index) => ({
+        'S.No': index + 1,
+        'First Name': cand.firstName || '',
+        'Last Name': cand.lastName || '',
+        'Full Name': cand.fullName || '',
+        Email: cand.email || '',
+        Mobile: cand.mobile || cand.phone || '',
+        Nationality: cand.nationality || '',
+        'Currently Located': cand.currentlyLocated || '',
+        'Visa Status': cand.visaStatus || '',
+        Industry: cand.industry || '',
+        'CV / Resume': typeof cand.attachedCv === 'string' ? cand.attachedCv : cand.attachedCv?.name || 'Attached',
+        'Registered Date': cand.createdAt ? new Date(cand.createdAt).toLocaleDateString() : '',
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(excelData)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Candidates')
+
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const filename = `Maplorix_Candidates_Pool_${timestamp}.xlsx`
+      XLSX.writeFile(wb, filename)
+
+      setSuccessMessage('Candidates Excel downloaded successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } catch (err) {
+      console.error('Failed to export candidates excel:', err)
+      setSuccessMessage('Failed to download Excel')
+      setTimeout(() => setSuccessMessage(''), 3000)
     }
   }
 
@@ -725,19 +897,53 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="card bg-white p-6 border-l-4 border-[#149fc9] shadow-custom">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-text-light uppercase tracking-wider">
+                  Candidate Profiles
+                </p>
+                <p className="text-3xl font-bold text-primary mt-2">
+                  {candidates.length}
+                </p>
+                <p className="text-xs text-emerald-600 font-medium mt-1">Talent Pool Records</p>
+              </div>
+              <div className="w-12 h-12 bg-[#149fc9]/10 rounded-xl flex items-center justify-center">
+                <i className="fas fa-id-card text-[#149fc9] text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-white p-6 border-l-4 border-primary shadow-custom">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-text-light uppercase tracking-wider">
+                  Job Applications
+                </p>
+                <p className="text-3xl font-bold text-primary mt-2">
+                  {stats.totalApplications || applications.length}
+                </p>
+                <p className="text-xs text-text-light mt-1">Submitted for jobs</p>
+              </div>
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <i className="fas fa-file-signature text-primary text-xl"></i>
+              </div>
+            </div>
+          </div>
+
           <div className="card bg-white p-6 border-l-4 border-secondary shadow-custom">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-text-light uppercase tracking-wide">
-                  Total Jobs
+                <p className="text-xs font-semibold text-text-light uppercase tracking-wider">
+                  Total Jobs Posted
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
-                  {stats.totalJobs}
+                  {stats.totalJobs || jobs.length}
                 </p>
-                <p className="text-xs text-text-light mt-1">Posted positions</p>
+                <p className="text-xs text-text-light mt-1">Active Positions</p>
               </div>
-              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
                 <i className="fas fa-briefcase text-secondary text-xl"></i>
               </div>
             </div>
@@ -746,348 +952,307 @@ const Dashboard = () => {
           <div className="card bg-white p-6 border-l-4 border-accent shadow-custom">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-text-light uppercase tracking-wide">
-                  Recent Jobs
+                <p className="text-xs font-semibold text-text-light uppercase tracking-wider">
+                  Recent Activity
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
-                  {stats.recentJobs}
+                  {(stats.recentApplications || 0) + (stats.recentJobs || 0)}
                 </p>
                 <p className="text-xs text-text-light mt-1">Last 7 days</p>
               </div>
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
                 <i className="fas fa-clock text-accent text-xl"></i>
               </div>
             </div>
           </div>
-
-          <div className="card bg-white p-6 border-l-4 border-primary shadow-custom">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light uppercase tracking-wide">
-                  Total Applications
-                </p>
-                <p className="text-3xl font-bold text-primary mt-2">
-                  {stats.totalApplications}
-                </p>
-                <p className="text-xs text-text-light mt-1">All submissions</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <i className="fas fa-users text-primary text-xl"></i>
-              </div>
-            </div>
-          </div>
-
-          <div className="card bg-white p-6 border-l-4 border-secondary shadow-custom">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light uppercase tracking-wide">
-                  Recent Applications
-                </p>
-                <p className="text-3xl font-bold text-primary mt-2">
-                  {stats.recentApplications}
-                </p>
-                <p className="text-xs text-text-light mt-1">Last 7 days</p>
-              </div>
-              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                <i className="fas fa-chart-line text-secondary text-xl"></i>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Backup Section */}
-        <div className="card bg-white shadow-custom mb-8">
-          <div className="px-6 py-4 border-b border-border-color">
-            <div className="flex items-center justify-between">
+        {/* Section Navigation Tabs */}
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => setActiveSection('all')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeSection === 'all'
+                ? 'bg-[#023341] text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <i className="fas fa-th-large"></i>
+            All Dashboard
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('candidates')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeSection === 'candidates'
+                ? 'bg-[#149fc9] text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <i className="fas fa-users"></i>
+            Candidates Pool / Profiles
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              activeSection === 'candidates' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+            }`}>
+              {candidates.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('applications')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeSection === 'applications'
+                ? 'bg-[#023341] text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <i className="fas fa-file-alt"></i>
+            Job Applications
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              activeSection === 'applications' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {applications.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('jobs')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeSection === 'jobs'
+                ? 'bg-[#023341] text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <i className="fas fa-briefcase"></i>
+            Jobs Posted
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              activeSection === 'jobs' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {jobs.length}
+            </span>
+          </button>
+        </div>
+
+        {/* ── SECTION 1: CANDIDATES POOL (PROFILES) ── */}
+        {(activeSection === 'all' || activeSection === 'candidates') && (
+          <div className="card bg-white shadow-custom mb-8">
+            <div className="px-6 py-4 border-b border-border-color bg-gradient-to-r from-blue-50/50 to-emerald-50/50 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-cloud-download-alt text-green-600"></i>
+                <div className="w-10 h-10 bg-[#149fc9] text-white rounded-xl flex items-center justify-center shadow-sm">
+                  <i className="fas fa-id-card text-lg"></i>
                 </div>
-                <h3 className="text-lg font-semibold text-primary">
-                  Auto Backup
-                </h3>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-text-light">
-                  {backups.autoBackupEnabled ? 'Enabled' : 'Disabled'}
-                </div>
-                {backups.lastBackup && (
-                  <div className="text-sm text-text-light">
-                    Last: {new Date(backups.lastBackup).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <button
-                onClick={createBackup}
-                disabled={loading.backup}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
-              >
-                <i className="fas fa-save"></i>
-                <span>{loading.backup ? 'Creating...' : 'Create Backup'}</span>
-              </button>
-
-              <button
-                onClick={downloadBackup}
-                className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
-              >
-                <i className="fas fa-download"></i>
-                <span>Download Backup</span>
-              </button>
-
-              <button
-                onClick={() => setAutoBackup(!backups.autoBackupEnabled)}
-                className={`px-4 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center space-x-2 ${
-                  backups.autoBackupEnabled
-                    ? 'bg-orange-600 text-white hover:bg-orange-700'
-                    : 'bg-gray-600 text-white hover:bg-gray-700'
-                }`}
-              >
-                <i className="fas fa-clock"></i>
-                <span>
-                  {backups.autoBackupEnabled ? 'Disable Auto' : 'Enable Auto'}
-                </span>
-              </button>
-
-              <button
-                onClick={clearBackupHistory}
-                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium flex items-center justify-center space-x-2"
-              >
-                <i className="fas fa-trash"></i>
-                <span>Clear History</span>
-              </button>
-            </div>
-
-            {backups.backupHistory.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-sm font-medium text-text-light uppercase tracking-wide mb-3">
-                  Backup History
-                </h4>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {backups.backupHistory.map((backup, index) => (
-                    <div
-                      key={backup.timestamp}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-gray-500">#{index + 1}</span>
-                        <span className="text-gray-700">
-                          {new Date(backup.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-gray-500">
-                        <span>{backup.metadata?.totalJobs || 0} jobs</span>
-                        <span>•</span>
-                        <span>
-                          {backup.metadata?.totalApplications || 0} apps
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <h3 className="text-lg font-bold text-primary">
+                    Candidates Profile Pool
+                  </h3>
+                  <p className="text-xs text-text-light">
+                    Registered candidates with full profile information and attached CVs
+                  </p>
                 </div>
               </div>
-            )}
-
-            {backups.nextBackupTime && (
-              <div className="mt-4 text-sm text-text-light">
-                <i className="fas fa-info-circle mr-2"></i>
-                Next automatic backup:{' '}
-                {new Date(backups.nextBackupTime).toLocaleString()}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Jobs and Applications Side-by-Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Jobs Section - Left */}
-          <div className="card bg-white shadow-custom">
-            <div className="px-6 py-4 border-b border-border-color">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-briefcase text-secondary"></i>
-                  </div>
-                  <h3 className="text-lg font-semibold text-primary">Jobs</h3>
-                </div>
-                <div className="text-sm text-text-light">
-                  {filterJobs(jobs).length} jobs
-                </div>
-              </div>
-            </div>
-
-            {/* Jobs Filters */}
-            <div className="px-6 py-4 border-b border-border-color bg-primary/5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Search role..."
-                  value={jobFilters.role}
-                  onChange={(e) =>
-                    setJobFilters((prev) => ({ ...prev, role: e.target.value }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                />
-                <select
-                  value={jobFilters.experience}
-                  onChange={(e) =>
-                    setJobFilters((prev) => ({
-                      ...prev,
-                      experience: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                >
-                  <option value="">All Experience</option>
-                  <option value="Entry Level">Entry Level</option>
-                  <option value="Mid Level">Mid Level</option>
-                  <option value="Senior Level">Senior Level</option>
-                  <option value="Executive">Executive</option>
-                </select>
-                <select
-                  value={jobFilters.salary}
-                  onChange={(e) =>
-                    setJobFilters((prev) => ({
-                      ...prev,
-                      salary: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                >
-                  <option value="">All Salaries</option>
-                  <option value="3000">3000+</option>
-                  <option value="5000">5000+</option>
-                  <option value="7000">7000+</option>
-                  <option value="10000">10000+</option>
-                  <option value="15000">15000+</option>
-                  <option value="20000">20000+</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Location..."
-                  value={jobFilters.location}
-                  onChange={(e) =>
-                    setJobFilters((prev) => ({
-                      ...prev,
-                      location: e.target.value,
-                    }))
-                  }
-                  className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                />
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() =>
-                    setJobFilters({
-                      role: '',
-                      experience: '',
-                      salary: '',
-                      location: '',
-                      sortBy: 'createdAt',
-                      sortOrder: 'desc',
-                    })
-                  }
-                  className="px-3 py-2 bg-secondary text-white rounded-lg text-sm hover:bg-secondary/90 transition-colors"
+                  type="button"
+                  onClick={downloadCandidatesExcel}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
                 >
-                  Clear Filters
+                  <i className="fas fa-file-excel"></i> Export Candidates
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchCandidateProfiles}
+                  className="px-3.5 py-2 bg-[#023341] hover:bg-[#034a5e] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <i className="fas fa-sync-alt"></i> Refresh
                 </button>
               </div>
             </div>
 
+            {/* Candidate Filters */}
+            <div className="px-6 py-4 border-b border-border-color bg-gray-50/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <input
+                  type="text"
+                  placeholder="Search name, email, phone..."
+                  value={candidateFilters.search}
+                  onChange={(e) =>
+                    setCandidateFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-[#149fc9] focus:border-[#149fc9]"
+                />
+
+                <select
+                  value={candidateFilters.location}
+                  onChange={(e) =>
+                    setCandidateFilters((prev) => ({ ...prev, location: e.target.value }))
+                  }
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-[#149fc9] focus:border-[#149fc9]"
+                >
+                  <option value="">All Locations</option>
+                  <option value="India">India</option>
+                  <option value="UAE">UAE</option>
+                </select>
+
+                <select
+                  value={candidateFilters.visaStatus}
+                  onChange={(e) =>
+                    setCandidateFilters((prev) => ({ ...prev, visaStatus: e.target.value }))
+                  }
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-[#149fc9] focus:border-[#149fc9]"
+                >
+                  <option value="">All Visa Statuses</option>
+                  <option value="visitVisa">Visit Visa</option>
+                  <option value="residenceVisa">Residence Visa</option>
+                  <option value="spouseVisa">Spouse Visa</option>
+                </select>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Filter industry..."
+                    value={candidateFilters.industry}
+                    onChange={(e) =>
+                      setCandidateFilters((prev) => ({ ...prev, industry: e.target.value }))
+                    }
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-[#149fc9] focus:border-[#149fc9]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCandidateFilters({
+                        search: '',
+                        location: '',
+                        visaStatus: '',
+                        industry: '',
+                        nationality: '',
+                      })
+                    }
+                    className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-semibold"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Candidates Grid */}
             <div className="p-6">
-              {filterJobs(jobs).length === 0 ? (
-                <p className="text-text-light text-center py-8">
-                  No jobs posted yet
-                </p>
+              {filterCandidates(candidates).length === 0 ? (
+                <div className="text-center py-10">
+                  <i className="fas fa-user-slash text-4xl text-gray-300 mb-2"></i>
+                  <p className="text-sm font-semibold text-gray-600">No candidate profiles found</p>
+                  <p className="text-xs text-gray-400 mt-1">Candidates who register on the website will automatically appear here</p>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {filterJobs(jobs)
-                    .slice(0, showAllJobs ? undefined : jobsToShow)
-                    .map((job) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filterCandidates(candidates)
+                    .slice(0, showAllCandidates ? undefined : candidatesToShow)
+                    .map((candidate) => (
                       <div
-                        key={job._id}
-                        className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                        key={candidate._id}
+                        className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all hover:border-[#149fc9]/50 flex flex-col justify-between"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-primary">
-                            {job.title || 'N/A'}
-                          </h4>
-                          <span className="text-xs text-text-light">
-                            {new Date(job.createdAt).toLocaleDateString()}
-                          </span>
+                        <div>
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-2 pb-3 border-b border-gray-100 mb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-10 h-10 rounded-full bg-[#023341] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                {(candidate.firstName?.[0] || candidate.fullName?.[0] || 'C').toUpperCase()}
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-900 leading-tight">
+                                  {candidate.firstName && candidate.lastName
+                                    ? `${candidate.firstName} ${candidate.lastName}`
+                                    : candidate.fullName || 'Candidate'}
+                                </h4>
+                                <span className="inline-block text-[11px] font-semibold text-[#149fc9] bg-blue-50 px-2 py-0.5 rounded mt-0.5">
+                                  {candidate.industry || 'General Profile'}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0">
+                              Registered
+                            </span>
+                          </div>
+
+                          {/* Candidate Information Fields */}
+                          <div className="space-y-1.5 text-xs text-gray-600 mb-3">
+                            <p className="flex items-center gap-2 truncate">
+                              <i className="fas fa-envelope text-gray-400 w-3.5"></i>
+                              <span className="font-medium text-gray-800 truncate">{candidate.email}</span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <i className="fas fa-phone text-gray-400 w-3.5"></i>
+                              <span className="font-medium text-gray-800">{candidate.mobile || candidate.phone || 'N/A'}</span>
+                            </p>
+                            <div className="grid grid-cols-2 gap-1 pt-1 text-[11px]">
+                              <div>
+                                <span className="text-gray-400 block text-[10px]">Nationality</span>
+                                <span className="font-semibold text-gray-700">{candidate.nationality || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block text-[10px]">Location</span>
+                                <span className="font-semibold text-gray-700">{candidate.currentlyLocated || 'N/A'}</span>
+                              </div>
+                              {candidate.visaStatus && (
+                                <div className="col-span-2 mt-0.5">
+                                  <span className="text-gray-400 block text-[10px]">Visa Status</span>
+                                  <span className="font-semibold text-gray-700">{candidate.visaStatus}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CV Badge */}
+                            {(candidate.attachedCv || candidate.resume) && (
+                              <div className="mt-2 p-2 bg-emerald-50/80 border border-emerald-200 rounded-lg flex items-center justify-between gap-1 text-[11px]">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <i className="fas fa-file-pdf text-red-500"></i>
+                                  <span className="font-semibold text-gray-800 truncate">
+                                    {typeof candidate.attachedCv === 'string'
+                                      ? candidate.attachedCv
+                                      : candidate.attachedCv?.name || 'Resume.pdf'}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-emerald-700 font-bold bg-white px-1.5 py-0.5 rounded shadow-2xs">
+                                  Verified
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-1 text-sm text-text-light">
-                          <p>
-                            <i className="fas fa-building mr-2"></i>
-                            {job.company || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-map-marker-alt mr-2"></i>
-                            {job.location || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-briefcase mr-2"></i>
-                            {job.type || job.jobType || 'Not specified'}
-                          </p>
-                          <p>
-                            <i className="fas fa-chart-line mr-2"></i>
-                            {job.experience || 'Entry Level'}
-                          </p>
-                          <p>
-                            <i className="fas fa-money-bill mr-2"></i>
-                            {job.salary && (job.salary.min || job.salary.max)
-                              ? `${job.salary.currency || 'AED'} ${job.salary.min || ''}${
-                                  job.salary.min && job.salary.max ? ' - ' : ''
-                                }${job.salary.max || ''}${
-                                  job.salary.min && !job.salary.max ? '+' : ''
-                                }`
-                              : 'Competitive'}
-                          </p>
-                          <p>
-                            <i className="fas fa-info-circle mr-2"></i>
-                            {job.description && job.description.trim()
-                              ? job.description.length > 50
-                                ? `${job.description.substring(0, 50)}...`
-                                : job.description
-                              : 'No description provided'}
-                          </p>
-                          <p>
-                            <i className="fas fa-list-check mr-2"></i>
-                            {job.requirements && job.requirements.trim()
-                              ? job.requirements.length > 50
-                                ? `${job.requirements.substring(0, 50)}...`
-                                : job.requirements
-                              : 'No specific requirements'}
-                          </p>
-                        </div>
-                        <div className="mt-3 flex space-x-2">
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                           <button
+                            type="button"
                             onClick={() => {
-                              setSelectedJob(job)
-                              setShowJobModal(true)
+                              setSelectedCandidate(candidate)
+                              setShowCandidateModal(true)
                             }}
-                            className="px-3 py-1 bg-accent text-white rounded text-sm hover:bg-accent/90 transition-colors"
+                            className="flex-1 py-1.5 bg-[#023341] hover:bg-[#034a5e] text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1"
                           >
-                            View Details
+                            <i className="fas fa-eye"></i> View Profile
                           </button>
                           <button
-                            onClick={() => handleDeleteJob(job)}
-                            disabled={deletingJobId === job._id}
-                            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                            type="button"
+                            onClick={() => handleDownloadResume(candidate._id)}
+                            className="py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors"
+                            title="Download CV"
                           >
-                            {deletingJobId === job._id ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                Deleting...
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-trash"></i>
-                                Delete
-                              </>
-                            )}
+                            <i className="fas fa-download"></i>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCandidate(candidate)}
+                            disabled={deletingCandidateId === candidate._id}
+                            className="py-1.5 px-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                            title="Remove Candidate"
+                          >
+                            <i className="fas fa-trash"></i>
                           </button>
                         </div>
                       </div>
@@ -1095,22 +1260,21 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* See More/Less Button for Jobs */}
-              {filterJobs(jobs).length > jobsToShow && (
-                <div className="p-4 border-t border-border-color">
+              {/* Show More/Less for Candidates */}
+              {filterCandidates(candidates).length > candidatesToShow && (
+                <div className="mt-6 text-center">
                   <button
-                    onClick={() => setShowAllJobs(!showAllJobs)}
-                    className="w-full px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2"
+                    type="button"
+                    onClick={() => setShowAllCandidates(!showAllCandidates)}
+                    className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5"
                   >
-                    {showAllJobs ? (
+                    {showAllCandidates ? (
                       <>
-                        <i className="fas fa-chevron-up"></i>
-                        See Less
+                        <i className="fas fa-chevron-up"></i> Show Less Candidates
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-chevron-down"></i>
-                        See More ({filterJobs(jobs).length - jobsToShow} more)
+                        <i className="fas fa-chevron-down"></i> View All ({filterCandidates(candidates).length}) Candidates
                       </>
                     )}
                   </button>
@@ -1118,285 +1282,411 @@ const Dashboard = () => {
               )}
             </div>
           </div>
+        )}
 
-          {/* Applications Section - Right */}
-          <div className="card bg-white shadow-custom">
-            <div className="px-6 py-4 border-b border-border-color">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-users text-accent"></i>
-                  </div>
-                  <h3 className="text-lg font-semibold text-primary">
-                    Applications
-                  </h3>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={downloadApplicationsExcel}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium flex items-center space-x-2"
-                    title="Download applications data as Excel"
-                  >
-                    <i className="fas fa-file-excel"></i>
-                    <span>Download Excel</span>
-                  </button>
-                  <div className="text-sm text-text-light">
-                    {filterApplications(applications).length} applications
+        {/* ── SECTION 2 & 3: JOBS AND APPLICATIONS SIDE-BY-SIDE ── */}
+        {(activeSection === 'all' || activeSection === 'jobs' || activeSection === 'applications') && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Jobs Section - Left */}
+            {(activeSection === 'all' || activeSection === 'jobs') && (
+              <div className="card bg-white shadow-custom">
+                <div className="px-6 py-4 border-b border-border-color">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-briefcase text-secondary"></i>
+                      </div>
+                      <h3 className="text-lg font-semibold text-primary">Jobs</h3>
+                    </div>
+                    <div className="text-sm text-text-light">
+                      {filterJobs(jobs).length} jobs
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Applications Filters */}
-              <div className="px-6 py-4 border-b border-border-color bg-primary/5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Search name..."
-                    value={applicationFilters.fullName}
-                    onChange={(e) =>
-                      setApplicationFilters((prev) => ({
-                        ...prev,
-                        fullName: e.target.value,
-                      }))
-                    }
-                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search email..."
-                    value={applicationFilters.email}
-                    onChange={(e) =>
-                      setApplicationFilters((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
-                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  />
-                  <select
-                    value={applicationFilters.experience}
-                    onChange={(e) =>
-                      setApplicationFilters((prev) => ({
-                        ...prev,
-                        experience: e.target.value,
-                      }))
-                    }
-                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="">All Experience</option>
-                    <option value="Entry Level">Entry Level</option>
-                    <option value="Mid Level">Mid Level</option>
-                    <option value="Senior Level">Senior Level</option>
-                    <option value="Executive">Executive</option>
-                  </select>
-                  <select
-                    value={applicationFilters.expectedSalary}
-                    onChange={(e) =>
-                      setApplicationFilters((prev) => ({
-                        ...prev,
-                        expectedSalary: e.target.value,
-                      }))
-                    }
-                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="">All Salaries</option>
-                    <option value="3000">3000+</option>
-                    <option value="5000">5000+</option>
-                    <option value="7000">7000+</option>
-                    <option value="10000">10000+</option>
-                    <option value="15000">15000+</option>
-                    <option value="20000">20000+</option>
-                  </select>
-                  <select
-                    value={applicationFilters.jobRole}
-                    onChange={(e) =>
-                      setApplicationFilters((prev) => ({
-                        ...prev,
-                        jobRole: e.target.value,
-                      }))
-                    }
-                    className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="">All Job Roles</option>
-                    <option value="developer">Developer</option>
-                    <option value="designer">Designer</option>
-                    <option value="manager">Manager</option>
-                    <option value="analyst">Analyst</option>
-                    <option value="engineer">Engineer</option>
-                    <option value="consultant">Consultant</option>
-                    <option value="accountant">Accountant</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="sales">Sales</option>
-                    <option value="hr">HR</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <button
-                    onClick={() =>
-                      setApplicationFilters({
-                        fullName: '',
-                        email: '',
-                        jobRole: '',
-                        experience: '',
-                        expectedSalary: '',
-                      })
-                    }
-                    className="px-3 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent/90 transition-colors"
-                  >
-                    Clear Filters
-                  </button>
+                {/* Jobs Filters */}
+                <div className="px-6 py-4 border-b border-border-color bg-primary/5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Search role..."
+                      value={jobFilters.role}
+                      onChange={(e) =>
+                        setJobFilters((prev) => ({ ...prev, role: e.target.value }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                    />
+                    <select
+                      value={jobFilters.experience}
+                      onChange={(e) =>
+                        setJobFilters((prev) => ({
+                          ...prev,
+                          experience: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                    >
+                      <option value="">All Experience</option>
+                      <option value="Entry Level">Entry Level</option>
+                      <option value="Mid Level">Mid Level</option>
+                      <option value="Senior Level">Senior Level</option>
+                      <option value="Executive">Executive</option>
+                    </select>
+                    <select
+                      value={jobFilters.salary}
+                      onChange={(e) =>
+                        setJobFilters((prev) => ({
+                          ...prev,
+                          salary: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                    >
+                      <option value="">All Salaries</option>
+                      <option value="3000">3000+</option>
+                      <option value="5000">5000+</option>
+                      <option value="7000">7000+</option>
+                      <option value="10000">10000+</option>
+                      <option value="15000">15000+</option>
+                      <option value="20000">20000+</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Location..."
+                      value={jobFilters.location}
+                      onChange={(e) =>
+                        setJobFilters((prev) => ({
+                          ...prev,
+                          location: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-6">
-                {filterApplications(applications).length === 0 ? (
-                  <p className="text-text-light text-center py-8">
-                    No applications yet
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {filterApplications(applications)
-                      .slice(
-                        0,
-                        showAllApplications ? undefined : applicationsToShow
-                      )
-                      .map((application) => (
-                        <div
-                          key={application._id}
-                          className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold text-primary">
-                              {application.fullName || 'N/A'}
-                            </h4>
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                application.status === 'approved'
-                                  ? 'bg-secondary/20 text-secondary'
-                                  : application.status === 'rejected'
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-accent/20 text-accent'
-                              }`}
-                            >
-                              {application.status || 'pending'}
-                            </span>
-                          </div>
-                          <div className="space-y-1.5 text-xs text-text-light">
-                            <p className="flex items-center gap-2">
-                              <i className="fas fa-envelope text-accent w-4"></i>
-                              <span className="font-medium text-gray-800">{application.email || 'Not specified'}</span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                              <i className="fas fa-phone text-accent w-4"></i>
-                              <span className="font-medium text-gray-800">{application.mobile || application.phone || 'Not specified'}</span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                              <i className="fas fa-briefcase text-accent w-4"></i>
-                              <span>Role / Industry: <strong>{application.industry || application.jobRole || 'Candidate Profile'}</strong></span>
-                            </p>
-                            <div className="grid grid-cols-2 gap-1 pt-1 text-[11px] text-gray-500">
-                              <span><i className="fas fa-globe mr-1 text-gray-400"></i> {application.nationality || 'Nationality: N/A'}</span>
-                              <span><i className="fas fa-map-marker-alt mr-1 text-gray-400"></i> {application.currentlyLocated || 'Location: N/A'}</span>
-                              {application.visaStatus && (
-                                <span className="col-span-2"><i className="fas fa-passport mr-1 text-gray-400"></i> Visa: {application.visaStatus}</span>
-                              )}
+                <div className="p-6">
+                  {filterJobs(jobs).length === 0 ? (
+                    <p className="text-text-light text-center py-8">
+                      No jobs posted yet
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filterJobs(jobs)
+                        .slice(0, showAllJobs ? undefined : jobsToShow)
+                        .map((job) => (
+                          <div
+                            key={job._id}
+                            className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-primary">
+                                {job.title}
+                              </h4>
+                              <span className="px-2 py-1 bg-secondary/20 text-secondary text-xs rounded-full">
+                                {job.type || job.jobType || 'Full-time'}
+                              </span>
                             </div>
-                            {(application.attachedCv || application.resume) && (
-                              <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[11px] font-medium border border-emerald-200">
-                                <i className="fas fa-file-pdf text-red-500"></i>
-                                <span className="truncate max-w-[200px]">
-                                  {typeof application.attachedCv === 'string'
-                                    ? application.attachedCv
-                                    : typeof application.resume === 'string'
-                                      ? application.resume
-                                      : application.attachedCv?.name || application.resume?.originalName || 'CV Attached'}
-                                </span>
-                              </div>
-                            )}
+                            <div className="space-y-1 text-sm text-text-light">
+                              <p>
+                                <i className="fas fa-building mr-2"></i>
+                                {job.company || 'Not specified'}
+                              </p>
+                              <p>
+                                <i className="fas fa-map-marker-alt mr-2"></i>
+                                {job.location || 'Not specified'}
+                              </p>
+                              <p>
+                                <i className="fas fa-money-bill mr-2"></i>
+                                {job.salary &&
+                                (job.salary.min || job.salary.max)
+                                  ? `${job.salary.currency || 'AED'} ${job.salary.min || ''}${job.salary.min && job.salary.max ? ' - ' : ''}${job.salary.max || ''}${job.salary.min && !job.salary.max ? '+' : ''}`
+                                  : 'Competitive'}
+                              </p>
+                            </div>
+                            <div className="mt-3 flex space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedJob(job)
+                                  setShowJobModal(true)
+                                }}
+                                className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90 transition-colors"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => handleDeleteJob(job)}
+                                disabled={deletingJobId === job._id}
+                                className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                              >
+                                {deletingJobId === job._id ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-trash"></i>
+                                    Delete
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
-                          <div className="mt-3 flex space-x-2">
-                            <button
-                              onClick={() => {
-                                console.log(
-                                  '🔍 Opening application details:',
-                                  application
-                                )
-                                console.log(
-                                  '🔍 Application ID:',
-                                  application._id
-                                )
-                                console.log(
-                                  '🔍 Application fullName:',
-                                  application.fullName
-                                )
-                                console.log(
-                                  '🔍 Application email:',
-                                  application.email
-                                )
-                                setSelectedApplication(application)
-                                setShowApplicationModal(true)
-                              }}
-                              className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
-                            >
-                              View Details
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleDeleteApplication(application)
-                              }
-                              disabled={
-                                deletingApplicationId === application._id
-                              }
-                              className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                            >
-                              {deletingApplicationId === application._id ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                  Deleting...
-                                </>
-                              ) : (
-                                <>
-                                  <i className="fas fa-trash"></i>
-                                  Delete
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
+                        ))}
+                    </div>
+                  )}
 
-                {/* See More/Less Button */}
-                {filterApplications(applications).length >
-                  applicationsToShow && (
-                  <div className="p-4 border-t border-border-color">
+                  {/* See More/Less Button */}
+                  {filterJobs(jobs).length > jobsToShow && (
+                    <div className="p-4 border-t border-border-color">
+                      <button
+                        onClick={() => setShowAllJobs(!showAllJobs)}
+                        className="w-full px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2"
+                      >
+                        {showAllJobs ? (
+                          <>
+                            <i className="fas fa-chevron-up"></i>
+                            See Less
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-chevron-down"></i>
+                            See More ({filterJobs(jobs).length - jobsToShow} more)
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Applications Section - Right */}
+            {(activeSection === 'all' || activeSection === 'applications') && (
+              <div className="card bg-white shadow-custom">
+                <div className="px-6 py-4 border-b border-border-color flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-file-alt text-accent"></i>
+                    </div>
+                    <h3 className="text-lg font-semibold text-primary">
+                      Applications
+                    </h3>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={downloadApplicationsExcel}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors flex items-center gap-1 font-semibold"
+                      title="Download applications data as Excel"
+                    >
+                      <i className="fas fa-download"></i>
+                      Excel
+                    </button>
+                    <span className="text-sm text-text-light">
+                      {filterApplications(applications).length} apps
+                    </span>
+                  </div>
+                </div>
+
+                {/* Applications Filters */}
+                <div className="px-6 py-4 border-b border-border-color bg-accent/5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Candidate name..."
+                      value={applicationFilters.fullName}
+                      onChange={(e) =>
+                        setApplicationFilters((prev) => ({
+                          ...prev,
+                          fullName: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Email..."
+                      value={applicationFilters.email}
+                      onChange={(e) =>
+                        setApplicationFilters((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                    <select
+                      value={applicationFilters.jobRole}
+                      onChange={(e) =>
+                        setApplicationFilters((prev) => ({
+                          ...prev,
+                          jobRole: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-2 border border-border-color rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    >
+                      <option value="">All Roles</option>
+                      <option value="developer">Developer</option>
+                      <option value="designer">Designer</option>
+                      <option value="manager">Manager</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="sales">Sales</option>
+                      <option value="hr">HR</option>
+                      <option value="other">Other</option>
+                    </select>
                     <button
                       onClick={() =>
-                        setShowAllApplications(!showAllApplications)
+                        setApplicationFilters({
+                          fullName: '',
+                          email: '',
+                          jobRole: '',
+                          experience: '',
+                          expectedSalary: '',
+                        })
                       }
-                      className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
+                      className="px-3 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent/90 transition-colors"
                     >
-                      {showAllApplications ? (
-                        <>
-                          <i className="fas fa-chevron-up"></i>
-                          See Less
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-chevron-down"></i>
-                          See More (
-                          {filterApplications(applications).length -
-                            applicationsToShow}{' '}
-                          more)
-                        </>
-                      )}
+                      Clear Filters
                     </button>
                   </div>
-                )}
+                </div>
+
+                <div className="p-6">
+                  {filterApplications(applications).length === 0 ? (
+                    <p className="text-text-light text-center py-8">
+                      No applications yet
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filterApplications(applications)
+                        .slice(
+                          0,
+                          showAllApplications ? undefined : applicationsToShow
+                        )
+                        .map((application) => (
+                          <div
+                            key={application._id}
+                            className="border border-border-color rounded-lg p-4 hover:shadow-custom transition-shadow"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-primary">
+                                {application.fullName || 'N/A'}
+                              </h4>
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  application.status === 'approved'
+                                    ? 'bg-secondary/20 text-secondary'
+                                    : application.status === 'rejected'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-accent/20 text-accent'
+                                }`}
+                              >
+                                {application.status || 'pending'}
+                              </span>
+                            </div>
+                            <div className="space-y-1.5 text-xs text-text-light">
+                              <p className="flex items-center gap-2">
+                                <i className="fas fa-envelope text-accent w-4"></i>
+                                <span className="font-medium text-gray-800">{application.email || 'Not specified'}</span>
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <i className="fas fa-phone text-accent w-4"></i>
+                                <span className="font-medium text-gray-800">{application.mobile || application.phone || 'Not specified'}</span>
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <i className="fas fa-briefcase text-accent w-4"></i>
+                                <span>Role / Industry: <strong>{application.industry || application.jobRole || 'Candidate Profile'}</strong></span>
+                              </p>
+                              <div className="grid grid-cols-2 gap-1 pt-1 text-[11px] text-gray-500">
+                                <span><i className="fas fa-globe mr-1 text-gray-400"></i> {application.nationality || 'Nationality: N/A'}</span>
+                                <span><i className="fas fa-map-marker-alt mr-1 text-gray-400"></i> {application.currentlyLocated || 'Location: N/A'}</span>
+                                {application.visaStatus && (
+                                  <span className="col-span-2"><i className="fas fa-passport mr-1 text-gray-400"></i> Visa: {application.visaStatus}</span>
+                                )}
+                              </div>
+                              {(application.attachedCv || application.resume) && (
+                                <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[11px] font-medium border border-emerald-200">
+                                  <i className="fas fa-file-pdf text-red-500"></i>
+                                  <span className="truncate max-w-[200px]">
+                                    {typeof application.attachedCv === 'string'
+                                      ? application.attachedCv
+                                      : typeof application.resume === 'string'
+                                        ? application.resume
+                                        : application.attachedCv?.name || application.resume?.originalName || 'CV Attached'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-3 flex space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedApplication(application)
+                                  setShowApplicationModal(true)
+                                }}
+                                className="px-3 py-1 bg-secondary text-white rounded text-sm hover:bg-secondary/90 transition-colors"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteApplication(application)
+                                }
+                                disabled={
+                                  deletingApplicationId === application._id
+                                }
+                                className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                              >
+                                {deletingApplicationId === application._id ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-trash"></i>
+                                    Delete
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {/* See More/Less Button */}
+                  {filterApplications(applications).length >
+                    applicationsToShow && (
+                    <div className="p-4 border-t border-border-color">
+                      <button
+                        onClick={() =>
+                          setShowAllApplications(!showAllApplications)
+                        }
+                        className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
+                      >
+                        {showAllApplications ? (
+                          <>
+                            <i className="fas fa-chevron-up"></i>
+                            See Less
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-chevron-down"></i>
+                            See More (
+                            {filterApplications(applications).length -
+                              applicationsToShow}{' '}
+                            more)
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        </div>
+        )}
       </main>
 
       {/* Job Details Modal */}
@@ -1622,6 +1912,148 @@ const Dashboard = () => {
                   type="button"
                   onClick={handleCloseApplicationModal}
                   className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Candidate Profile Details Modal */}
+      {showCandidateModal && selectedCandidate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-150">
+            <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-[#023341] to-[#034a5e] text-white rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold">
+                    {(selectedCandidate.firstName?.[0] || selectedCandidate.fullName?.[0] || 'C').toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {selectedCandidate.firstName && selectedCandidate.lastName
+                        ? `${selectedCandidate.firstName} ${selectedCandidate.lastName}`
+                        : selectedCandidate.fullName || 'Candidate Profile'}
+                    </h2>
+                    <p className="text-xs text-emerald-300 font-medium">
+                      Registered Candidate • {selectedCandidate.industry || 'Talent Pool'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCandidateModal(false)
+                    setSelectedCandidate(null)
+                  }}
+                  className="text-white/80 hover:text-white text-2xl font-light w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm">
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">First Name</span>
+                  <p className="font-semibold text-gray-900 mt-1">
+                    {selectedCandidate.firstName || selectedCandidate.fullName?.split(' ')[0] || 'N/A'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Last Name</span>
+                  <p className="font-semibold text-gray-900 mt-1">
+                    {selectedCandidate.lastName || selectedCandidate.fullName?.split(' ').slice(1).join(' ') || 'N/A'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</span>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedCandidate.email || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mobile / Phone Number</span>
+                  <p className="font-semibold text-gray-900 mt-1">
+                    {selectedCandidate.mobile || selectedCandidate.phone || 'N/A'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nationality</span>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedCandidate.nationality || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currently Located</span>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedCandidate.currentlyLocated || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visa Status</span>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedCandidate.visaStatus || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Industry / Job Role</span>
+                  <p className="font-semibold text-gray-900 mt-1">
+                    {selectedCandidate.industry || selectedCandidate.jobRole || 'General Profile'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Attach CV / Resume section */}
+              <div className="mt-4 bg-emerald-50/70 p-4 rounded-xl border border-emerald-200">
+                <span className="block text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Attached CV / Resume</span>
+                {selectedCandidate.attachedCv || selectedCandidate.resume ? (
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <i className="fas fa-file-pdf text-red-500 text-2xl"></i>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {typeof selectedCandidate.attachedCv === 'string'
+                            ? selectedCandidate.attachedCv
+                            : typeof selectedCandidate.resume === 'string'
+                              ? selectedCandidate.resume
+                              : selectedCandidate.attachedCv?.name || selectedCandidate.resume?.originalName || 'Candidate_Resume.pdf'}
+                        </p>
+                        <p className="text-xs text-emerald-700">Uploaded during candidate registration</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleViewResume(selectedCandidate._id)}
+                        className="px-3.5 py-1.5 bg-[#023341] text-white rounded-lg hover:bg-[#034a5e] transition-colors text-xs font-semibold flex items-center gap-1.5"
+                      >
+                        <i className="fas fa-eye"></i> View CV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadResume(selectedCandidate._id)}
+                        className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-semibold flex items-center gap-1.5"
+                      >
+                        <i className="fas fa-download"></i> Download
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">No CV uploaded for this candidate</p>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCandidateModal(false)
+                    setSelectedCandidate(null)
+                  }}
+                  className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-xl text-xs font-bold transition-colors"
                 >
                   Close
                 </button>

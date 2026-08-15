@@ -464,6 +464,64 @@ export const applicationsAPI = {
   },
 }
 
+// Candidates API (Talent Pool & Registered Profiles)
+export const candidatesAPI = {
+  getAllCandidates: async (params = {}) => {
+    try {
+      let config = { params }
+      if (typeof params === 'string') {
+        config = { params: new URLSearchParams(params) }
+      }
+      const response = await api.get('/candidates', config)
+      return response.data?.candidates || response.data?.data?.candidates || response.data || []
+    } catch (error) {
+      console.warn('Candidates API endpoint notice, falling back:', error.message)
+      return []
+    }
+  },
+
+  getCandidateById: async (id) => {
+    const response = await api.get(`/candidates/${id}`)
+    return response.data
+  },
+
+  createCandidate: async (data) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+    const config = {
+      timeout: 60000,
+    }
+    if (isFormData) {
+      config.headers = {
+        'Content-Type': 'multipart/form-data',
+      }
+    }
+    const response = await api.post('/candidates', data, config)
+    return response.data
+  },
+
+  updateCandidate: async (id, candidateData) => {
+    const response = await api.put(`/candidates/${id}`, candidateData)
+    return response.data
+  },
+
+  deleteCandidate: async (id) => {
+    const response = await api.delete(`/candidates/${id}`)
+    return response.data
+  },
+
+  downloadResume: async (id) => {
+    const response = await api.get(`/candidates/${id}/resume`, {
+      responseType: 'blob',
+    })
+    return response
+  },
+
+  getCandidateStats: async () => {
+    const response = await api.get('/candidates/stats')
+    return response.data
+  },
+}
+
 // Contact API
 
 export const contactAPI = {

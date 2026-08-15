@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authAPI, applicationsAPI } from '../services/api'
+import { authAPI, applicationsAPI, candidatesAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { getFriendlyErrorMessage } from '../utils/errorUtils'
@@ -535,9 +535,13 @@ const Register = () => {
         appData.append('jobRole', indVal)
         appData.append('jobTitle', indVal)
 
-        await applicationsAPI.createApplication(appData)
+        // Save to Applications & Candidate Profiles Pool
+        await Promise.allSettled([
+          applicationsAPI.createApplication(appData),
+          candidatesAPI.createCandidate(appData),
+        ])
       } catch (appErr) {
-        console.warn('Initial application submission notice:', appErr)
+        console.warn('Initial application/candidate profile submission notice:', appErr)
       }
 
       setSuccessMessage('🎉 Account created successfully! Logging you in...')
