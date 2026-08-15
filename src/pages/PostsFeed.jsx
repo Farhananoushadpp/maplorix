@@ -549,10 +549,13 @@ const PostsFeed = () => {
           prefillData={
             selectedPost
               ? {
-                  jobRole: selectedPost.jobTitle,
-                  coverLetter: `I'm interested in the ${selectedPost.jobTitle} position.`,
+                  ...user,
+                  jobId: selectedPost._id || selectedPost.id,
+                  jobRole: selectedPost.jobTitle || selectedPost.title,
+                  jobTitle: selectedPost.jobTitle || selectedPost.title,
+                  attachedCvName: user?.attachedCvName || user?.attachedCv,
                 }
-              : {}
+              : { ...user }
           }
         />
 

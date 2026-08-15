@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authAPI } from '../services/api'
+import { authAPI, applicationsAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { getFriendlyErrorMessage } from '../utils/errorUtils'
@@ -511,11 +511,57 @@ const Register = () => {
 
       const response = await authAPI.register(registrationPayload)
 
+      // Automatically create application in DB & Dashboard with user's attached CV
+      try {
+        const appData = new FormData()
+        appData.append('firstName', formData.firstName.trim())
+        appData.append('lastName', formData.lastName.trim())
+        appData.append('fullName', `${formData.firstName.trim()} ${formData.lastName.trim()}`)
+        appData.append('email', formData.email.trim().toLowerCase())
+        appData.append('mobile', formData.mobile.trim())
+        appData.append('phone', formData.mobile.trim())
+        if (formData.attachedCv) {
+          appData.append('attachedCv', formData.attachedCv)
+          appData.append('resume', formData.attachedCv)
+        }
+        appData.append('nationality', formData.nationality.trim())
+        appData.append('currentlyLocated', formData.currentlyLocated.trim())
+        appData.append('visaStatus', formData.visaStatus || '')
+        appData.append(
+          'jobRole',
+          formData.industry === 'Other'
+            ? formData.otherIndustry.trim()
+            : formData.industry || 'Candidate Profile'
+        )
+
+        await applicationsAPI.createApplication(appData)
+      } catch (appErr) {
+        console.warn('Initial application submission notice:', appErr)
+      }
+
       setSuccessMessage('🎉 Account created successfully! Logging you in...')
 
-      // Save token and user if returned
+      // Save token and enhanced user object
       const token = response.data?.token || response.token
-      const user = response.data?.user || response.user
+      let user = response.data?.user || response.user
+
+      if (user) {
+        user = {
+          ...user,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          mobile: formData.mobile.trim(),
+          nationality: formData.nationality.trim(),
+          currentlyLocated: formData.currentlyLocated.trim(),
+          visaStatus: formData.visaStatus,
+          industry:
+            formData.industry === 'Other'
+              ? formData.otherIndustry.trim()
+              : formData.industry,
+          attachedCvName: formData.attachedCv ? formData.attachedCv.name : undefined,
+        }
+      }
 
       if (token && user) {
         localStorage.setItem('authToken', token)

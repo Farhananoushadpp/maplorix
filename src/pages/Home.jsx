@@ -69,19 +69,18 @@ const Home = () => {
   const handleApplyJobSuccess = (applicationData) => {
     console.log('Application submitted successfully:', applicationData)
 
-    // Show success message
-    setSuccessMessage(
-      `Application submitted successfully for "${applicationData.jobRole || 'Position'}"!`
-    )
+    const msg =
+      typeof applicationData === 'string'
+        ? applicationData
+        : `Applied for "${applicationData?.jobRole || 'Position'}" successfully!`
 
-    // Show success message and redirect
+    setSuccessMessage(msg)
+
     setTimeout(() => {
       setShowApplyJobModal(false)
       setSuccessMessage('')
       if (isAuthenticated) {
-        // Trigger refetch instead of calling fetchJobs directly
         setRefetchTrigger((prev) => prev + 1)
-        navigate('/dashboard')
       }
     }, 3000)
   }
@@ -646,6 +645,10 @@ const Home = () => {
           isOpen={showApplyJobModal}
           onClose={() => setShowApplyJobModal(false)}
           onSuccess={handleApplyJobSuccess}
+          prefillData={{
+            ...user,
+            attachedCvName: user?.attachedCvName || user?.attachedCv,
+          }}
         />
       </div>
     </>
