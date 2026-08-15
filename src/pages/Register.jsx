@@ -527,12 +527,13 @@ const Register = () => {
         appData.append('nationality', formData.nationality.trim())
         appData.append('currentlyLocated', formData.currentlyLocated.trim())
         appData.append('visaStatus', formData.visaStatus || '')
-        appData.append(
-          'jobRole',
+        const indVal =
           formData.industry === 'Other'
             ? formData.otherIndustry.trim()
             : formData.industry || 'Candidate Profile'
-        )
+        appData.append('industry', indVal)
+        appData.append('jobRole', indVal)
+        appData.append('jobTitle', indVal)
 
         await applicationsAPI.createApplication(appData)
       } catch (appErr) {

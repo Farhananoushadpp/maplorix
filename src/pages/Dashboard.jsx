@@ -1280,59 +1280,38 @@ const Dashboard = () => {
                               {application.status || 'pending'}
                             </span>
                           </div>
-                          <div className="space-y-1 text-sm text-text-light">
-                            <p>
-                              <i className="fas fa-envelope mr-2"></i>
-                              {application.email || 'Not specified'}
+                          <div className="space-y-1.5 text-xs text-text-light">
+                            <p className="flex items-center gap-2">
+                              <i className="fas fa-envelope text-accent w-4"></i>
+                              <span className="font-medium text-gray-800">{application.email || 'Not specified'}</span>
                             </p>
-                            <p>
-                              <i className="fas fa-phone mr-2"></i>
-                              {application.phone || 'Not specified'}
+                            <p className="flex items-center gap-2">
+                              <i className="fas fa-phone text-accent w-4"></i>
+                              <span className="font-medium text-gray-800">{application.mobile || application.phone || 'Not specified'}</span>
                             </p>
-                            <p>
-                              <i className="fas fa-briefcase mr-2"></i>
-                              {application.jobRole || 'Not specified'}
+                            <p className="flex items-center gap-2">
+                              <i className="fas fa-briefcase text-accent w-4"></i>
+                              <span>Role / Industry: <strong>{application.industry || application.jobRole || 'Candidate Profile'}</strong></span>
                             </p>
-                            <p>
-                              <i className="fas fa-chart-line mr-2"></i>
-                              {application.experience || 'Entry Level'}
-                            </p>
-                            <p>
-                              <i className="fas fa-money-bill mr-2"></i>
-                              {application.expectedSalary
-                                ? typeof application.expectedSalary === 'object'
-                                  ? application.expectedSalary.amount ||
-                                    application.expectedSalary.min ||
-                                    application.expectedSalary.max
-                                    ? `${
-                                        application.expectedSalary.currency ||
-                                        'AED'
-                                      } ${
-                                        application.expectedSalary.amount ||
-                                        application.expectedSalary.min ||
-                                        ''
-                                      }${
-                                        application.expectedSalary.min &&
-                                        application.expectedSalary.max
-                                          ? ` - ${application.expectedSalary.max}`
-                                          : application.expectedSalary.min &&
-                                              !application.expectedSalary.max
-                                            ? '+'
-                                            : ''
-                                      }`
-                                    : 'Not specified'
-                                  : `${application.currency || 'AED'} ${application.expectedSalary}`
-                                : 'Not specified'}
-                            </p>
-                            <p>
-                              <i className="fas fa-file-alt mr-2"></i>
-                              {application.coverLetter &&
-                              application.coverLetter.trim().length > 0
-                                ? application.coverLetter.length > 50
-                                  ? `${application.coverLetter.substring(0, 50)}...`
-                                  : application.coverLetter
-                                : 'Not specified'}
-                            </p>
+                            <div className="grid grid-cols-2 gap-1 pt-1 text-[11px] text-gray-500">
+                              <span><i className="fas fa-globe mr-1 text-gray-400"></i> {application.nationality || 'Nationality: N/A'}</span>
+                              <span><i className="fas fa-map-marker-alt mr-1 text-gray-400"></i> {application.currentlyLocated || 'Location: N/A'}</span>
+                              {application.visaStatus && (
+                                <span className="col-span-2"><i className="fas fa-passport mr-1 text-gray-400"></i> Visa: {application.visaStatus}</span>
+                              )}
+                            </div>
+                            {(application.attachedCv || application.resume) && (
+                              <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[11px] font-medium border border-emerald-200">
+                                <i className="fas fa-file-pdf text-red-500"></i>
+                                <span className="truncate max-w-[200px]">
+                                  {typeof application.attachedCv === 'string'
+                                    ? application.attachedCv
+                                    : typeof application.resume === 'string'
+                                      ? application.resume
+                                      : application.attachedCv?.name || application.resume?.originalName || 'CV Attached'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="mt-3 flex space-x-2">
                             <button
@@ -1522,284 +1501,130 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="p-6">
-              {/* Debug: Show selected application data */}
-              {console.log(
-                '🎯 Modal opened with selectedApplication:',
-                selectedApplication
-              )}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Full Name
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.fullName || 'Not specified'}
+              <div className="bg-gradient-to-br from-blue-50/50 to-emerald-50/50 p-4 rounded-xl border border-gray-200 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#023341] text-white flex items-center justify-center font-bold text-lg">
+                    {(selectedApplication.firstName?.[0] || selectedApplication.fullName?.[0] || 'C').toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {selectedApplication.firstName && selectedApplication.lastName
+                        ? `${selectedApplication.firstName} ${selectedApplication.lastName}`
+                        : selectedApplication.fullName || 'Candidate Profile'}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Applied on {new Date(selectedApplication.createdAt || Date.now()).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                {/* 1. First Name */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">First Name</span>
+                  <p className="font-medium text-gray-900 mt-0.5">
+                    {selectedApplication.firstName || selectedApplication.fullName?.split(' ')[0] || 'N/A'}
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.email || 'Not specified'}
+
+                {/* 2. Last Name */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Last Name</span>
+                  <p className="font-medium text-gray-900 mt-0.5">
+                    {selectedApplication.lastName || selectedApplication.fullName?.split(' ').slice(1).join(' ') || 'N/A'}
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Phone</h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.phone || 'Not specified'}
+
+                {/* 3. Email Address */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Email Address</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{selectedApplication.email || 'N/A'}</p>
+                </div>
+
+                {/* 4. Mobile / Phone Number */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Mobile / Phone Number</span>
+                  <p className="font-medium text-gray-900 mt-0.5">
+                    {selectedApplication.mobile || selectedApplication.phone || 'N/A'}
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Job Role</h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.jobRole || 'Not specified'}
+
+                {/* 5. Nationality */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Nationality</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{selectedApplication.nationality || 'N/A'}</p>
+                </div>
+
+                {/* 6. Currently Located */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Currently Located</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{selectedApplication.currentlyLocated || 'N/A'}</p>
+                </div>
+
+                {/* 7. Visa Status */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Visa Status</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{selectedApplication.visaStatus || 'N/A'}</p>
+                </div>
+
+                {/* 8. Industry / Job Role */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase">Industry / Job Role</span>
+                  <p className="font-medium text-gray-900 mt-0.5">
+                    {selectedApplication.industry || selectedApplication.jobRole || selectedApplication.jobTitle || 'N/A'}
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Experience Level
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.experience || 'Entry Level'}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Expected Salary
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.expectedSalary
-                      ? typeof selectedApplication.expectedSalary === 'object'
-                        ? selectedApplication.expectedSalary.amount ||
-                          selectedApplication.expectedSalary.min ||
-                          selectedApplication.expectedSalary.max
-                          ? `${selectedApplication.expectedSalary.currency || 'AED'} ${
-                              selectedApplication.expectedSalary.amount ||
-                              selectedApplication.expectedSalary.min ||
-                              ''
-                            }${
-                              selectedApplication.expectedSalary.min &&
-                              selectedApplication.expectedSalary.max
-                                ? ` - ${selectedApplication.expectedSalary.max}`
-                                : selectedApplication.expectedSalary.min &&
-                                    !selectedApplication.expectedSalary.max
-                                  ? '+'
-                                  : ''
-                            }`
-                          : 'Not specified'
-                        : `${selectedApplication.currency || 'AED'} ${
-                            selectedApplication.expectedSalary
-                          }`
-                      : 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Cover Letter
-                  </h3>
-                  <p className="text-gray-600 whitespace-pre-wrap">
-                    {selectedApplication.coverLetter &&
-                    selectedApplication.coverLetter.trim().length > 0
-                      ? selectedApplication.coverLetter
-                      : 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Resume/CV
-                  </h3>
-                  {/* Debug: Log resume data structure */}
-                  {console.log(
-                    '🔍 Resume data structure:',
-                    selectedApplication.resume
-                  )}
-                  {selectedApplication.resume &&
-                  (selectedApplication.resume.filename ||
-                    selectedApplication.resume.originalName ||
-                    selectedApplication.resume.data ||
-                    selectedApplication.resume.size > 0) ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">
-                        <i className="fas fa-file-pdf-alt mr-2"></i>
-                        {selectedApplication.resume.originalName ||
-                          selectedApplication.resume.filename}
-                        <span className="ml-2 text-xs text-gray-500">
-                          (
-                          {Math.round(
-                            (selectedApplication.resume.size || 0) / 1024
-                          )}{' '}
-                          KB)
-                        </span>
-                      </p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() =>
-                            handleViewResume(selectedApplication._id)
-                          }
-                          className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-                        >
-                          <i className="fas fa-eye mr-2"></i>
-                          View Resume
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDownloadResume(selectedApplication._id)
-                          }
-                          className="px-3 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors text-sm font-medium"
-                        >
-                          <i className="fas fa-download mr-2"></i>
-                          Download Resume
-                        </button>
+              </div>
+
+              {/* 9. Attach CV / Resume Section */}
+              <div className="mt-5 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <span className="block text-xs font-semibold text-gray-500 uppercase mb-2">Attach CV / Resume</span>
+                {selectedApplication.attachedCv || selectedApplication.resume ? (
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-file-pdf text-red-500 text-2xl"></i>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          {typeof selectedApplication.attachedCv === 'string'
+                            ? selectedApplication.attachedCv
+                            : typeof selectedApplication.resume === 'string'
+                              ? selectedApplication.resume
+                              : selectedApplication.attachedCv?.name || selectedApplication.resume?.originalName || 'Resume.pdf'}
+                        </p>
+                        <p className="text-xs text-emerald-600 font-medium">CV attached &amp; verified</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">
-                        <i className="fas fa-file-alt mr-2"></i>
-                        No resume uploaded
-                      </p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            // Check if we have a valid selected application
-                            if (
-                              !selectedApplication ||
-                              !selectedApplication._id
-                            ) {
-                              console.log('❌ No valid application selected')
-                              setSuccessMessage('No application selected')
-                              setTimeout(() => setSuccessMessage(''), 2000)
-                              return
-                            }
-
-                            console.log(
-                              '🔄 Force refreshing application data from backend...'
-                            )
-                            console.log(
-                              '📋 Application ID:',
-                              selectedApplication._id
-                            )
-
-                            fetchApplications(true) // Force refresh with cache busting
-
-                            // Also fetch the specific application details
-                            const fetchApplicationDetails = async () => {
-                              try {
-                                const response = await api.get(
-                                  `/applications/${selectedApplication._id}`
-                                )
-                                console.log('📋 API Response:', response)
-                                console.log(
-                                  '📋 Response data structure:',
-                                  JSON.stringify(response.data, null, 2)
-                                )
-
-                                // Handle different response structures
-                                const applicationData =
-                                  response.data?.data?.application || // New structure: data.application
-                                  response.data?.application || // Alternative: data.application
-                                  response.data?.data || // Original: data
-                                  response.data || // Direct: response
-                                  response // Fallback: response
-
-                                if (applicationData) {
-                                  console.log(
-                                    '📄 Fresh application data:',
-                                    applicationData
-                                  )
-                                  console.log(
-                                    '📄 Complete application structure:',
-                                    JSON.stringify(applicationData, null, 2)
-                                  )
-                                  console.log(
-                                    '🔍 Resume in fresh data:',
-                                    applicationData.resume
-                                  )
-                                  console.log(
-                                    '🔍 Resume type:',
-                                    typeof applicationData.resume
-                                  )
-                                  console.log(
-                                    '🔍 Resume keys:',
-                                    applicationData.resume
-                                      ? Object.keys(applicationData.resume)
-                                      : 'no resume object'
-                                  )
-                                  // Update the selected application with fresh data
-                                  setSelectedApplication(applicationData)
-                                  setSuccessMessage(
-                                    'Application data refreshed!'
-                                  )
-                                  setTimeout(() => setSuccessMessage(''), 2000)
-                                } else {
-                                  console.log(
-                                    '⚠️ No application data in response'
-                                  )
-                                  setSuccessMessage('No application data found')
-                                  setTimeout(() => setSuccessMessage(''), 2000)
-                                }
-                              } catch (error) {
-                                console.error(
-                                  '❌ Error fetching application details:',
-                                  error
-                                )
-                                setSuccessMessage(
-                                  'Failed to fetch application details'
-                                )
-                                setTimeout(() => setSuccessMessage(''), 2000)
-                              }
-                            }
-
-                            fetchApplicationDetails()
-                          }}
-                          className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-                        >
-                          <i className="fas fa-sync-alt mr-2"></i>
-                          Refresh Data
-                        </button>
-                        <button
-                          onClick={addTestResumeData}
-                          className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
-                          title="Add test resume data for debugging"
-                        >
-                          <i className="fas fa-flask mr-2"></i>
-                          Test Resume
-                        </button>
-                        <button
-                          disabled
-                          className="px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
-                          title="No resume available"
-                        >
-                          <i className="fas fa-eye mr-2"></i>
-                          View Resume
-                        </button>
-                        <button
-                          disabled
-                          className="px-3 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed text-sm font-medium"
-                          title="No resume available"
-                        >
-                          <i className="fas fa-download mr-2"></i>
-                          Download Resume
-                        </button>
-                      </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleViewResume(selectedApplication._id)}
+                        className="px-3 py-1.5 bg-[#023341] text-white rounded-lg hover:bg-[#034a5e] transition-colors text-xs font-semibold flex items-center gap-1.5"
+                      >
+                        <i className="fas fa-eye"></i> View CV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadResume(selectedApplication._id)}
+                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-semibold flex items-center gap-1.5"
+                      >
+                        <i className="fas fa-download"></i> Download
+                      </button>
                     </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Status</h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.status || 'pending'}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Submitted Date
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedApplication.createdAt
-                      ? new Date(selectedApplication.createdAt).toLocaleString()
-                      : 'Not specified'}
-                  </p>
-                </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">No resume attached</p>
+                )}
+              </div>
+              {/* Modal Footer Actions */}
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseApplicationModal}
+                  className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
