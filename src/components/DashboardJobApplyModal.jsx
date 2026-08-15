@@ -27,17 +27,8 @@ const DashboardJobApplyModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   const prevIsOpenRef = useRef(false)
-
-  // Has saved profile if prefillData has at least email/name
-  const hasSavedProfile = Boolean(
-    prefillData.email ||
-    (prefillData.firstName && prefillData.lastName) ||
-    prefillData.attachedCvName ||
-    prefillData.attachedCv
-  )
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -62,8 +53,6 @@ const DashboardJobApplyModal = ({
       setErrors({})
       setSubmitError('')
       setSubmitSuccess(false)
-      // Default to quick view if user already has saved details, else edit mode
-      setIsEditingProfile(!prefillData.email)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -179,7 +168,7 @@ const DashboardJobApplyModal = ({
     }
 
     if (!formData.attachedCv && !formData.savedCvName) {
-      newErrors.attachedCv = 'CV / Resume is required'
+      newErrors.attachedCv = 'Please attach your CV / Resume'
     }
 
     if (!formData.nationality.trim()) {
@@ -213,7 +202,6 @@ const DashboardJobApplyModal = ({
     setSubmitError('')
 
     if (!validateForm()) {
-      setIsEditingProfile(true) // Expand form if validation fails
       return
     }
 
@@ -242,13 +230,13 @@ const DashboardJobApplyModal = ({
       formDataToSend.append('currentlyLocated', formData.currentlyLocated)
       formDataToSend.append('visaStatus', formData.visaStatus || '')
 
-      if (prefillData.jobId || prefillData._id || prefillData.id) {
-        formDataToSend.append(
-          'jobId',
-          prefillData.jobId || prefillData._id || prefillData.id
-        )
+      const targetJobId = prefillData.jobId || prefillData._id || prefillData.id
+      if (targetJobId) {
+        formDataToSend.append('job', targetJobId)
+        formDataToSend.append('jobId', targetJobId)
       }
       formDataToSend.append('jobRole', jobRoleTitle)
+      formDataToSend.append('jobTitle', jobRoleTitle)
 
       const response = await applicationsAPI.createApplication(formDataToSend)
 
@@ -308,8 +296,11 @@ const DashboardJobApplyModal = ({
       }, 1500)
     } catch (error) {
       console.error('Failed to submit application:', error)
-      const friendlyMessage = getFriendlyErrorMessage(error)
-      setSubmitError(friendlyMessage)
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        getFriendlyErrorMessage(error)
+      setSubmitError(errorMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -362,106 +353,17 @@ const DashboardJobApplyModal = ({
           </div>
         )}
 
-        {/* ── MODE 1: QUICK APPLY WITH SAVED PROFILE & CV ── */}
-        {hasSavedProfile && !isEditingProfile && !submitSuccess && (
-          <div className="p-6 space-y-5">
-            <div className="bg-gradient-to-br from-blue-50/70 to-emerald-50/70 border border-blue-100 rounded-xl p-4 sm:p-5 shadow-sm">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-200/60 mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-[#023341] text-white flex items-center justify-center font-bold text-sm">
-                    {formData.firstName?.[0]}
-                    {formData.lastName?.[0]}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      {formData.firstName} {formData.lastName}
-                    </h4>
-                    <p className="text-xs text-gray-500">{formData.email}</p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
-                  Saved Profile
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5 text-xs text-gray-600 mb-3">
-                <div>
-                  <span className="text-gray-400 block text-[10px] uppercase font-semibold">Phone</span>
-                  <span className="font-medium text-gray-800">{formData.mobile || 'Not set'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px] uppercase font-semibold">Location</span>
-                  <span className="font-medium text-gray-800">{formData.currentlyLocated || 'Not set'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px] uppercase font-semibold">Nationality</span>
-                  <span className="font-medium text-gray-800">{formData.nationality || 'Not set'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px] uppercase font-semibold">Visa Status</span>
-                  <span className="font-medium text-gray-800">{formData.visaStatus || 'N/A'}</span>
-                </div>
-              </div>
-
-              {/* Saved CV badge */}
-              <div className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 truncate">
-                  <i className="fas fa-file-pdf text-red-500 text-base"></i>
-                  <span className="text-xs font-semibold text-gray-800 truncate">
-                    {formData.savedCvName || 'Profile CV / Resume on File'}
-                  </span>
-                </div>
-                <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded">
-                  Ready to submit
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="space-y-2.5 pt-1">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="w-full py-3 px-4 bg-gradient-to-r from-[#023341] to-[#149fc9] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i> Submitting Application...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-bolt text-yellow-300"></i> Apply with Current Profile &amp; CV
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsEditingProfile(true)}
-                className="w-full py-2.5 px-4 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <i className="fas fa-edit text-gray-500"></i> Edit Profile Details / Update CV
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── MODE 2: EDITABLE APPLICATION FORM ── */}
-        {(isEditingProfile || !hasSavedProfile) && !submitSuccess && (
+        {/* Application Form */}
+        {!submitSuccess && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {hasSavedProfile && (
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-700">
-                  <i className="fas fa-user-edit mr-1 text-[#149fc9]"></i> Update Details for this Job
+            {/* Pre-fill Notice if user is logged in */}
+            {formData.email && (
+              <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl flex items-center justify-between text-xs text-blue-900">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <i className="fas fa-user-check text-[#149fc9]"></i>
+                  Pre-filled with your profile details
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingProfile(false)}
-                  className="text-xs text-[#149fc9] hover:underline font-semibold"
-                >
-                  ← Back to Quick Apply
-                </button>
+                <span className="text-[11px] text-gray-500">Edit below if needed</span>
               </div>
             )}
 
@@ -545,34 +447,7 @@ const DashboardJobApplyModal = ({
                 Attach CV / Resume <span className="text-red-500">*</span>
               </label>
 
-              {formData.savedCvName && !formData.attachedCv ? (
-                <div className="flex items-center justify-between p-3 border border-emerald-200 bg-emerald-50/50 rounded-xl">
-                  <div className="flex items-center gap-2 truncate">
-                    <i className="fas fa-file-pdf text-red-500 text-lg"></i>
-                    <div>
-                      <p className="text-xs font-bold text-gray-800 truncate">{formData.savedCvName}</p>
-                      <p className="text-[11px] text-emerald-700">Currently using saved profile resume</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (fileInputRef.current) fileInputRef.current.click()
-                    }}
-                    className="text-xs font-semibold text-[#149fc9] hover:underline px-2 py-1"
-                  >
-                    Replace CV
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    name="attachedCv"
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx"
-                    className="hidden"
-                  />
-                </div>
-              ) : formData.attachedCv ? (
+              {formData.attachedCv ? (
                 <div className="flex items-center justify-between p-3 border border-[#149fc9] bg-blue-50/40 rounded-xl">
                   <div className="flex items-center gap-2 truncate">
                     <i className="fas fa-file-pdf text-red-500 text-lg"></i>
@@ -585,8 +460,30 @@ const DashboardJobApplyModal = ({
                     onClick={handleRemoveFile}
                     className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1"
                   >
-                    <i className="fas fa-trash mr-1"></i> Remove
+                    <i className="fas fa-trash mr-1"></i> Replace
                   </button>
+                </div>
+              ) : formData.savedCvName ? (
+                <div className="p-3 border border-gray-200 bg-gray-50/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 truncate">
+                      <i className="fas fa-file-pdf text-red-500 text-lg"></i>
+                      <span className="text-xs font-medium text-gray-700 truncate">
+                        {formData.savedCvName} (Profile CV)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="pt-1">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      name="attachedCv"
+                      onChange={handleFileChange}
+                      accept=".pdf,.doc,.docx"
+                      className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#023341] file:text-white hover:file:bg-[#034a5e] border border-gray-300 rounded-lg cursor-pointer bg-white p-1"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">Upload a new file to update, or keep profile CV</p>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -687,9 +584,17 @@ const DashboardJobApplyModal = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2 bg-gradient-to-r from-[#023341] to-[#149fc9] text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs shadow-md"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#023341] to-[#149fc9] text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs shadow-md flex items-center gap-1.5"
               >
-                {isSubmitting ? 'Submitting...' : 'Confirm & Apply'}
+                {isSubmitting ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i> Submitting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane text-[10px]"></i> Submit Application
+                  </>
+                )}
               </button>
             </div>
           </form>

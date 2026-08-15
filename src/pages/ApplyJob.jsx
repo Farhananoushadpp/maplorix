@@ -179,17 +179,21 @@ const ApplyJob = () => {
       
       if (formData.attachedCv) {
         submitData.append('attachedCv', formData.attachedCv)
+        submitData.append('resume', formData.attachedCv)
       }
 
       submitData.append('nationality', formData.nationality.trim())
       submitData.append('currentlyLocated', formData.currentlyLocated)
-      submitData.append('visaStatus', formData.visaStatus)
+      submitData.append('visaStatus', formData.visaStatus || '')
       
-      if (jobContext.jobId) {
-        submitData.append('job', jobContext.jobId)
+      const targetJobId = jobContext.jobId || jobContext._id || jobContext.id
+      if (targetJobId) {
+        submitData.append('job', targetJobId)
+        submitData.append('jobId', targetJobId)
       }
       if (jobContext.jobTitle || jobContext.jobRole) {
         submitData.append('jobRole', jobContext.jobTitle || jobContext.jobRole)
+        submitData.append('jobTitle', jobContext.jobTitle || jobContext.jobRole)
       }
 
       const response = await applicationsAPI.createApplication(submitData)
