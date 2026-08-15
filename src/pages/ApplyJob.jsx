@@ -31,15 +31,37 @@ const ApplyJob = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value,
+      }
+      if (
+        name === 'currentlyLocated' &&
+        value !== 'uae' &&
+        value !== 'UAE' &&
+        value !== 'dubai'
+      ) {
+        updated.visaStatus = ''
+      }
+      return updated
+    })
 
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
+      }))
+    }
+    if (
+      name === 'currentlyLocated' &&
+      value !== 'uae' &&
+      value !== 'UAE' &&
+      value !== 'dubai'
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        visaStatus: '',
       }))
     }
     if (submitError) {
@@ -117,7 +139,13 @@ const ApplyJob = () => {
       newErrors.currentlyLocated = 'Currently Located is required'
     }
 
-    if (!formData.visaStatus) {
+    // Visa status required only if located in UAE
+    if (
+      (formData.currentlyLocated === 'uae' ||
+        formData.currentlyLocated === 'UAE' ||
+        formData.currentlyLocated === 'dubai') &&
+      !formData.visaStatus
+    ) {
       newErrors.visaStatus = 'Visa Status is required'
     }
 
@@ -461,7 +489,7 @@ const ApplyJob = () => {
               >
                 <option value="">Select location</option>
                 <option value="india">India</option>
-                <option value="dubai">Dubai</option>
+                <option value="uae">UAE</option>
               </select>
               {errors.currentlyLocated && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -471,31 +499,35 @@ const ApplyJob = () => {
               )}
             </div>
 
-            {/* 8. Visa Status */}
-            <div>
-              <label className="block text-sm font-semibold text-text-dark mb-2">
-                Visa Status *
-              </label>
-              <select
-                name="visaStatus"
-                value={formData.visaStatus}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary bg-white transition-colors ${
-                  errors.visaStatus ? 'border-red-500 bg-red-50/20' : 'border-border-color'
-                }`}
-              >
-                <option value="">Select visa status</option>
-                <option value="visitVisa">Visit Visa</option>
-                <option value="residenceVisa">Residence Visa</option>
-                <option value="spouseVisa">Spouse Visa</option>
-              </select>
-              {errors.visaStatus && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i>
-                  {errors.visaStatus}
-                </p>
-              )}
-            </div>
+            {/* 8. Visa Status (only if currently located in UAE) */}
+            {(formData.currentlyLocated === 'uae' ||
+              formData.currentlyLocated === 'UAE' ||
+              formData.currentlyLocated === 'dubai') && (
+              <div>
+                <label className="block text-sm font-semibold text-text-dark mb-2">
+                  Visa Status *
+                </label>
+                <select
+                  name="visaStatus"
+                  value={formData.visaStatus}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-primary bg-white transition-colors ${
+                    errors.visaStatus ? 'border-red-500 bg-red-50/20' : 'border-border-color'
+                  }`}
+                >
+                  <option value="">Select visa status</option>
+                  <option value="visitVisa">Visit Visa</option>
+                  <option value="residenceVisa">Residence Visa</option>
+                  <option value="spouseVisa">Spouse Visa</option>
+                </select>
+                {errors.visaStatus && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <i className="fas fa-exclamation-circle mr-1"></i>
+                    {errors.visaStatus}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Global Error Display */}
             {submitError && (

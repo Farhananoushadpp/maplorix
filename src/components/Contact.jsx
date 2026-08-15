@@ -15,7 +15,7 @@ const Contact = () => {
     {
       icon: 'fa-phone',
       title: 'Call Us',
-      text: '044538999, +971581929900',
+      text: '+971 54 163 2502',
       description: 'Mon-Fri: 9AM-6PM GST',
     },
     {

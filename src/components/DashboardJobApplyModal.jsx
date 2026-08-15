@@ -56,15 +56,37 @@ const DashboardJobApplyModal = ({
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value,
+      }
+      if (
+        name === 'currentlyLocated' &&
+        value !== 'uae' &&
+        value !== 'UAE' &&
+        value !== 'dubai'
+      ) {
+        updated.visaStatus = ''
+      }
+      return updated
+    })
 
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
         [name]: '',
+      }))
+    }
+    if (
+      name === 'currentlyLocated' &&
+      value !== 'uae' &&
+      value !== 'UAE' &&
+      value !== 'dubai'
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        visaStatus: '',
       }))
     }
     if (submitError) {
@@ -141,7 +163,13 @@ const DashboardJobApplyModal = ({
       newErrors.currentlyLocated = 'Currently Located is required'
     }
 
-    if (!formData.visaStatus) {
+    // Visa status required only if located in UAE
+    if (
+      (formData.currentlyLocated === 'uae' ||
+        formData.currentlyLocated === 'UAE' ||
+        formData.currentlyLocated === 'dubai') &&
+      !formData.visaStatus
+    ) {
       newErrors.visaStatus = 'Visa Status is required'
     }
 
@@ -455,7 +483,7 @@ const DashboardJobApplyModal = ({
             >
               <option value="">Select location</option>
               <option value="india">India</option>
-              <option value="dubai">Dubai</option>
+              <option value="uae">UAE</option>
             </select>
             {errors.currentlyLocated && (
               <p className="mt-1 text-xs text-red-600 flex items-center">
@@ -465,31 +493,35 @@ const DashboardJobApplyModal = ({
             )}
           </div>
 
-          {/* 8. Visa Status */}
-          <div>
-            <label className="block text-sm font-medium text-primary mb-1">
-              Visa Status *
-            </label>
-            <select
-              name="visaStatus"
-              value={formData.visaStatus}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all bg-white ${
-                errors.visaStatus ? 'border-red-500 bg-red-50/20' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Select visa status</option>
-              <option value="visitVisa">Visit Visa</option>
-              <option value="residenceVisa">Residence Visa</option>
-              <option value="spouseVisa">Spouse Visa</option>
-            </select>
-            {errors.visaStatus && (
-              <p className="mt-1 text-xs text-red-600 flex items-center">
-                <i className="fas fa-exclamation-circle mr-1"></i>
-                {errors.visaStatus}
-              </p>
-            )}
-          </div>
+          {/* 8. Visa Status (only if currently located in UAE) */}
+          {(formData.currentlyLocated === 'uae' ||
+            formData.currentlyLocated === 'UAE' ||
+            formData.currentlyLocated === 'dubai') && (
+            <div>
+              <label className="block text-sm font-medium text-primary mb-1">
+                Visa Status *
+              </label>
+              <select
+                name="visaStatus"
+                value={formData.visaStatus}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all bg-white ${
+                  errors.visaStatus ? 'border-red-500 bg-red-50/20' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select visa status</option>
+                <option value="visitVisa">Visit Visa</option>
+                <option value="residenceVisa">Residence Visa</option>
+                <option value="spouseVisa">Spouse Visa</option>
+              </select>
+              {errors.visaStatus && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <i className="fas fa-exclamation-circle mr-1"></i>
+                  {errors.visaStatus}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Global Error Display */}
           {submitError && (

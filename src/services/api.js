@@ -366,7 +366,7 @@ export const jobsAPI = {
         params: {
           ...filters,
           status: 'active', // Only show admin posts (active status)
-          limit: 10000,
+          limit: filters.limit || 50,
           sortBy: 'createdAt',
           sortOrder: 'desc',
         },
@@ -437,7 +437,7 @@ export const applicationsAPI = {
     const response = await api.get('/applications', {
       params: {
         ...filters,
-        limit: 10000,
+        limit: filters.limit || 100,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       },

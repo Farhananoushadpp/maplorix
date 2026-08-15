@@ -133,11 +133,12 @@ export const AuthProvider = ({ children }) => {
           dispatch({ type: AUTH_ACTIONS.LOAD_USER_START })
 
           const response = await authAPI.getProfile()
+          const user =
+            response?.user || response?.data?.user || response?.data || response
 
           dispatch({
             type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-
-            payload: response.data.user,
+            payload: user,
           })
         } catch (error) {
           localStorage.removeItem('authToken')

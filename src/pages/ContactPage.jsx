@@ -16,7 +16,7 @@ const ContactPage = () => {
     {
       icon: 'fa-phone',
       title: 'Call Us',
-      text: '044538999, +971581929900',
+      text: '+971 54 163 2502',
       description: 'Mon-Fri: 9AM-6PM GST',
     },
     {
@@ -155,11 +155,11 @@ const ContactPage = () => {
           {/* Quick contact chips */}
           <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
             <a
-              href="tel:044538999"
+              href="tel:+97154163 2502"
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300"
             >
               <i className="fas fa-phone text-secondary"></i>
-              044538999
+              +971 54 163 2502
             </a>
             <a
               href="mailto:hr@maplorix.ae"
