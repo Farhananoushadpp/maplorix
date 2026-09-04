@@ -149,7 +149,7 @@ const Header = () => {
                     className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-secondary to-accent rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     <i className="fas fa-sign-in-alt mr-2"></i>
-                    LOGIN
+                    Login
                   </Link>
                   <Link
                     to={ROUTES.REGISTER}
@@ -157,7 +157,7 @@ const Header = () => {
                     className="flex items-center px-4 py-2 text-sm font-medium text-primary bg-white border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-300"
                   >
                     <i className="fas fa-user-plus mr-2"></i>
-                    SIGNUP
+                    Sign Up
                   </Link>
                 </div>
               ) : (

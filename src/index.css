@@ -91,7 +91,7 @@
   }
 
   .nav-link {
-    @apply text-white font-medium text-sm uppercase tracking-wide transition-colors duration-300 hover:text-secondary;
+    @apply text-white font-medium text-sm tracking-wide transition-colors duration-300 hover:text-secondary;
   }
 
   .nav-link.active {

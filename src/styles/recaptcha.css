@@ -22,7 +22,6 @@
     margin: 15px 0;
   }
 }
-
 @media (max-width: 380px) {
   .g-recaptcha {
     transform: scale(0.85);
@@ -44,7 +43,6 @@
     filter: brightness(0.9);
   }
 }
-
 /* Loading state */
 .g-recaptcha-loading {
   opacity: 0.6;

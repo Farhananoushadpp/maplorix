@@ -118,10 +118,9 @@ const Dashboard = () => {
     }
   }, [applications])
 
-  // Fetch data on component mount with debouncing
+  // Fetch data on component mount
   useEffect(() => {
     let isMounted = true
-    let timeoutId = null
 
     const fetchData = async () => {
       if (!isMounted) return
@@ -142,29 +141,23 @@ const Dashboard = () => {
           applicationsData?.length || 0,
           'applications'
         )
-
-        // Fetch candidate profiles
-        fetchCandidateProfiles()
       } catch (error) {
         if (!isMounted) return
         console.error('❌ Error fetching dashboard data:', error)
       }
     }
 
-    timeoutId = setTimeout(() => {
-      fetchData()
-    }, 1000)
+    fetchData()
 
     return () => {
       isMounted = false
-      if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [fetchCandidateProfiles])
+  }, [fetchJobs, fetchApplications])
 
-  // Refresh candidate profiles when applications change
+  // Refresh candidate profiles when applications change or on mount
   useEffect(() => {
     fetchCandidateProfiles()
-  }, [applications, fetchCandidateProfiles])
+  }, [fetchCandidateProfiles])
 
   useEffect(() => {
     if (jobs.length > 0 || applications.length > 0) {

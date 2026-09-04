@@ -284,7 +284,8 @@ const ApplyJob = () => {
             Apply Job
           </h1>
           {jobContext.jobTitle && (
-            <p className="text-lg font-semibold text-secondary mb-2">
+            <p className="text-lg font-se
+            mibold text-secondary mb-2">
               Position: {jobContext.jobTitle}
             </p>
           )}

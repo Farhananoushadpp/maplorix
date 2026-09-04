@@ -612,7 +612,7 @@ export const DataProvider = ({ children }) => {
     }
   }, [])
 
-  const createJob = async (jobData) => {
+  const createJob = useCallback(async (jobData) => {
     try {
       dispatch({ type: DATA_ACTIONS.CREATE_JOB_START })
       const response = await jobsAPI.createJob(jobData)
@@ -630,9 +630,9 @@ export const DataProvider = ({ children }) => {
       dispatch({ type: DATA_ACTIONS.CREATE_JOB_FAILURE, payload: errorMessage })
       throw error
     }
-  }
+  }, [])
 
-  const updateJob = async (id, jobData) => {
+  const updateJob = useCallback(async (id, jobData) => {
     try {
       dispatch({ type: DATA_ACTIONS.UPDATE_JOB_START })
       const response = await jobsAPI.updateJob(id, jobData)
@@ -650,9 +650,9 @@ export const DataProvider = ({ children }) => {
       dispatch({ type: DATA_ACTIONS.UPDATE_JOB_FAILURE, payload: errorMessage })
       throw error
     }
-  }
+  }, [])
 
-  const deleteJob = async (id) => {
+  const deleteJob = useCallback(async (id) => {
     try {
       dispatch({ type: DATA_ACTIONS.DELETE_JOB_START })
       await jobsAPI.deleteJob(id)
@@ -664,10 +664,10 @@ export const DataProvider = ({ children }) => {
       dispatch({ type: DATA_ACTIONS.DELETE_JOB_FAILURE, payload: errorMessage })
       throw error
     }
-  }
+  }, [])
 
   // Applications actions
-  const fetchApplications = async (filters = {}) => {
+  const fetchApplications = useCallback(async (filters = {}) => {
     try {
       dispatch({ type: DATA_ACTIONS.FETCH_APPLICATIONS_START })
       // Add timestamp to force refresh if requested
@@ -697,9 +697,9 @@ export const DataProvider = ({ children }) => {
       })
       throw error
     }
-  }
+  }, [])
 
-  const createApplication = async (applicationData) => {
+  const createApplication = useCallback(async (applicationData) => {
     try {
       dispatch({ type: DATA_ACTIONS.CREATE_APPLICATION_START })
       const response = await applicationsAPI.createApplication(applicationData)
@@ -719,9 +719,9 @@ export const DataProvider = ({ children }) => {
       })
       throw error
     }
-  }
+  }, [])
 
-  const updateApplication = async (id, applicationData) => {
+  const updateApplication = useCallback(async (id, applicationData) => {
     try {
       dispatch({ type: DATA_ACTIONS.UPDATE_APPLICATION_START })
       const response = await applicationsAPI.updateApplication(
@@ -744,9 +744,9 @@ export const DataProvider = ({ children }) => {
       })
       throw error
     }
-  }
+  }, [])
 
-  const deleteApplication = async (id) => {
+  const deleteApplication = useCallback(async (id) => {
     try {
       dispatch({ type: DATA_ACTIONS.DELETE_APPLICATION_START })
       await applicationsAPI.deleteApplication(id)
@@ -763,7 +763,7 @@ export const DataProvider = ({ children }) => {
       })
       throw error
     }
-  }
+  }, [])
 
   const restoreBackup = useCallback(async (backupData) => {
     try {
@@ -850,9 +850,9 @@ export const DataProvider = ({ children }) => {
   }, [])
 
   // Common actions
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: DATA_ACTIONS.CLEAR_ERROR })
-  }
+  }, [])
 
   // Simplified context value without useMemo to stop infinite loop
   const value = {
