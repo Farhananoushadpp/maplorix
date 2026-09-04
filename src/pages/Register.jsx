@@ -84,10 +84,11 @@ const Register = () => {
     }
   }, [passwordState.password])
 
-  // Render reCAPTCHA explicitly when component mounts or on Step 1
+  // Render reCAPTCHA explicitly when component mounts or on Step 1 / form display
   useEffect(() => {
-    if (step !== 1) return
+    if (step !== 1 || isExistingUser) return
     let isMounted = true
+    let timer = null
 
     const renderRecaptcha = () => {
       if (
@@ -130,16 +131,19 @@ const Register = () => {
       }
     }
 
-    if (window.whenRecaptchaReady) {
-      window.whenRecaptchaReady(renderRecaptcha)
-    } else if (window.grecaptcha) {
-      renderRecaptcha()
-    }
+    timer = setTimeout(() => {
+      if (window.whenRecaptchaReady) {
+        window.whenRecaptchaReady(renderRecaptcha)
+      } else if (window.grecaptcha) {
+        renderRecaptcha()
+      }
+    }, 50)
 
     return () => {
       isMounted = false
+      if (timer) clearTimeout(timer)
     }
-  }, [RECAPTCHA_SITE_KEY, step])
+  }, [RECAPTCHA_SITE_KEY, step, isExistingUser])
 
   // Reset reCAPTCHA helper
   const resetRecaptcha = useCallback(() => {
@@ -604,7 +608,12 @@ const Register = () => {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setIsExistingUser(false)}
+                      onClick={() => {
+                        setIsExistingUser(false)
+                        setFormData((prev) => ({ ...prev, captcha: '' }))
+                        setErrors({})
+                        resetRecaptcha()
+                      }}
                       className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 text-xs font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all"
                     >
                       <i className="fas fa-edit text-xs"></i> Change Email / Mobile &amp; Try Again
